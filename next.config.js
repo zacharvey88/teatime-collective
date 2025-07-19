@@ -5,7 +5,6 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: { unoptimized: true },
-  transpilePackages: ["geist"],
 };
 
 module.exports = nextConfig;
