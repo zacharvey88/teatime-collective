@@ -49,8 +49,8 @@ const WeddingCakes = () => {
               <span className="text-sm font-medium uppercase tracking-wider">Special Occasions</span>
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4">
-              Wedding Cakes
+            <h2 className="text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster">
+              Weddings
             </h2>
 
             <div className="prose prose-lg text-gray space-y-4">
