@@ -84,9 +84,9 @@ const Carousel = () => {
                 transform: `translateY(${translateY}px)`,
                 boxShadow,
                 position: 'absolute',
-                left: `calc(50% + ${(i - centerIndex) * 320}px - 200px)`,
+                left: `calc(50% + ${(i - centerIndex) * 350}px - 215px)`,
                 top: 0,
-                width: isCenter ? 400 : 320,
+                width: isCenter ? 430 : 350,
                 height: isCenter ? 540 : 480,
                 zIndex,
                 background: '#fff',
@@ -127,10 +127,13 @@ const Carousel = () => {
           className="framer-overlay"
           style={{
             position: 'absolute',
-            inset: 0,
+            left: 0,
+            top: 0,
+            width: '100%',
+            height: 600,
             background: 'radial-gradient(50% 85% at 50% 50%, rgba(255,255,255,0) 39%, rgba(255,254,253,0.13) 58%, var(--cream, #FFFBF0) 100%)',
             pointerEvents: 'none',
-            zIndex: 3,
+            zIndex: 0,
           }}
         />
         {/* Left Arrow */}
