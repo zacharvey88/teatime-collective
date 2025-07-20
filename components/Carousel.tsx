@@ -21,7 +21,7 @@ const Carousel = () => {
   const handlePrev = () => setCurrentSlide((currentSlide - 1 + (slides.length - 4)) % (slides.length - 4));
   const handleNext = () => setCurrentSlide((currentSlide + 1) % (slides.length - 4));
 
-  const getScale = (index) => {
+  const getScale = (index: number) => {
     const centerIndex = 2; // Central image is the 3rd of 5 visible
     const distance = Math.abs(index - centerIndex);
     return 1 - (distance * 0.2); // Reduces by 20% per step from center
@@ -95,8 +95,16 @@ const Carousel = () => {
           transition: 'background 0.3s ease, transform 0.3s ease',
         }}
         onClick={handlePrev}
-        onMouseEnter={(e) => { e.target.style.background = 'rgba(255, 255, 255, 0.9)'; e.target.style.transform = 'translateY(-50%) scale(1.1)'; }}
-        onMouseLeave={(e) => { e.target.style.background = 'rgba(255, 255, 255, 0.7)'; e.target.style.transform = 'translateY(-50%) scale(1)'; }}
+        onMouseEnter={(e) => {
+          const target = e.target as HTMLButtonElement;
+          target.style.background = 'rgba(255, 255, 255, 0.9)';
+          target.style.transform = 'translateY(-50%) scale(1.1)';
+        }}
+        onMouseLeave={(e) => {
+          const target = e.target as HTMLButtonElement;
+          target.style.background = 'rgba(255, 255, 255, 0.7)';
+          target.style.transform = 'translateY(-50%) scale(1)';
+        }}
       >
         {'<'}
       </button>
@@ -118,8 +126,16 @@ const Carousel = () => {
           transition: 'background 0.3s ease, transform 0.3s ease',
         }}
         onClick={handleNext}
-        onMouseEnter={(e) => { e.target.style.background = 'rgba(255, 255, 255, 0.9)'; e.target.style.transform = 'translateY(-50%) scale(1.1)'; }}
-        onMouseLeave={(e) => { e.target.style.background = 'rgba(255, 255, 255, 0.7)'; e.target.style.transform = 'translateY(-50%) scale(1)'; }}
+        onMouseEnter={(e) => {
+          const target = e.target as HTMLButtonElement;
+          target.style.background = 'rgba(255, 255, 255, 0.9)';
+          target.style.transform = 'translateY(-50%) scale(1.1)';
+        }}
+        onMouseLeave={(e) => {
+          const target = e.target as HTMLButtonElement;
+          target.style.background = 'rgba(255, 255, 255, 0.7)';
+          target.style.transform = 'translateY(-50%) scale(1)';
+        }}
       >
         {'>'}
       </button>
