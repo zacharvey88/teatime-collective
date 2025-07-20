@@ -1,161 +1,194 @@
 import React, { useState, useEffect } from 'react';
 
-const Carousel = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
+const images = [
+  "https://framerusercontent.com/images/mloIhuklrhI5BFUacMMCzhmZHxQ.jpg",
+  "https://framerusercontent.com/images/PPEllho3AF9c2nOji5oLm3FNx0s.jpg",
+  "https://framerusercontent.com/images/noGm4cyaXzYmGjjRJvR1Yjcg.jpg",
+  "https://framerusercontent.com/images/bABuIXzTPD8PxqWUg0bWyneTpc.jpg",
+  "https://framerusercontent.com/images/LW4HjXF0shedHVgnqtiGVWQGgKI.jpg"
+];
 
-  const slides = [
-    "https://framerusercontent.com/images/mloIhuklrhI5BFUacMMCzhmZHxQ.jpg",
-    "https://framerusercontent.com/images/PPEllho3AF9c2nOji5oLm3FNx0s.jpg",
-    "https://framerusercontent.com/images/noGm4cyaXzYmGjjRJvR1Yjcg.jpg",
-    "https://framerusercontent.com/images/bABuIXzTPD8PxqWUg0bWyneTpc.jpg",
-    "https://framerusercontent.com/images/LW4HjXF0shedHVgnqtiGVWQGgKI.jpg"
-  ];
+const framerNames = [
+  'Left2',
+  'Left1',
+  'Center',
+  'Right1',
+  'Right2',
+];
+
+const framerAppearIds = [
+  'ggx6xi',
+  '3qcaqp',
+  'msdesd',
+  'oqgtul',
+  'rhfcax',
+];
+
+const borderRadius = 32;
+const centerIndex = 2;
+
+const getTransform = (i: number, current: number) => {
+  // mimic the translateY and opacity from the HTML
+  const offset = i - current;
+  let translateY = 0;
+  let opacity = 1;
+  if (offset === -2 || offset === 2) {
+    translateY = 120;
+    opacity = 0.001;
+  } else if (offset === -1 || offset === 1) {
+    translateY = 80;
+    opacity = 0.001;
+  } else if (offset === 0) {
+    translateY = 40;
+    opacity = 0.001;
+  }
+  return { translateY, opacity };
+};
+
+const Carousel = () => {
+  const [current, setCurrent] = useState(centerIndex);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentSlide((currentSlide + 1) % (slides.length - 4));
+      setCurrent((prev) => (prev + 1) % images.length);
     }, 5000);
     return () => clearInterval(interval);
-  }, [currentSlide, slides.length]);
+  }, []);
 
-  const handlePrev = () => setCurrentSlide((currentSlide - 1 + (slides.length - 4)) % (slides.length - 4));
-  const handleNext = () => setCurrentSlide((currentSlide + 1) % (slides.length - 4));
+  const handlePrev = () => setCurrent((prev) => (prev - 1 + images.length) % images.length);
+  const handleNext = () => setCurrent((prev) => (prev + 1) % images.length);
 
-  const getScale = (index: number) => {
-    const centerIndex = 2; // Central image is the 3rd of 5 visible
-    const distance = Math.abs(index - centerIndex);
-    return 1 - (distance * 0.2); // Reduces by 20% per step from center
-  };
+  // Calculate the visible indices (wrap around)
+  const visibleIndices = [
+    (current - 2 + images.length) % images.length,
+    (current - 1 + images.length) % images.length,
+    current,
+    (current + 1) % images.length,
+    (current + 2) % images.length,
+  ];
 
   return (
-    <div style={{ width: '100%', height: '547px', position: 'relative', background: '#f0f0f0', overflow: 'hidden' }}>
-      <div style={{ display: 'flex', height: '100%', transition: 'transform 0.5s ease', transform: `translateX(-${currentSlide * (375 + 10)}px)` }}>
-        {slides.map((src, index) => {
-          const isVisible = index >= currentSlide && index < currentSlide + 5;
-          const adjustedIndex = index - currentSlide;
-          const scale = isVisible ? getScale(adjustedIndex) : 0;
-          const opacity = isVisible ? 1 : 0;
-          const width = 375 * scale;
-          const leftOffset = adjustedIndex * (375 + 10);
-
+    <div style={{ width: '100%', position: 'relative', background: 'var(--cream, #FFFBF0)', overflow: 'visible', minHeight: 600 }}>
+      <div style={{ position: 'relative', width: '100%', height: 600, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        {visibleIndices.map((imgIdx, i) => {
+          const framerName = framerNames[i];
+          const framerAppearId = framerAppearIds[i];
+          const { translateY, opacity } = getTransform(i, centerIndex);
+          const isCenter = i === centerIndex;
+          const zIndex = isCenter ? 2 : 1;
+          const boxShadow = isCenter ? '0px 1px 2px 0px rgba(0,0,0,0.25)' : undefined;
           return (
-            <div
-              key={index}
+            <header
+              key={framerName}
+              className={`framer-${framerAppearId} framer-${framerName.toLowerCase()} framer-v-${framerName.toLowerCase()}`}
+              data-framer-appear-id={framerAppearId}
+              data-framer-name={framerName}
               style={{
+                borderRadius: borderRadius,
+                willChange: 'transform',
+                opacity,
+                transform: `translateY(${translateY}px)`,
+                boxShadow,
                 position: 'absolute',
-                left: `${leftOffset}px`,
-                width: `${width}px`,
-                height: '547px',
-                borderRadius: '20px',
+                left: `calc(50% + ${(i - centerIndex) * 320}px - 200px)`,
+                top: 0,
+                width: isCenter ? 400 : 320,
+                height: isCenter ? 540 : 480,
+                zIndex,
+                background: '#fff',
                 overflow: 'hidden',
-                transform: `scale(${scale})`,
-                opacity: opacity,
-                transition: 'transform 0.3s ease, opacity 0.3s ease',
+                transition: 'all 0.5s cubic-bezier(.4,0,.2,1)',
+                borderBottomLeftRadius: borderRadius,
+                borderBottomRightRadius: borderRadius,
+                borderTopLeftRadius: borderRadius,
+                borderTopRightRadius: borderRadius,
               }}
+              tabIndex={isCenter || i === 1 || i === 3 ? 0 : undefined}
+              data-highlight={isCenter || i === 1 || i === 3 ? true : undefined}
             >
-              <img
-                src={src}
-                alt={`Slide ${index + 1}`}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'cover',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%',
-                  background: `linear-gradient(to right, transparent ${adjustedIndex <= 1 ? '60%' : '0'}, rgba(255, 255, 255, 0.9) ${adjustedIndex <= 2 ? '80%' : '20%'})`,
-                  pointerEvents: 'none',
-                }}
-              />
-            </div>
+              <div style={{ position: 'absolute', borderRadius: 'inherit', top: 0, right: 0, bottom: 0, left: 0 }}>
+                <img
+                  decoding="async"
+                  src={images[imgIdx]}
+                  alt=""
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: 'inherit',
+                    objectPosition: 'center',
+                    objectFit: 'cover',
+                  }}
+                />
+              </div>
+            </header>
           );
         })}
-      </div>
-      <button
-        style={{
-          position: 'absolute',
-          top: '50%',
-          left: '385px',
-          transform: 'translateY(-50%)',
-          width: '40px',
-          height: '40px',
-          background: 'rgba(255, 255, 255, 0.7)',
-          border: 'none',
-          borderRadius: '50%',
-          color: '#000',
-          fontSize: '20px',
-          cursor: 'pointer',
-          zIndex: 1,
-          transition: 'background 0.3s ease, transform 0.3s ease',
-        }}
-        onClick={handlePrev}
-        onMouseEnter={(e) => {
-          const target = e.target as HTMLButtonElement;
-          target.style.background = 'rgba(255, 255, 255, 0.9)';
-          target.style.transform = 'translateY(-50%) scale(1.1)';
-        }}
-        onMouseLeave={(e) => {
-          const target = e.target as HTMLButtonElement;
-          target.style.background = 'rgba(255, 255, 255, 0.7)';
-          target.style.transform = 'translateY(-50%) scale(1)';
-        }}
-      >
-        {'<'}
-      </button>
-      <button
-        style={{
-          position: 'absolute',
-          top: '50%',
-          right: '385px',
-          transform: 'translateY(-50%)',
-          width: '40px',
-          height: '40px',
-          background: 'rgba(255, 255, 255, 0.7)',
-          border: 'none',
-          borderRadius: '50%',
-          color: '#000',
-          fontSize: '20px',
-          cursor: 'pointer',
-          zIndex: 1,
-          transition: 'background 0.3s ease, transform 0.3s ease',
-        }}
-        onClick={handleNext}
-        onMouseEnter={(e) => {
-          const target = e.target as HTMLButtonElement;
-          target.style.background = 'rgba(255, 255, 255, 0.9)';
-          target.style.transform = 'translateY(-50%) scale(1.1)';
-        }}
-        onMouseLeave={(e) => {
-          const target = e.target as HTMLButtonElement;
-          target.style.background = 'rgba(255, 255, 255, 0.7)';
-          target.style.transform = 'translateY(-50%) scale(1)';
-        }}
-      >
-        {'>'}
-      </button>
-      <div style={{ position: 'absolute', bottom: '10px', left: 0, right: 0, textAlign: 'center', zIndex: 1 }}>
-        {[...Array(slides.length - 4)].map((_, index) => (
-          <button
-            key={index}
-            style={{
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: currentSlide === index ? 'white' : 'rgba(255, 255, 255, 0.5)',
-              border: 'none',
-              margin: '0 5px',
-              cursor: 'pointer',
-              padding: 0,
-            }}
-            onClick={() => setCurrentSlide(index)}
-          />
-        ))}
+        {/* Overlay gradient */}
+        <div
+          className="framer-overlay"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(50% 85% at 50% 50%, rgba(255,255,255,0) 39%, rgba(255,254,253,0.13) 58%, var(--cream, #FFFBF0) 100%)',
+            pointerEvents: 'none',
+            zIndex: 3,
+          }}
+        />
+        {/* Left Arrow */}
+        <button
+          aria-label="Previous"
+          style={{
+            position: 'absolute',
+            left: 'calc(50% - 320px - 40px)',
+            top: '50%',
+            transform: 'translateY(-50%)',
+            width: 40,
+            height: 40,
+            background: 'rgba(255,255,255,0.8)',
+            border: 'none',
+            borderRadius: '50%',
+            color: '#000',
+            fontSize: 24,
+            cursor: 'pointer',
+            zIndex: 4,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'background 0.3s, transform 0.3s',
+          }}
+          onClick={handlePrev}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M 11.813 14.625 L 6.188 9 L 11.813 3.375" fill="transparent" strokeWidth="2" stroke="rgb(0,0,0)" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+        {/* Right Arrow */}
+        <button
+          aria-label="Next"
+          style={{
+            position: 'absolute',
+            right: 'calc(50% - 320px - 40px)',
+            top: '50%',
+            transform: 'translateY(-50%) rotate(180deg)',
+            width: 40,
+            height: 40,
+            background: 'rgba(255,255,255,0.8)',
+            border: 'none',
+            borderRadius: '50%',
+            color: '#000',
+            fontSize: 24,
+            cursor: 'pointer',
+            zIndex: 4,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'background 0.3s, transform 0.3s',
+          }}
+          onClick={handleNext}
+        >
+          <svg width="18" height="18" viewBox="0 0 18 18"><path d="M 11.813 14.625 L 6.188 9 L 11.813 3.375" fill="transparent" strokeWidth="2" stroke="rgb(0,0,0)" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
       </div>
     </div>
   );
