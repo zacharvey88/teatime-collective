@@ -62,15 +62,23 @@ const Carousel = () => {
   ];
 
   return (
-    <div style={{ width: '100%', position: 'relative', background: 'var(--cream, #FFFBF0)', overflow: 'visible', minHeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ position: 'relative', width: '100%', height: 600, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24 }}>
+    <div style={{ width: '100%', position: 'relative', background: 'var(--cream, #FFFBF0)', overflow: 'visible', minHeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', width: '100%', height: 900, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24 }}>
         {visibleIndices.map((imgIdx, i) => {
           const framerName = framerNames[i];
           const framerAppearId = framerAppearIds[i];
-          const { translateY, opacity } = getTransform(i, centerIndex);
+          const { opacity } = getTransform(i, centerIndex);
           const isCenter = i === centerIndex;
           const zIndex = isCenter ? 2 : 1;
           const boxShadow = isCenter ? '0px 1px 2px 0px rgba(0,0,0,0.25)' : undefined;
+          // Responsive sizes
+          const centerHeight = '60vh';
+          const centerWidth = '45vw';
+          const sideHeight = '40vh';
+          const sideWidth = '28vw';
+          // For the center image, move it up by 5vh so 10vh is out of view (5vh top, 5vh bottom)
+          const translateY = isCenter ? '-5vh' : '0';
+
           return (
             <header
               key={framerName}
@@ -81,10 +89,10 @@ const Carousel = () => {
                 borderRadius: borderRadius,
                 willChange: 'transform',
                 opacity,
-                transform: `translateY(${translateY}px)`,
+                transform: `translateY(${translateY})`,
                 boxShadow,
-                width: isCenter ? 430 : 350,
-                height: isCenter ? 540 : 480,
+                width: isCenter ? centerWidth : sideWidth,
+                height: isCenter ? centerHeight : sideHeight,
                 zIndex,
                 background: '#fff',
                 overflow: 'hidden',
