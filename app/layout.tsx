@@ -1,18 +1,14 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Poppins, Inter } from 'next/font/google'
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
+import { Lobster } from "next/font/google";
 
-const poppins = Poppins({ 
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '900'],
-  variable: '--font-poppins'
-})
-
-const inter = Inter({ 
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-inter'
-})
+const lobster = Lobster({
+  variable: "--font-lobster",
+  subsets: ["latin"],
+  weight: "400",
+});
 
 export const metadata: Metadata = {
   title: 'Teatime Collective - Delicious Vegan Cakes',
@@ -31,15 +27,17 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en" className={`${poppins.variable} ${inter.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} ${lobster.variable}`}>
       <head>
         <link rel="icon" href="https://framerusercontent.com/images/9BRXJQRTuoR7dflavQsmPR1Pfpw.png" />
       </head>
-      <body className="bg-cream font-poppins min-h-screen">{children}</body>
+      <body className="antialiased">
+        {children}
+      </body>
     </html>
-  )
+  );
 }

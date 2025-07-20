@@ -9,6 +9,7 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
+        lobster: ['var(--font-lobster)', 'cursive'],
         'poppins': ['var(--font-poppins)', 'sans-serif'],
         'inter': ['var(--font-inter)', 'sans-serif'],
       },

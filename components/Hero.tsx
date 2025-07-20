@@ -70,44 +70,44 @@ const Hero = () => {
 
         {/* Cake Gallery Carousel */}
         <div className="relative max-w-6xl mx-auto">
-          <div className="hidden lg:flex items-center justify-center space-x-4">
+          <div className="hidden lg:flex items-center justify-center space-x-6">
             {cakeImages.map((image, index) => {
-              const position = (index - currentSlide + cakeImages.length) % cakeImages.length
-              let scale = 'scale-75 opacity-50 z-0'
-              let width = 'w-48 h-64'
+              const position = (index - currentSlide + cakeImages.length) % cakeImages.length;
+              let scale = 'scale-75 opacity-50 z-0';
+              let width = 'w-40 h-56';
               
               if (position === 0) {
-                scale = 'scale-100 opacity-100 z-20 shadow-2xl'
-                width = 'w-64 h-80'
+                scale = 'scale-100 opacity-100 z-20 shadow-lg';
+                width = 'w-56 h-72';
               } else if (position === 1 || position === cakeImages.length - 1) {
-                scale = 'scale-90 opacity-75 z-10'
-                width = 'w-56 h-72'
+                scale = 'scale-85 opacity-75 z-10';
+                width = 'w-48 h-64';
               }
 
               return (
                 <div
                   key={index}
-                  className={`relative ${width} transition-all duration-700 ease-out ${scale} rounded-3xl overflow-hidden cursor-pointer`}
+                  className={`relative ${width} transition-all duration-500 ease-in-out ${scale} rounded-xl overflow-hidden cursor-pointer`}
                   onClick={() => setCurrentSlide(index)}
                 >
                   <Image
                     src={image}
-                    alt={`Delicious vegan cake ${index + 1}`}
+                    alt={`Delicious cake ${index + 1}`}
                     fill
                     className="object-cover"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   />
                 </div>
-              )
+              );
             })}
           </div>
 
           {/* Mobile Carousel */}
           <div className="lg:hidden relative">
-            <div className="relative h-96 rounded-3xl overflow-hidden">
+            <div className="relative h-72 rounded-xl overflow-hidden">
               <Image
                 src={cakeImages[currentSlide]}
-                alt={`Delicious vegan cake ${currentSlide + 1}`}
+                alt={`Delicious cake ${currentSlide + 1}`}
                 fill
                 className="object-cover"
                 sizes="100vw"
@@ -118,28 +118,28 @@ const Hero = () => {
           {/* Navigation Arrows */}
           <button
             onClick={prevSlide}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-light-cream/80 hover:bg-light-cream p-3 rounded-full transition-all duration-200 hover:scale-110"
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full transition-all duration-200 hover:scale-105"
             aria-label="Previous image"
           >
-            <ChevronLeft className="w-6 h-6 text-dark" />
+            <ChevronLeft className="w-5 h-5 text-gray-800" />
           </button>
           
           <button
             onClick={nextSlide}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-light-cream/80 hover:bg-light-cream p-3 rounded-full transition-all duration-200 hover:scale-110"
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full transition-all duration-200 hover:scale-105"
             aria-label="Next image"
           >
-            <ChevronRight className="w-6 h-6 text-dark" />
+            <ChevronRight className="w-5 h-5 text-gray-800" />
           </button>
 
           {/* Dots Indicator */}
-          <div className="flex justify-center space-x-2 mt-8">
+          <div className="flex justify-center space-x-2 mt-4">
             {cakeImages.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-200 ${
-                  index === currentSlide ? 'bg-orange scale-110' : 'bg-light-gray hover:bg-orange/50'
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  index === currentSlide ? 'bg-gray-800' : 'bg-gray-300 hover:bg-gray-500'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
