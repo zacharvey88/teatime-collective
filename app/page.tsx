@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Navigation from '@/components/Navigation'
 import Hero from '@/components/Hero'
-import MarketDates from '@/components/MarketDates'
+import Markets from '@/components/Markets'
 import OurStory from '@/components/OurStory'
 import Festivals from '@/components/Festivals'
 import Weddings from '@/components/Weddings'
@@ -22,7 +22,7 @@ export default function Home() {
       <Navigation />
       <main>
         <Hero />
-        <MarketDates />
+        <Markets />
         <OurStory />
         <Festivals />
         <Weddings />

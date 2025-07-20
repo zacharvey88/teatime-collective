@@ -1,30 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Heart, Mail } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient';
+
+const supabaseUrl = 'https://kntdzvkvfyoiwjfnlvgg.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtudGR6dmt2ZnlvaXdqZm5sdmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNDE2MTUsImV4cCI6MjA2ODYxNzYxNX0.-8oTxt7JZ7eJuGfELaesTGqjugJiO5S15ic4Vhlntqc';
 
 const Weddings = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [weddingImages, setWeddingImages] = useState<{ src: string; alt: string }[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const weddingImages = [
-    {
-      src: "https://framerusercontent.com/images/avMVMvlfbzhLiBE5pMj63KqoyY.jpg",
-      alt: "Decorated Wedding Cake"
-    },
-    {
-      src: "https://framerusercontent.com/images/bWdwBqOchHtKOBN6izTe2q9fX7Y.jpg",
-      alt: "Multi-tier Wedding Cake"
-    },
-    {
-      src: "https://framerusercontent.com/images/lg4WiynyZMq0CMWYVsqK8BkOOS8.jpg",
-      alt: "Custom Wedding Cake"
-    },
-    {
-      src: "https://framerusercontent.com/images/q5RiRVuTXEyeXvBl013bDctLUg.jpg",
-      alt: "Beautiful Wedding Cake"
-    }
-  ]
+  useEffect(() => {
+    const fetchImages = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.storage.from('weddings').list('', { limit: 100 });
+      if (error) {
+        setWeddingImages([]);
+        setLoading(false);
+        return;
+      }
+      const images = (data?.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i)) || []).map(file => ({
+        src: `${supabaseUrl}/storage/v1/object/public/weddings/${file.name}`,
+        alt: file.name.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
+      }));
+      setWeddingImages(images);
+      setLoading(false);
+    };
+    fetchImages();
+  }, []);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % weddingImages.length)
@@ -51,11 +57,11 @@ const Weddings = () => {
 
             <div className="prose prose-lg text-gray space-y-4">
               <p>
-                Yes, we cater for weddings to! If you want the icing on top of your special day, get in touch for a quote or to discuss any ideas.
+                Yes, we cater for weddings and other special occasions too! And that doesn't have to mean just one magnificent tiered cake; we also do cake buffets! So for the cherry on top of your day, get in touch for a quote or to discuss any ideas.
               </p>
 
               <p>
-                Please note that I no longer sell Fondant Iced Cakes! I am able to create tiered masterpieces similar to the cakes shown below, or frosted cakes such as this one!
+                Please note that I no longer sell Fondant Iced Cakes. I am able to create tiered masterpieces similar to the cakes shown below, or frosted cakes such as this one!
               </p>
             </div>
 
@@ -80,19 +86,26 @@ const Weddings = () => {
           {/* Wedding Gallery */}
           <div className="lg:flex-1 order-1 lg:order-2">
             <div className="relative h-96 lg:h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-cream">
-              <Image
-                src={weddingImages[currentSlide].src}
-                alt={weddingImages[currentSlide].alt}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
+              {loading ? (
+                <div className="flex items-center justify-center h-full text-gray">Loading images...</div>
+              ) : weddingImages.length > 0 ? (
+                <Image
+                  src={weddingImages[currentSlide].src}
+                  alt={weddingImages[currentSlide].alt}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray">No images found.</div>
+              )}
 
               {/* Navigation Arrows */}
               <button
                 onClick={prevSlide}
                 className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200"
                 aria-label="Previous wedding cake image"
+                disabled={weddingImages.length === 0}
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
@@ -101,6 +114,7 @@ const Weddings = () => {
                 onClick={nextSlide}
                 className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200"
                 aria-label="Next wedding cake image"
+                disabled={weddingImages.length === 0}
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
@@ -116,6 +130,7 @@ const Weddings = () => {
                         index === currentSlide ? 'bg-white scale-125' : 'bg-white/50'
                       }`}
                       aria-label={`Go to slide ${index + 1}`}
+                      disabled={weddingImages.length === 0}
                     />
                   ))}
                 </div>

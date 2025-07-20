@@ -1,50 +1,34 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Music, Users, Calendar } from 'lucide-react'
+import { supabase } from '@/lib/supabaseClient';
+const supabaseUrl = 'https://kntdzvkvfyoiwjfnlvgg.supabase.co';
 
 const Festivals = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [festivalImages, setFestivalImages] = useState<{ src: string; alt: string }[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const festivalImages = [
-    {
-      src: "https://framerusercontent.com/images/9XU1SQzXEDdsiYXKUCYq0jtvw.jpg",
-      alt: "Festival Catering"
-    },
-    {
-      src: "https://framerusercontent.com/images/AI3Q4AfZU8JfXCg9YXGjXPyqTw.jpg",
-      alt: "Parklife Festival"
-    },
-    {
-      src: "https://framerusercontent.com/images/w39weG4J9NEXUw37lp2zzvRNtI.jpg",
-      alt: "Indie Tracks Festival"
-    },
-    {
-      src: "https://framerusercontent.com/images/QaZnrKdqgt9Ibo4m4TIGV72TUVA.jpg",
-      alt: "Glastonbury Festival"
-    },
-    {
-      src: "https://framerusercontent.com/images/Z8WnxN3cT9ODp5GaraYCrFg2KDk.jpg",
-      alt: "Equinox Festival"
-    },
-    {
-      src: "https://framerusercontent.com/images/2cQxPW0ISAyKt2b9HwLIE9b8c.jpg",
-      alt: "Envirolution Festival"
-    },
-    {
-      src: "https://framerusercontent.com/images/6KaYeK6ysCJudi1fBqEBw4Q2wc8.jpg",
-      alt: "Dirty Weekend Festival"
-    },
-    {
-      src: "https://framerusercontent.com/images/UDHpNcaNbf81yif1lXmJTFHB30I.jpg",
-      alt: "Carnival Festival"
-    },
-    {
-      src: "https://framerusercontent.com/images/zYiSrMtw5jPfCCzNQjMUo5qGRZE.jpg",
-      alt: "Vegan Fair Cakes"
-    }
-  ]
+  useEffect(() => {
+    const fetchImages = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.storage.from('festivals').list('', { limit: 100 });
+      if (error) {
+        setFestivalImages([]);
+        setLoading(false);
+        return;
+      }
+      const images = (data?.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i)) || []).map(file => ({
+        src: `${supabaseUrl}/storage/v1/object/public/festivals/${file.name}`,
+        alt: file.name.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
+      }));
+      setFestivalImages(images);
+      setLoading(false);
+    };
+    fetchImages();
+  }, []);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % festivalImages.length)
@@ -61,19 +45,26 @@ const Festivals = () => {
           {/* Festival Gallery */}
           <div className="lg:flex-1">
             <div className="relative h-96 lg:h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-light-cream">
-              <Image
-                src={festivalImages[currentSlide].src}
-                alt={festivalImages[currentSlide].alt}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
+              {loading ? (
+                <div className="flex items-center justify-center h-full text-gray">Loading images...</div>
+              ) : festivalImages.length > 0 ? (
+                <Image
+                  src={festivalImages[currentSlide].src}
+                  alt={festivalImages[currentSlide].alt}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray">No images found.</div>
+              )}
 
               {/* Navigation Arrows */}
               <button
                 onClick={prevSlide}
                 className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200"
                 aria-label="Previous festival image"
+                disabled={festivalImages.length === 0}
               >
                 <ChevronLeft className="w-6 h-6" />
               </button>
@@ -82,6 +73,7 @@ const Festivals = () => {
                 onClick={nextSlide}
                 className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200"
                 aria-label="Next festival image"
+                disabled={festivalImages.length === 0}
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
@@ -97,6 +89,7 @@ const Festivals = () => {
                         index === currentSlide ? 'bg-white scale-125' : 'bg-white/50'
                       }`}
                       aria-label={`Go to slide ${index + 1}`}
+                      disabled={festivalImages.length === 0}
                     />
                   ))}
                 </div>
