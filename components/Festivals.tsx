@@ -20,6 +20,7 @@ const Festivals = () => {
         setLoading(false);
         return;
       }
+      console.log(data);
       const images = (data?.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i)) || []).map(file => ({
         src: `${supabaseUrl}/storage/v1/object/public/festivals/${file.name}`,
         alt: file.name.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
