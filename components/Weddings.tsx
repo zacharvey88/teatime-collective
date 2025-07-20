@@ -4,21 +4,17 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Heart, Mail } from 'lucide-react'
 
-const WeddingCakes = () => {
+const Weddings = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
 
   const weddingImages = [
     {
-      src: "https://framerusercontent.com/images/WV9YyzyU2aaOsusK1i5NFJwKs8.jpg",
-      alt: "Elegant Wedding Cake"
+      src: "https://framerusercontent.com/images/avMVMvlfbzhLiBE5pMj63KqoyY.jpg",
+      alt: "Decorated Wedding Cake"
     },
     {
       src: "https://framerusercontent.com/images/bWdwBqOchHtKOBN6izTe2q9fX7Y.jpg",
       alt: "Multi-tier Wedding Cake"
-    },
-    {
-      src: "https://framerusercontent.com/images/avMVMvlfbzhLiBE5pMj63KqoyY.jpg",
-      alt: "Decorated Wedding Cake"
     },
     {
       src: "https://framerusercontent.com/images/lg4WiynyZMq0CMWYVsqK8BkOOS8.jpg",
@@ -132,4 +128,4 @@ const WeddingCakes = () => {
   )
 }
 
-export default WeddingCakes
+export default Weddings

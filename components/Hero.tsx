@@ -1,36 +1,37 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Image from 'next/image'
+// import { useState, useEffect } from 'react'
+// import Image from 'next/image'
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import Carousel from './Carousel'
 
 const Hero = () => {
-  const [currentSlide, setCurrentSlide] = useState(0)
+  // const [currentSlide, setCurrentSlide] = useState(0)
 
-  const cakeImages = [
-    "https://framerusercontent.com/images/mloIhuklrhI5BFUacMMCzhmZHxQ.jpg",
-    "https://framerusercontent.com/images/PPEllho3AF9c2nOji5oLm3FNx0s.jpg",
-    "https://framerusercontent.com/images/noGm4cyaXzYmGjjRJvR1Yjcg.jpg",
-    "https://framerusercontent.com/images/bABuIXzTPD8PxqWUg0bWyneTpc.jpg",
-    "https://framerusercontent.com/images/LW4HjXF0shedHVgnqtiGVWQGgKI.jpg"
-  ]
+  // const cakeImages = [
+  //   "https://framerusercontent.com/images/mloIhuklrhI5BFUacMMCzhmZHxQ.jpg",
+  //   "https://framerusercontent.com/images/PPEllho3AF9c2nOji5oLm3FNx0s.jpg",
+  //   "https://framerusercontent.com/images/noGm4cyaXzYmGjjRJvR1Yjcg.jpg",
+  //   "https://framerusercontent.com/images/bABuIXzTPD8PxqWUg0bWyneTpc.jpg",
+  //   "https://framerusercontent.com/images/LW4HjXF0shedHVgnqtiGVWQGgKI.jpg"
+  // ]
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % cakeImages.length)
-    }, 4000)
+  // useEffect(() => {
+  //   const timer = setInterval(() => {
+  //     setCurrentSlide((prev) => (prev + 1) % cakeImages.length)
+  //   }, 4000)
 
-    return () => clearInterval(timer)
-  }, [cakeImages.length])
+  //   return () => clearInterval(timer)
+  // }, [cakeImages.length])
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % cakeImages.length)
-  }
+  // const nextSlide = () => {
+  //   setCurrentSlide((prev) => (prev + 1) % cakeImages.length)
+  // }
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + cakeImages.length) % cakeImages.length)
-  }
+  // const prevSlide = () => {
+  //   setCurrentSlide((prev) => (prev - 1 + cakeImages.length) % cakeImages.length)
+  // }
 
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 pb-16 overflow-hidden">
@@ -69,7 +70,8 @@ const Hero = () => {
         </div>
 
         {/* Cake Gallery Carousel */}
-        <div className="relative max-w-6xl mx-auto">
+        <Carousel />
+        {/* <div className="relative max-w-6xl mx-auto">
           <div className="hidden lg:flex items-center justify-center space-x-6">
             {cakeImages.map((image, index) => {
               const position = (index - currentSlide + cakeImages.length) % cakeImages.length;
@@ -101,8 +103,7 @@ const Hero = () => {
               );
             })}
           </div>
-
-          {/* Mobile Carousel */}
+  
           <div className="lg:hidden relative">
             <div className="relative h-72 rounded-xl overflow-hidden">
               <Image
@@ -115,7 +116,6 @@ const Hero = () => {
             </div>
           </div>
 
-          {/* Navigation Arrows */}
           <button
             onClick={prevSlide}
             className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full transition-all duration-200 hover:scale-105"
@@ -132,7 +132,6 @@ const Hero = () => {
             <ChevronRight className="w-5 h-5 text-gray-800" />
           </button>
 
-          {/* Dots Indicator */}
           <div className="flex justify-center space-x-2 mt-4">
             {cakeImages.map((_, index) => (
               <button
@@ -145,7 +144,7 @@ const Hero = () => {
               />
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
 
       {/* Gradient Overlay */}

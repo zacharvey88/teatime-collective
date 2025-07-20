@@ -6,7 +6,7 @@ import Hero from '@/components/Hero'
 import MarketDates from '@/components/MarketDates'
 import OurStory from '@/components/OurStory'
 import Festivals from '@/components/Festivals'
-import WeddingCakes from '@/components/WeddingCakes'
+import Weddings from '@/components/Weddings'
 import Testimonials from '@/components/Testimonials'
 import Footer from '@/components/Footer'
 
@@ -25,7 +25,7 @@ export default function Home() {
         <MarketDates />
         <OurStory />
         <Festivals />
-        <WeddingCakes />
+        <Weddings />
         <Testimonials />
       </main>
       <Footer />

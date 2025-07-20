@@ -61,10 +61,6 @@ const OurStory = () => {
         <div className="max-w-4xl mx-auto">
           {timelineEvents.map((event, index) => (
             <div key={index} className="relative flex flex-col lg:flex-row items-start lg:items-center mb-16 last:mb-0">
-              {/* Timeline Line */}
-              {index < timelineEvents.length - 1 && (
-                <div className="absolute left-8 lg:left-20 top-24 lg:top-auto lg:bottom-0 w-0.5 h-16 lg:h-0.5 lg:w-16 bg-orange/30"></div>
-              )}
 
               {/* Date Circle */}
               <div className="flex-shrink-0 flex flex-col items-center lg:items-start mb-6 lg:mb-0 lg:mr-8">
@@ -75,7 +71,7 @@ const OurStory = () => {
               </div>
 
               {/* Content */}
-              <div className="flex-1 lg:flex lg:space-x-8 space-y-6 lg:space-y-0">
+              <div className="flex-1 lg:flex items-center lg:space-x-8 space-y-6 lg:space-y-0">
                 <div className="lg:flex-1">
                   <div className="mb-4">
                     <p className="text-orange font-medium mb-2">{event.tagline}</p>

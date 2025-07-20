@@ -9,8 +9,8 @@ const Festivals = () => {
 
   const festivalImages = [
     {
-      src: "https://framerusercontent.com/images/zYiSrMtw5jPfCCzNQjMUo5qGRZE.jpg",
-      alt: "Vegan Fair Cakes"
+      src: "https://framerusercontent.com/images/9XU1SQzXEDdsiYXKUCYq0jtvw.jpg",
+      alt: "Festival Catering"
     },
     {
       src: "https://framerusercontent.com/images/AI3Q4AfZU8JfXCg9YXGjXPyqTw.jpg",
@@ -37,12 +37,12 @@ const Festivals = () => {
       alt: "Dirty Weekend Festival"
     },
     {
-      src: "https://framerusercontent.com/images/9XU1SQzXEDdsiYXKUCYq0jtvw.jpg",
-      alt: "Festival Catering"
-    },
-    {
       src: "https://framerusercontent.com/images/UDHpNcaNbf81yif1lXmJTFHB30I.jpg",
       alt: "Carnival Festival"
+    },
+    {
+      src: "https://framerusercontent.com/images/zYiSrMtw5jPfCCzNQjMUo5qGRZE.jpg",
+      alt: "Vegan Fair Cakes"
     }
   ]
 
