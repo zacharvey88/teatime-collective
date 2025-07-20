@@ -131,7 +131,7 @@ const Carousel = () => {
             top: 0,
             width: '100%',
             height: 600,
-            background: 'radial-gradient(50% 85% at 50% 50%, rgba(255,255,255,0) 39%, rgba(255,254,253,0.13) 58%, var(--cream, #FFFBF0) 100%)',
+            background: 'radial-gradient(circle at 50% 50%, rgba(255,255,255,0) 60%, var(--cream, #FFFBF0) 80%)',
             pointerEvents: 'none',
             zIndex: 0,
           }}
