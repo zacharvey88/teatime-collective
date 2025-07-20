@@ -63,7 +63,7 @@ const Carousel = () => {
 
   return (
     <div style={{ width: '100%', position: 'relative', background: 'var(--cream, #FFFBF0)', overflow: 'visible', minHeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ position: 'relative', width: '100%', height: 600, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+      <div style={{ position: 'relative', width: '100%', height: 600, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24 }}>
         {visibleIndices.map((imgIdx, i) => {
           const framerName = framerNames[i];
           const framerAppearId = framerAppearIds[i];
@@ -83,9 +83,6 @@ const Carousel = () => {
                 opacity,
                 transform: `translateY(${translateY}px)`,
                 boxShadow,
-                position: 'absolute',
-                left: `calc(50% + ${(i - centerIndex) * 350}px - 215px)`,
-                top: 0,
                 width: isCenter ? 430 : 350,
                 height: isCenter ? 540 : 480,
                 zIndex,
@@ -97,6 +94,9 @@ const Carousel = () => {
                 borderTopLeftRadius: borderRadius,
                 borderTopRightRadius: borderRadius,
                 cursor: isCenter ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
               tabIndex={isCenter || i === 1 || i === 3 ? 0 : undefined}
               data-highlight={isCenter || i === 1 || i === 3 ? true : undefined}
@@ -104,27 +104,25 @@ const Carousel = () => {
                 if (!isCenter) setCurrent(imgIdx);
               }}
             >
-              <div style={{ position: 'absolute', borderRadius: 'inherit', top: 0, right: 0, bottom: 0, left: 0 }}>
-                <img
-                  decoding="async"
-                  src={images[imgIdx]}
-                  alt=""
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    height: '100%',
-                    borderRadius: 'inherit',
-                    objectPosition: 'center',
-                    objectFit: 'cover',
-                  }}
-                />
-              </div>
+              <img
+                decoding="async"
+                src={images[imgIdx]}
+                alt=""
+                style={{
+                  display: 'block',
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 'inherit',
+                  objectPosition: 'center',
+                  objectFit: 'cover',
+                }}
+              />
             </header>
           );
         })}
         {/* Overlay gradient */}
         <div
-          className="framer-overlay"
+          className="overlay"
           style={{
             position: 'absolute',
             left: 0,
