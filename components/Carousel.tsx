@@ -49,13 +49,6 @@ const getTransform = (i: number, current: number) => {
 const Carousel = () => {
   const [current, setCurrent] = useState(centerIndex);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrent((prev) => (prev + 1) % images.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
   const handlePrev = () => setCurrent((prev) => (prev - 1 + images.length) % images.length);
   const handleNext = () => setCurrent((prev) => (prev + 1) % images.length);
 
@@ -69,7 +62,7 @@ const Carousel = () => {
   ];
 
   return (
-    <div style={{ width: '100%', position: 'relative', background: 'var(--cream, #FFFBF0)', overflow: 'visible', minHeight: 600 }}>
+    <div style={{ width: '100%', position: 'relative', background: 'var(--cream, #FFFBF0)', overflow: 'visible', minHeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ position: 'relative', width: '100%', height: 600, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
         {visibleIndices.map((imgIdx, i) => {
           const framerName = framerNames[i];
@@ -103,9 +96,13 @@ const Carousel = () => {
                 borderBottomRightRadius: borderRadius,
                 borderTopLeftRadius: borderRadius,
                 borderTopRightRadius: borderRadius,
+                cursor: isCenter ? 'default' : 'pointer',
               }}
               tabIndex={isCenter || i === 1 || i === 3 ? 0 : undefined}
               data-highlight={isCenter || i === 1 || i === 3 ? true : undefined}
+              onClick={() => {
+                if (!isCenter) setCurrent(imgIdx);
+              }}
             >
               <div style={{ position: 'absolute', borderRadius: 'inherit', top: 0, right: 0, bottom: 0, left: 0 }}>
                 <img
