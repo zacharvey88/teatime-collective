@@ -28,19 +28,20 @@ const borderRadius = 32;
 const centerIndex = 2;
 
 const getTransform = (i: number, current: number) => {
-  // mimic the translateY and opacity from the HTML
   const offset = i - current;
   let translateY = 0;
   let opacity = 1;
-  if (offset === -2 || offset === 2) {
-    translateY = 120;
-    opacity = 0.001;
+  if (offset === 0) {
+    translateY = 40;
+    opacity = 1;
   } else if (offset === -1 || offset === 1) {
     translateY = 80;
-    opacity = 0.001;
-  } else if (offset === 0) {
-    translateY = 40;
-    opacity = 0.001;
+    opacity = 0.7;
+  } else if (offset === -2 || offset === 2) {
+    translateY = 120;
+    opacity = 0.3;
+  } else {
+    opacity = 0;
   }
   return { translateY, opacity };
 };
