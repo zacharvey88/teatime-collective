@@ -6,7 +6,7 @@ import Carousel from './Carousel'
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-30 pb-16 overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-[120px]">
       {/* Background Pattern */}
       {/* <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-gradient-radial from-orange/20 to-transparent"></div>
@@ -33,13 +33,11 @@ const Hero = () => {
 
         <div className="mb-16 animate-slide-up delay-300">
           <Link href="/" className="btn-primary">
-            View Cakes
+            Order Now
           </Link>
         </div>
+        <Carousel />
       </div>
-
-      {/* <Carousel /> */}
-
       {/* Gradient Overlay */}
       {/* <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-cream to-transparent"></div> */}
     </section>

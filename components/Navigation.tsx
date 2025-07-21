@@ -30,8 +30,8 @@ const Navigation = () => {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       isScrolled ? 'bg-cream/90 backdrop-blur-lg shadow-lg' : 'bg-gradient-to-b from-cream to-transparent'
     }`}>
-      <div className="section-container">
-        <div className="flex items-center justify-between py-4">
+      <div className="w-full">
+        <div className="flex items-center justify-between py-1 px-4 lg:px-12">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="relative w-16 h-16">
