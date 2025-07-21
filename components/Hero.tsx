@@ -6,7 +6,7 @@ import Carousel from './Carousel'
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center pt-40 pb-16 overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center pt-30 pb-16 overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-gradient-radial from-orange/20 to-transparent"></div>
