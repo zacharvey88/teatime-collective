@@ -8,12 +8,11 @@ const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-30 pb-16 overflow-hidden">
       {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
+      {/* <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-gradient-radial from-orange/20 to-transparent"></div>
-      </div>
+      </div> */}
 
       <div className="section-container text-center z-10">
-        {/* Rating Badge */}
         <div className="inline-flex items-center bg-light-cream px-6 py-3 rounded-full mb-8 animate-fade-in">
           <span className="text-sm font-medium mr-2">Google:</span>
           <div className="flex items-center space-x-1 mr-2">
@@ -24,27 +23,25 @@ const Hero = () => {
           <span className="text-sm font-bold">(4.8)</span>
         </div>
 
-        {/* Main Heading */}
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 animate-slide-up text-balance">
           Delicious Vegan Cakes
         </h1>
 
-        {/* Subtitle */}
         <p className="text-lg md:text-xl text-gray max-w-2xl mx-auto mb-8 animate-slide-up delay-200">
           Vegan bakery, market traders and amazing cake makers since 2013
         </p>
 
-        {/* CTA Button */}
         <div className="mb-16 animate-slide-up delay-300">
           <Link href="/" className="btn-primary">
             View Cakes
           </Link>
         </div>
-        <Carousel />
       </div>
 
+      <Carousel />
+
       {/* Gradient Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-cream to-transparent"></div>
+      {/* <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-cream to-transparent"></div> */}
     </section>
   )
 }
