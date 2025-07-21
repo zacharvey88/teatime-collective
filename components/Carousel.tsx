@@ -24,14 +24,12 @@ const Carousel: React.FC = () => {
   const handlePrev = () => setCurrent((prev) => (prev - 1 + images.length) % images.length);
   const handleNext = () => setCurrent((prev) => (prev + 1) % images.length);
 
-  // Get indices of images to show
   const visibleIndices = Array.from({ length: visibleCount }, (_, i) => {
     return (current - half + i + images.length) % images.length;
   });
 
-  // Portrait aspect ratio: width < height
-  const baseWidth = 18; // vw
-  const baseHeight = 32; // vw (portrait)
+  const baseWidth = 18;
+  const baseHeight = 32;
 
   return (
     <div style={{ width: '100%', background: 'var(--cream, #FFFBF0)', overflow: 'visible', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 80 }}>
@@ -55,14 +53,13 @@ const Carousel: React.FC = () => {
       >
         <svg width="18" height="18" viewBox="0 0 18 18"><path d="M 11.813 14.625 L 6.188 9 L 11.813 3.375" fill="transparent" strokeWidth="2" stroke="rgb(0,0,0)" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
-      <div style={{ position: 'relative', width: '80vw', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10vw', height: `${baseHeight}px` }}>
+      <div style={{ position: 'relative', width: '80vw', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', height: `${baseHeight}px` }}>
         {visibleIndices.map((imgIdx, i) => {
           const offset = i - half;
           const scale = getScale(offset);
           const isCenter = offset === 0;
           const width = `${baseWidth * scale}vw`;
           const height = `${baseHeight * scale}vw`;
-          const translateY = isCenter ? '-5vh' : '0';
           return (
             <div
               key={imgIdx}
@@ -74,7 +71,7 @@ const Carousel: React.FC = () => {
                 overflow: 'hidden',
                 background: '#fff',
                 cursor: 'pointer',
-                transform: `translateY(${translateY}) scale(${scale})`,
+                transform: `scale(${scale})`,
                 transition: 'all 0.5s cubic-bezier(.4,0,.2,1)',
                 display: 'flex',
                 alignItems: 'center',
