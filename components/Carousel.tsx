@@ -8,22 +8,6 @@ const images = [
   "https://framerusercontent.com/images/LW4HjXF0shedHVgnqtiGVWQGgKI.jpg"
 ];
 
-const framerNames = [
-  'Left2',
-  'Left1',
-  'Center',
-  'Right1',
-  'Right2',
-];
-
-const framerAppearIds = [
-  'ggx6xi',
-  '3qcaqp',
-  'msdesd',
-  'oqgtul',
-  'rhfcax',
-];
-
 const borderRadius = 32;
 const centerIndex = 2;
 
@@ -62,11 +46,9 @@ const Carousel = () => {
   ];
 
   return (
-    <div style={{ width: '100%', position: 'relative', background: 'var(--cream, #FFFBF0)', overflow: 'visible', minHeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ position: 'relative', width: '100%', height: 900, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 24 }}>
+    <div style={{ width: '100%', position: 'relative', background: 'var(--cream, #FFFBF0)', overflow: 'visible', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: '80px' }}>
         {visibleIndices.map((imgIdx, i) => {
-          const framerName = framerNames[i];
-          const framerAppearId = framerAppearIds[i];
           const { opacity } = getTransform(i, centerIndex);
           const isCenter = i === centerIndex;
           const zIndex = isCenter ? 2 : 1;
@@ -77,19 +59,16 @@ const Carousel = () => {
           const sideHeight = '40vh';
           const sideWidth = '28vw';
           // For the center image, move it up by 5vh so 10vh is out of view (5vh top, 5vh bottom)
-          const translateY = isCenter ? '-5vh' : '0';
+          // const translateY = isCenter ? '-5vh' : '0';
 
           return (
             <header
-              key={framerName}
-              className={`framer-${framerAppearId} framer-${framerName.toLowerCase()} framer-v-${framerName.toLowerCase()}`}
-              data-framer-appear-id={framerAppearId}
-              data-framer-name={framerName}
+              key={imgIdx}
               style={{
                 borderRadius: borderRadius,
                 willChange: 'transform',
                 opacity,
-                transform: `translateY(${translateY})`,
+                // transform: `translateY(${translateY})`,
                 boxShadow,
                 width: isCenter ? centerWidth : sideWidth,
                 height: isCenter ? centerHeight : sideHeight,
@@ -107,7 +86,6 @@ const Carousel = () => {
                 justifyContent: 'center',
               }}
               tabIndex={isCenter || i === 1 || i === 3 ? 0 : undefined}
-              data-highlight={isCenter || i === 1 || i === 3 ? true : undefined}
               onClick={() => {
                 if (!isCenter) setCurrent(imgIdx);
               }}
