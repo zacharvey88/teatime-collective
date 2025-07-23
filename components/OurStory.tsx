@@ -36,7 +36,7 @@ const OurStory = () => {
       tagline: 'There will be cake',
       title: 'Hulme Cafe Opens',
       description: "I never intended it to be a cafe, it just kind of happened. After a year catering as festivals it had come to the end of season and I had just taken on a permanent space as a prep kitchen, after I had outgrown my house. It started off as a Vegan Ice Cream, Cake and Coffee Shop; to help with the rent during the winter, we where already supplying cakes and catering at festivals. There was big demand for a menu, so we decided to expand and took on our quirky and popular shipping container, so we had a dining room.",
-      image: timelineImages[1]?.src
+      image: timelineImages[0]?.src
     },
     {
       month: 'DEC',
@@ -44,7 +44,7 @@ const OurStory = () => {
       tagline: 'All good things',
       title: 'Cafe Closes',
       description: "After 4 lovely years it was no longer making enough money to keep it open and we sadly had to close the doors in December 2017.",
-      image: timelineImages[2]?.src
+      image: timelineImages[1]?.src
     },
     {
       month: 'FEB',
@@ -52,7 +52,7 @@ const OurStory = () => {
       tagline: 'Short and sweet',
       title: 'Rockers',
       description: "A few days after announcing we where closing, Kathy asked if we would like to open a cake shop; inside her shop, Rockers, in the Northern Quarter. Which we did, in February 2018, and we closed 1st September 2018 for the same reason we closed the cafe. I took the winter off and the following year spent the summer working the festival circuit.",
-      image: timelineImages[3]?.src
+      image: timelineImages[2]?.src
     },
     {
       month: 'MAR',
@@ -60,7 +60,7 @@ const OurStory = () => {
       tagline: 'A new beginning',
       title: 'Cake Delivery',
       description: "When the pandemic started, I began making a weekly cake box, that I delivered every Saturday throughout lockdown. This is where Teatime really took off, some weeks I was delivering over 100 boxes a week!",
-      image: timelineImages[4]?.src
+      image: timelineImages[3]?.src
     },
     {
       month: 'MAR',
@@ -68,7 +68,7 @@ const OurStory = () => {
       tagline: 'At a stall near you',
       title: 'Markets',
       description: "After lockdown ended cake box sales slumped and it was then I decided to bring my cakes to the markets instead, and I guess, well, here we are now. We trade at 7 different makers markets in Manchester every month, you can find us at a few festivals still in the summer and I make cakes to order!",
-      image: timelineImages[5]?.src
+      image: timelineImages[4]?.src
     }
   ]
 
@@ -107,12 +107,12 @@ const OurStory = () => {
 
                 {/* Image */}
                 <div className="lg:flex-shrink-0">
-                  <div className="relative w-full lg:w-48 h-48 rounded-xl overflow-hidden">
+                  <div className="relative w-full lg:w-48 h-48 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 bg-white shadow-[0_4px_12px_-2px_rgba(0,0,0,0.6)]">
                     <Image
                       src={event.image}
                       alt={event.title}
                       fill
-                      className="object-cover hover:scale-105 transition-transform duration-300"
+                      className="object-cover transition-transform duration-300"
                       sizes="(max-width: 1024px) 100vw, 192px"
                     />
                   </div>

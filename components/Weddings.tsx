@@ -71,7 +71,7 @@ const Weddings = () => {
 
     autoPlayRef.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % weddingImages.length);
-    }, 5000);
+    }, 4000);
 
     return () => {
       if (autoPlayRef.current) {
@@ -121,20 +121,30 @@ const Weddings = () => {
               </p>
             </div>
 
-            {/* Contact Info */}
-            <div className="bg-cream p-6 rounded-xl">
-              <h3 className="text-xl font-semibold mb-4 flex items-center space-x-2">
-                <Mail className="w-5 h-5 text-orange" />
-                <span>Get in Touch</span>
-              </h3>
+            {/* Wedding Services */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-xl shadow-lg border border-orange/20 text-center">
+                <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Heart className="w-4 h-4 text-orange" />
+                </div>
+                <h4 className="font-semibold text-dark mb-1">Tiered Cakes</h4>
+                <p className="text-sm text-gray">Elegant multi-tiered masterpieces</p>
+              </div>
               
-              <div className="space-y-3">
-                <p className="text-gray">
-                  Email: <a href="mailto:info@teatimecollective.co.uk" className="text-orange hover:underline">info@teatimecollective.co.uk</a>
-                </p>
-                <p className="text-gray">
-                  Phone: <a href="tel:+447765833910" className="text-orange hover:underline">+44 07765 833 910</a>
-                </p>
+              <div className="bg-white p-4 rounded-xl shadow-lg border border-orange/20 text-center">
+                <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-orange font-bold text-lg">🍰</span>
+                </div>
+                <h4 className="font-semibold text-dark mb-1">Cake Buffets</h4>
+                <p className="text-sm text-gray">Variety of smaller cakes</p>
+              </div>
+              
+              <div className="bg-white p-4 rounded-xl shadow-lg border border-orange/20 text-center">
+                <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-orange font-bold text-lg">✨</span>
+                </div>
+                <h4 className="font-semibold text-dark mb-1">Custom Designs</h4>
+                <p className="text-sm text-gray">Personalized to your theme</p>
               </div>
             </div>
           </div>

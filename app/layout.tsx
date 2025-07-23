@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Lobster } from "next/font/google";
+import CookieProvider from '@/components/CookieProvider'
 
 const lobster = Lobster({
   variable: "--font-lobster",
@@ -36,7 +37,9 @@ export default function RootLayout({
         <link rel="icon" href="https://framerusercontent.com/images/9BRXJQRTuoR7dflavQsmPR1Pfpw.png" />
       </head>
       <body className="antialiased">
-        {children}
+        <CookieProvider>
+          {children}
+        </CookieProvider>
       </body>
     </html>
   );

@@ -69,7 +69,7 @@ const Festivals = () => {
 
     autoPlayRef.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % festivalImages.length);
-    }, 5000);
+    }, 4000);
 
     return () => {
       if (autoPlayRef.current) {
@@ -189,7 +189,7 @@ const Festivals = () => {
 
             {/* Stats */}
             <div className="flex flex-row flex-wrap gap-6 mt-8">
-              <div className="text-center bg-light-cream p-4 rounded-xl flex-1 min-w-[120px]">
+              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[120px] shadow-lg border border-orange/20">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Calendar className="w-5 h-5 text-orange" />
                   <span className="text-2xl font-bold text-dark">13</span>
@@ -197,7 +197,7 @@ const Festivals = () => {
                 <p className="text-sm text-gray">Years Experience</p>
               </div>
               
-              <div className="text-center bg-light-cream p-4 rounded-xl flex-1 min-w-[120px]">
+              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[120px] shadow-lg border border-orange/20">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Users className="w-5 h-5 text-orange" />
                   <span className="text-2xl font-bold text-dark">50+</span>
@@ -205,7 +205,7 @@ const Festivals = () => {
                 <p className="text-sm text-gray">Events Catered</p>
               </div>
 
-              <div className="text-center bg-light-cream p-4 rounded-xl flex-1 min-w-[120px]">
+              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[120px] shadow-lg border border-orange/20">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Recycle className="w-5 h-5 text-orange" />
                   <span className="text-2xl font-bold text-dark">100%</span>

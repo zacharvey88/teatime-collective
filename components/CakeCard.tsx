@@ -26,7 +26,7 @@ export default function CakeCard({ id, name, image, description, flavors, pricin
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg border border-orange/20 overflow-hidden hover:shadow-xl transition-all duration-300">
+    <div className="bg-white rounded-2xl shadow-lg border border-orange/20 overflow-hidden hover:shadow-xl transition-all duration-300 flex flex-col h-full">
       {/* Image */}
       <div className="relative h-64 overflow-hidden">
         <Image
@@ -39,7 +39,7 @@ export default function CakeCard({ id, name, image, description, flavors, pricin
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="p-6 flex flex-col flex-grow">
         {/* Title and Description */}
         <h3 className="text-2xl font-bold text-gray mb-2 font-lobster">{name}</h3>
         <p className="text-gray-600 mb-4">{description}</p>
@@ -84,13 +84,15 @@ export default function CakeCard({ id, name, image, description, flavors, pricin
           </div>
         </div>
 
-        {/* Order Button */}
-        <Button
-          onClick={handleOrderNow}
-          className="w-full bg-orange hover:bg-orange/90 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg"
-        >
-          Order Now
-        </Button>
+        {/* Order Button - pushed to bottom */}
+        <div className="mt-auto">
+          <Button
+            onClick={handleOrderNow}
+            className="w-full bg-orange hover:bg-orange/90 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg"
+          >
+            Order Now
+          </Button>
+        </div>
       </div>
     </div>
   )
