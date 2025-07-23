@@ -2,8 +2,33 @@
 
 import Image from 'next/image'
 import { Clock, Calendar } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabaseClient';
+const supabaseUrl = 'https://kntdzvkvfyoiwjfnlvgg.supabase.co';
 
 const OurStory = () => {
+  const [timelineImages, settimelineImages] = useState<{ src: string; alt: string }[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchImages = async () => {
+      setLoading(true);
+      const { data, error } = await supabase.storage.from('timeline').list('', { limit: 100 });
+      if (error) {
+        settimelineImages([]);
+        setLoading(false);
+        return;
+      }
+      const images = (data?.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i)) || []).map(file => ({
+        src: `${supabaseUrl}/storage/v1/object/public/timeline/${file.name}`,
+        alt: file.name.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
+      }));
+      settimelineImages(images);
+      setLoading(false);
+    };
+    fetchImages();
+  }, []);
+
   const timelineEvents = [
     {
       month: 'SEP',
@@ -11,7 +36,7 @@ const OurStory = () => {
       tagline: 'There will be cake',
       title: 'Hulme Cafe Opens',
       description: "I never intended it to be a cafe, it just kind of happened. After a year catering as festivals it had come to the end of season and I had just taken on a permanent space as a prep kitchen, after I had outgrown my house. It started off as a Vegan Ice Cream, Cake and Coffee Shop; to help with the rent during the winter, we where already supplying cakes and catering at festivals. There was big demand for a menu, so we decided to expand and took on our quirky and popular shipping container, so we had a dining room.",
-      image: "https://framerusercontent.com/images/22iL3n7dlQYBJ78U9feKv4vz4dg.jpg"
+      image: timelineImages[1]?.src
     },
     {
       month: 'DEC',
@@ -19,7 +44,7 @@ const OurStory = () => {
       tagline: 'All good things',
       title: 'Cafe Closes',
       description: "After 4 lovely years it was no longer making enough money to keep it open and we sadly had to close the doors in December 2017.",
-      image: "https://framerusercontent.com/images/rbwBUNYCyrPgNks7t27IFzFXM.jpg"
+      image: timelineImages[2]?.src
     },
     {
       month: 'FEB',
@@ -27,7 +52,7 @@ const OurStory = () => {
       tagline: 'Short and sweet',
       title: 'Rockers',
       description: "A few days after announcing we where closing, Kathy asked if we would like to open a cake shop; inside her shop, Rockers, in the Northern Quarter. Which we did, in February 2018, and we closed 1st September 2018 for the same reason we closed the cafe. I took the winter off and the following year spent the summer working the festival circuit.",
-      image: "https://framerusercontent.com/images/nlzRRlTJzQS0k7A0SThoOvm7xg.png"
+      image: timelineImages[3]?.src
     },
     {
       month: 'MAR',
@@ -35,7 +60,7 @@ const OurStory = () => {
       tagline: 'A new beginning',
       title: 'Cake Delivery',
       description: "When the pandemic started, I began making a weekly cake box, that I delivered every Saturday throughout lockdown. This is where Teatime really took off, some weeks I was delivering over 100 boxes a week!",
-      image: "https://framerusercontent.com/images/fH8qC411sO4GOM8RHcda0E9N54I.jpg"
+      image: timelineImages[4]?.src
     },
     {
       month: 'MAR',
@@ -43,7 +68,7 @@ const OurStory = () => {
       tagline: 'At a stall near you',
       title: 'Markets',
       description: "After lockdown ended cake box sales slumped and it was then I decided to bring my cakes to the markets instead, and I guess, well, here we are now. We trade at 7 different makers markets in Manchester every month, you can find us at a few festivals still in the summer and I make cakes to order!",
-      image: "https://framerusercontent.com/images/ZWAWFTfI4D4tMiuwMJxLuTNYHI.jpg"
+      image: timelineImages[5]?.src
     }
   ]
 

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
+import Image from 'next/image';
 
 const images = [
-  "https://framerusercontent.com/images/mloIhuklrhI5BFUacMMCzhmZHxQ.jpg",
-  "https://framerusercontent.com/images/PPEllho3AF9c2nOji5oLm3FNx0s.jpg",
-  "https://framerusercontent.com/images/noGm4cyaXzYmGjjRJvR1Yjcg.jpg",
-  "https://framerusercontent.com/images/bABuIXzTPD8PxqWUg0bWyneTpc.jpg",
-  "https://framerusercontent.com/images/LW4HjXF0shedHVgnqtiGVWQGgKI.jpg"
+  '/images/carousel-01.jpg',
+  '/images/carousel-02.jpg',
+  '/images/carousel-03.jpg',
+  '/images/carousel-04.jpg',
+  '/images/carousel-05.jpg',
 ];
 
 const getScale = (offset: number) => {
@@ -93,7 +94,7 @@ const Carousel: React.FC = () => {
             >
               <img
                 src={images[imgIdx]}
-                alt="Carousel Image"
+                alt={`Carousel Image ${imgIdx + 1}`}
                 style={{
                   width: '100%',
                   height: '100%',

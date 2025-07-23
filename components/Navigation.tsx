@@ -3,40 +3,57 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import logo from '../app/logo.png'
 import { Menu, X } from 'lucide-react'
 
 const Navigation = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
+  const [lastScrollY, setLastScrollY] = useState(0)
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50)
+      const currentScrollY = window.scrollY
+      
+      // Show/hide navigation based on scroll direction
+      if (currentScrollY > lastScrollY && currentScrollY > 100) {
+        // Scrolling down and past the top
+        setIsVisible(false)
+      } else {
+        // Scrolling up
+        setIsVisible(true)
+      }
+      
+      // Update scroll state for background
+      setIsScrolled(currentScrollY > 50)
+      setLastScrollY(currentScrollY)
     }
 
-    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+  }, [lastScrollY])
 
   const navItems = [
-    { name: 'Cakes', href: '/' },
+    { name: 'Cakes', href: '/cakes' },
     { name: 'Order', href: '/order' },
-    { name: 'Our Story', href: '#story' },
-    { name: 'Markets', href: '#markets' },
-    { name: 'Festivals', href: '#festivals' }
+    { name: 'Our Story', href: '/#story' },
+    { name: 'Markets', href: '/#markets' },
+    { name: 'Festivals', href: '/#festivals' },
+    { name: 'Weddings', href: '/#weddings' }
   ]
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-cream/90 backdrop-blur-lg shadow-lg' : 'bg-gradient-to-b from-cream to-transparent'
-    }`}>
+      isScrolled ? 'bg-cream/80 backdrop-blur-md' : 'bg-gradient-to-b from-cream to-transparent'
+    } ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="w-full">
         <div className="flex items-center justify-between py-1 px-4 lg:px-12">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="relative w-16 h-16">
               <Image
-                src="https://framerusercontent.com/images/9BRXJQRTuoR7dflavQsmPR1Pfpw.png"
+                src={logo}
                 alt="Teatime Collective Logo"
                 fill
                 className="object-contain"

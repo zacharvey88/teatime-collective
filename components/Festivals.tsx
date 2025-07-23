@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { ChevronLeft, ChevronRight, Music, Users, Calendar } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Music, Users, Calendar, Recycle } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient';
 const supabaseUrl = 'https://kntdzvkvfyoiwjfnlvgg.supabase.co';
 
@@ -10,6 +10,10 @@ const Festivals = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [festivalImages, setFestivalImages] = useState<{ src: string; alt: string }[]>([])
   const [loading, setLoading] = useState(true)
+  const [isPaused, setIsPaused] = useState(false)
+  const [isInView, setIsInView] = useState(false)
+  const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
+  const carouselRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -20,7 +24,6 @@ const Festivals = () => {
         setLoading(false);
         return;
       }
-      console.log(data);
       const images = (data?.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i)) || []).map(file => ({
         src: `${supabaseUrl}/storage/v1/object/public/festivals/${file.name}`,
         alt: file.name.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
@@ -31,6 +34,50 @@ const Festivals = () => {
     fetchImages();
   }, []);
 
+  // Intersection Observer for viewport detection
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      {
+        threshold: 0.3, // Trigger when 30% of the carousel is visible
+        rootMargin: '0px 0px -100px 0px' // Start a bit before the carousel comes into view
+      }
+    );
+
+    if (carouselRef.current) {
+      observer.observe(carouselRef.current);
+    }
+
+    return () => {
+      if (carouselRef.current) {
+        observer.unobserve(carouselRef.current);
+      }
+    };
+  }, []);
+
+  // Auto-scroll functionality
+  useEffect(() => {
+    if (festivalImages.length <= 1 || isPaused || !isInView) {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+        autoPlayRef.current = null;
+      }
+      return;
+    }
+
+    autoPlayRef.current = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % festivalImages.length);
+    }, 5000);
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [festivalImages.length, isPaused, isInView]);
+
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % festivalImages.length)
   }
@@ -39,13 +86,26 @@ const Festivals = () => {
     setCurrentSlide((prev) => (prev - 1 + festivalImages.length) % festivalImages.length)
   }
 
+  const handleMouseEnter = () => {
+    setIsPaused(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPaused(false);
+  };
+
   return (
     <section id="festivals" className="py-20 bg-cream">
       <div className="section-container">
         <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-12 lg:space-y-0 lg:space-x-12">
           {/* Festival Gallery */}
           <div className="lg:flex-1">
-            <div className="relative h-96 lg:h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-light-cream">
+            <div 
+              ref={carouselRef}
+              className="relative h-96 lg:h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-light-cream"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
               {loading ? (
                 <div className="flex items-center justify-center h-full text-gray">Loading images...</div>
               ) : festivalImages.length > 0 ? (
@@ -102,7 +162,7 @@ const Festivals = () => {
           <div className="lg:flex-1 space-y-6">
             <div className="flex items-center space-x-2 text-orange mb-4">
               <Music className="w-6 h-6" />
-              <span className="text-sm font-medium uppercase tracking-wider">Festival Experience</span>
+              <span className="text-sm font-medium uppercase tracking-wider">Festivals and Events</span>
             </div>
 
             <h2 className="text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster">
@@ -128,8 +188,8 @@ const Festivals = () => {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 gap-6 mt-8">
-              <div className="text-center bg-light-cream p-4 rounded-xl">
+            <div className="flex flex-row flex-wrap gap-6 mt-8">
+              <div className="text-center bg-light-cream p-4 rounded-xl flex-1 min-w-[120px]">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Calendar className="w-5 h-5 text-orange" />
                   <span className="text-2xl font-bold text-dark">13</span>
@@ -137,12 +197,20 @@ const Festivals = () => {
                 <p className="text-sm text-gray">Years Experience</p>
               </div>
               
-              <div className="text-center bg-light-cream p-4 rounded-xl">
+              <div className="text-center bg-light-cream p-4 rounded-xl flex-1 min-w-[120px]">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Users className="w-5 h-5 text-orange" />
-                  <span className="text-2xl font-bold text-dark">500+</span>
+                  <span className="text-2xl font-bold text-dark">50+</span>
                 </div>
                 <p className="text-sm text-gray">Events Catered</p>
+              </div>
+
+              <div className="text-center bg-light-cream p-4 rounded-xl flex-1 min-w-[120px]">
+                <div className="flex items-center justify-center space-x-2 mb-2">
+                  <Recycle className="w-5 h-5 text-orange" />
+                  <span className="text-2xl font-bold text-dark">100%</span>
+                </div>
+                <p className="text-sm text-gray">Eco-Concious</p>
               </div>
             </div>
           </div>

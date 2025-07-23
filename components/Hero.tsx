@@ -23,7 +23,7 @@ const Hero = () => {
           <span className="text-sm font-bold">(4.8)</span>
         </div>
 
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 animate-slide-up text-balance">
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 animate-slide-up text-balance font-lobster text-orange">
           Delicious Vegan Cakes
         </h1>
 
@@ -32,8 +32,8 @@ const Hero = () => {
         </p>
 
         <div className="mb-16 animate-slide-up delay-300">
-          <Link href="/" className="btn-primary">
-            Order Now
+          <Link href="/cakes" className="btn-primary">
+            View Cakes
           </Link>
         </div>
         <Carousel />

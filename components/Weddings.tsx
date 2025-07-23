@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Heart, Mail } from 'lucide-react'
 import { supabase } from '@/lib/supabaseClient';
@@ -12,6 +12,10 @@ const Weddings = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [weddingImages, setWeddingImages] = useState<{ src: string; alt: string }[]>([])
   const [loading, setLoading] = useState(true)
+  const [isPaused, setIsPaused] = useState(false)
+  const [isInView, setIsInView] = useState(false)
+  const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
+  const carouselRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -32,6 +36,50 @@ const Weddings = () => {
     fetchImages();
   }, []);
 
+  // Intersection Observer for viewport detection
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsInView(entry.isIntersecting);
+      },
+      {
+        threshold: 0.3, // Trigger when 30% of the carousel is visible
+        rootMargin: '0px 0px -100px 0px' // Start a bit before the carousel comes into view
+      }
+    );
+
+    if (carouselRef.current) {
+      observer.observe(carouselRef.current);
+    }
+
+    return () => {
+      if (carouselRef.current) {
+        observer.unobserve(carouselRef.current);
+      }
+    };
+  }, []);
+
+  // Auto-scroll functionality
+  useEffect(() => {
+    if (weddingImages.length <= 1 || isPaused || !isInView) {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+        autoPlayRef.current = null;
+      }
+      return;
+    }
+
+    autoPlayRef.current = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % weddingImages.length);
+    }, 5000);
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [weddingImages.length, isPaused, isInView]);
+
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % weddingImages.length)
   }
@@ -39,6 +87,14 @@ const Weddings = () => {
   const prevSlide = () => {
     setCurrentSlide((prev) => (prev - 1 + weddingImages.length) % weddingImages.length)
   }
+
+  const handleMouseEnter = () => {
+    setIsPaused(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPaused(false);
+  };
 
   return (
     <section id="weddings" className="py-20 bg-light-cream">
@@ -85,7 +141,12 @@ const Weddings = () => {
 
           {/* Wedding Gallery */}
           <div className="lg:flex-1 order-1 lg:order-2">
-            <div className="relative h-96 lg:h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-cream">
+            <div 
+              ref={carouselRef}
+              className="relative h-96 lg:h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-cream"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
               {loading ? (
                 <div className="flex items-center justify-center h-full text-gray">Loading images...</div>
               ) : weddingImages.length > 0 ? (

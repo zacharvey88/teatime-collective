@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import logo from '../app/logo.png'
 import Link from 'next/link'
 import { MapPin, Phone, Mail, Instagram, Facebook } from 'lucide-react'
 
@@ -14,14 +15,14 @@ const Footer = () => {
             <div className="flex items-center space-x-4">
               <div className="relative w-20 h-20">
                 <Image
-                  src="https://framerusercontent.com/images/9BRXJQRTuoR7dflavQsmPR1Pfpw.png"
+                  src={logo}
                   alt="Teatime Collective Logo"
                   fill
                   className="object-contain"
                 />
               </div>
               <div>
-                <h3 className="text-3xl font-bold text-dark">
+                <h3 className="text-3xl font-bold text-orange font-lobster">
                   Delicious Vegan Cakes
                 </h3>
               </div>
@@ -106,7 +107,17 @@ const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-center md:text-left">
               <p className="text-sm text-gray">
-                © 2025 Teatime Collective. All rights reserved.
+                Site created by{' '}
+                <a 
+                  href="https://zacharvey.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-orange hover:underline transition-colors"
+                >
+                  Zac Harvey
+                </a>
+                {' '}•{' '}
+                © 2025 Teatime Collective. All rights reserved. 
               </p>
             </div>
 
@@ -116,9 +127,6 @@ const Footer = () => {
               </Link>
               <Link href="/cookies" className="text-gray hover:text-orange transition-colors">
                 Cookies
-              </Link>
-              <Link href="/terms" className="text-gray hover:text-orange transition-colors">
-                Terms & Conditions
               </Link>
             </div>
           </div>
