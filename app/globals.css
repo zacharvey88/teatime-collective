@@ -5,7 +5,8 @@
 :root {
   --cream: #FFFBF0;
   --light-cream: #FFF5E0;
-  --orange: #E57634;
+  --primary-color: #E57634; /* This will be dynamically updated from settings */
+  --orange: var(--primary-color); /* Keep orange as alias for backward compatibility */
   --dark: #000000;
   --gray: #383838;
   --light-gray: #999999;
@@ -24,7 +25,7 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-orange text-white px-8 py-4 rounded-full font-semibold hover:bg-orange/90 transition-all duration-300 transform hover:scale-105;
+    @apply bg-orange text-white px-8 py-4 rounded-full font-semibold hover:bg-orange-900 transition-all duration-300 transform hover:scale-105;
   }
   
   .section-container {
@@ -87,10 +88,24 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--orange);
+  background: var(--primary-color);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d16829;
+  background: color-mix(in srgb, var(--primary-color) 80%, black);
+}
+
+/* Custom spin animation for logo */
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-logo-spin {
+  animation: logo-spin linear infinite;
 }

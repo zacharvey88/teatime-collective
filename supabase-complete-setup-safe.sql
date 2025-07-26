@@ -1,0 +1,394 @@
+-- Complete Supabase Setup for Teatime Collective (Safe Version)
+-- This script is safe to run on existing databases - no data loss
+-- Run this in your Supabase SQL editor
+
+-- ========================================
+-- 1. STORAGE SETUP
+-- ========================================
+
+-- Create storage bucket for images (safe - won't overwrite)
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'images',
+  'images',
+  true,
+  5242880, -- 5MB limit
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+) ON CONFLICT (id) DO NOTHING;
+
+-- Drop existing storage policies if they exist
+DROP POLICY IF EXISTS "Public read access to images" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own images" ON storage.objects;
+DROP POLICY IF EXISTS "Admins can manage all images" ON storage.objects;
+
+-- Create storage policies for the images bucket
+CREATE POLICY "Public read access to images" ON storage.objects
+  FOR SELECT USING (bucket_id = 'images');
+
+CREATE POLICY "Authenticated users can upload images" ON storage.objects
+  FOR INSERT WITH CHECK (
+    bucket_id = 'images' 
+    AND auth.role() = 'authenticated'
+  );
+
+CREATE POLICY "Users can update their own images" ON storage.objects
+  FOR UPDATE USING (
+    bucket_id = 'images' 
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Users can delete their own images" ON storage.objects
+  FOR DELETE USING (
+    bucket_id = 'images' 
+    AND auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+CREATE POLICY "Admins can manage all images" ON storage.objects
+  FOR ALL USING (
+    bucket_id = 'images' 
+    AND auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+-- ========================================
+-- 2. SETTINGS SETUP
+-- ========================================
+
+-- Create settings table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS settings (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  logo_url TEXT,
+  order_email TEXT NOT NULL,
+  site_title TEXT NOT NULL,
+  site_description TEXT NOT NULL,
+  primary_color TEXT NOT NULL DEFAULT '#FF6B35',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Insert default settings (only if table is empty)
+INSERT INTO settings (order_email, site_title, site_description, primary_color)
+SELECT 
+  'orders@teatimecollective.co.uk',
+  'Teatime Collective - Delicious Vegan Cakes',
+  'Vegan Cakes and Bakes, Festival Caterers and Market Traders since 2013.',
+  '#FF6B35'
+WHERE NOT EXISTS (SELECT 1 FROM settings);
+
+-- Enable RLS
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Admins can read settings" ON settings;
+DROP POLICY IF EXISTS "Admins can update settings" ON settings;
+DROP POLICY IF EXISTS "Admins can insert settings" ON settings;
+DROP POLICY IF EXISTS "Public can read settings" ON settings;
+
+-- Create policies
+CREATE POLICY "Admins can read settings" ON settings
+  FOR SELECT USING (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+CREATE POLICY "Admins can update settings" ON settings
+  FOR UPDATE USING (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+CREATE POLICY "Admins can insert settings" ON settings
+  FOR INSERT WITH CHECK (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+CREATE POLICY "Public can read settings" ON settings
+  FOR SELECT USING (true);
+
+-- ========================================
+-- 3. ORDER REQUESTS SETUP
+-- ========================================
+
+-- Create order_requests table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS order_requests (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_name TEXT NOT NULL,
+  customer_email TEXT NOT NULL,
+  customer_phone TEXT,
+  request_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  preferred_delivery_date DATE,
+  preferred_delivery_time TIME,
+  delivery_address TEXT,
+  estimated_total DECIMAL(10,2) NOT NULL,
+  status TEXT DEFAULT 'new_request' CHECK (status IN ('new_request', 'reviewed', 'approved', 'rejected', 'completed')),
+  email_sent BOOLEAN DEFAULT false,
+  notes TEXT,
+  special_requirements TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create request_items table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS request_items (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  request_id UUID REFERENCES order_requests(id) ON DELETE CASCADE,
+  cake_flavor_id UUID REFERENCES cake_flavors(id) ON DELETE SET NULL,
+  cake_size_id UUID REFERENCES cake_sizes(id) ON DELETE SET NULL,
+  item_name TEXT NOT NULL,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  estimated_unit_price DECIMAL(10,2) NOT NULL,
+  estimated_total_price DECIMAL(10,2) NOT NULL,
+  special_instructions TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create customers table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS customers (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  phone TEXT,
+  address TEXT,
+  first_request_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  last_request_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  total_requests INTEGER DEFAULT 0,
+  total_estimated_value DECIMAL(10,2) DEFAULT 0,
+  favorite_flavor TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ========================================
+-- 3. IMAGE TABLES SETUP
+-- ========================================
+
+-- Create carousel_images table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS carousel_images (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  url TEXT NOT NULL,
+  alt_text TEXT NOT NULL,
+  order_index INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create wedding_images table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS wedding_images (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  url TEXT NOT NULL,
+  alt_text TEXT NOT NULL,
+  order_index INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create festival_images table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS festival_images (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  url TEXT NOT NULL,
+  alt_text TEXT NOT NULL,
+  order_index INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS on all tables
+ALTER TABLE order_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE request_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE carousel_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE wedding_images ENABLE ROW LEVEL SECURITY;
+ALTER TABLE festival_images ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Admins can manage order requests" ON order_requests;
+DROP POLICY IF EXISTS "Everyone can view order requests" ON order_requests;
+DROP POLICY IF EXISTS "Admins can manage request items" ON request_items;
+DROP POLICY IF EXISTS "Everyone can view request items" ON request_items;
+DROP POLICY IF EXISTS "Admins can manage customers" ON customers;
+DROP POLICY IF EXISTS "Everyone can view customers" ON customers;
+DROP POLICY IF EXISTS "Admins can manage carousel images" ON carousel_images;
+DROP POLICY IF EXISTS "Everyone can view carousel images" ON carousel_images;
+DROP POLICY IF EXISTS "Admins can manage wedding images" ON wedding_images;
+DROP POLICY IF EXISTS "Everyone can view wedding images" ON wedding_images;
+DROP POLICY IF EXISTS "Admins can manage festival images" ON festival_images;
+DROP POLICY IF EXISTS "Everyone can view festival images" ON festival_images;
+
+-- Create RLS policies for order_requests
+CREATE POLICY "Admins can manage order requests" ON order_requests
+  FOR ALL USING (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+CREATE POLICY "Everyone can view order requests" ON order_requests
+  FOR SELECT USING (true);
+
+-- Create RLS policies for request_items
+CREATE POLICY "Admins can manage request items" ON request_items
+  FOR ALL USING (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+CREATE POLICY "Everyone can view request items" ON request_items
+  FOR SELECT USING (true);
+
+-- Create RLS policies for customers
+CREATE POLICY "Admins can manage customers" ON customers
+  FOR ALL USING (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+CREATE POLICY "Everyone can view customers" ON customers
+  FOR SELECT USING (true);
+
+-- Create RLS policies for carousel_images
+CREATE POLICY "Admins can manage carousel images" ON carousel_images
+  FOR ALL USING (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+CREATE POLICY "Everyone can view carousel images" ON carousel_images
+  FOR SELECT USING (true);
+
+-- Create RLS policies for wedding_images
+CREATE POLICY "Admins can manage wedding images" ON wedding_images
+  FOR ALL USING (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+CREATE POLICY "Everyone can view wedding images" ON wedding_images
+  FOR SELECT USING (true);
+
+-- Create RLS policies for festival_images
+CREATE POLICY "Admins can manage festival images" ON festival_images
+  FOR ALL USING (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
+CREATE POLICY "Everyone can view festival images" ON festival_images
+  FOR SELECT USING (true);
+
+-- Create or replace functions (safe - will update existing functions)
+CREATE OR REPLACE FUNCTION update_customer_stats()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Insert or update customer record
+  INSERT INTO customers (email, name, phone, address, first_request_date, last_request_date, total_requests, total_estimated_value)
+  VALUES (
+    NEW.customer_email,
+    NEW.customer_name,
+    NEW.customer_phone,
+    NEW.delivery_address,
+    NEW.request_date,
+    NEW.request_date,
+    1,
+    NEW.estimated_total
+  )
+  ON CONFLICT (email) DO UPDATE SET
+    name = EXCLUDED.name,
+    phone = COALESCE(EXCLUDED.phone, customers.phone),
+    address = COALESCE(EXCLUDED.address, customers.address),
+    last_request_date = EXCLUDED.last_request_date,
+    total_requests = customers.total_requests + 1,
+    total_estimated_value = customers.total_estimated_value + EXCLUDED.total_estimated_value,
+    updated_at = NOW();
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION update_favorite_flavor()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Update customer's favorite flavor based on most requested
+  UPDATE customers
+  SET favorite_flavor = (
+    SELECT cf.name
+    FROM request_items ri
+    JOIN cake_flavors cf ON ri.cake_flavor_id = cf.id
+    WHERE ri.request_id IN (
+      SELECT id FROM order_requests WHERE customer_email = (
+        SELECT customer_email FROM order_requests WHERE id = NEW.request_id
+      )
+    )
+    GROUP BY cf.name
+    ORDER BY COUNT(*) DESC
+    LIMIT 1
+  )
+  WHERE email = (
+    SELECT customer_email FROM order_requests WHERE id = NEW.request_id
+  );
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop existing triggers if they exist
+DROP TRIGGER IF EXISTS on_order_request_created ON order_requests;
+DROP TRIGGER IF EXISTS on_request_item_created ON request_items;
+
+-- Create triggers
+CREATE TRIGGER on_order_request_created
+  AFTER INSERT ON order_requests
+  FOR EACH ROW EXECUTE FUNCTION update_customer_stats();
+
+CREATE TRIGGER on_request_item_created
+  AFTER INSERT ON request_items
+  FOR EACH ROW EXECUTE FUNCTION update_favorite_flavor();
+
+-- ========================================
+-- 4. SAMPLE DATA (Optional)
+-- ========================================
+
+-- Insert sample order requests (only if table is empty)
+INSERT INTO order_requests (customer_name, customer_email, customer_phone, preferred_delivery_date, preferred_delivery_time, delivery_address, estimated_total, status, notes)
+SELECT 
+  'Sarah Johnson',
+  'sarah.johnson@email.com',
+  '+44 07765 123 456',
+  '2025-02-15',
+  '14:00',
+  '123 High Street, Manchester, M1 1AA',
+  85.00,
+  'completed',
+  'Chocolate cake for birthday party'
+WHERE NOT EXISTS (SELECT 1 FROM order_requests);
+
+INSERT INTO order_requests (customer_name, customer_email, customer_phone, preferred_delivery_date, preferred_delivery_time, delivery_address, estimated_total, status, notes)
+SELECT 
+  'Michael Brown',
+  'michael.brown@email.com',
+  '+44 07765 234 567',
+  '2025-02-20',
+  '16:00',
+  '456 Park Avenue, Manchester, M2 2BB',
+  110.00,
+  'approved',
+  'Wedding cake consultation needed'
+WHERE NOT EXISTS (SELECT 1 FROM order_requests LIMIT 1 OFFSET 1);
+
+-- Insert sample market dates (only if table is empty)
+INSERT INTO market_dates (name, date, start_time, end_time, location, active)
+SELECT 
+  'Chorlton Makers Market',
+  '2025-01-25',
+  '10:00',
+  '16:00',
+  'Chorlton',
+  true
+WHERE NOT EXISTS (SELECT 1 FROM market_dates);
+
+INSERT INTO market_dates (name, date, start_time, end_time, location, active)
+SELECT 
+  'Northern Quarter Market',
+  '2025-01-26',
+  '11:00',
+  '17:00',
+  'Northern Quarter',
+  true
+WHERE NOT EXISTS (SELECT 1 FROM market_dates LIMIT 1 OFFSET 1);
+
+-- Success message
+SELECT 'Teatime Collective Supabase setup completed successfully!' as status; 

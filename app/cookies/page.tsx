@@ -84,7 +84,7 @@ export default function CookiesPage() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={handleAccept}
-                    className="px-6 py-2 bg-orange text-white rounded-lg font-medium hover:bg-orange/90 transition-colors duration-200"
+                    className="px-6 py-2 bg-orange text-white rounded-lg font-medium hover:bg-orange-900 transition-colors duration-200"
                   >
                     Accept All Cookies
                   </button>

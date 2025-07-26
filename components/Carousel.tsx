@@ -1,13 +1,7 @@
-import React, { useState } from 'react';
-import Image from 'next/image';
+'use client'
 
-const images = [
-  '/images/carousel-01.jpg',
-  '/images/carousel-02.jpg',
-  '/images/carousel-03.jpg',
-  '/images/carousel-04.jpg',
-  '/images/carousel-05.jpg',
-];
+import React, { useState, useEffect } from 'react';
+import { FrontendImageService, FrontendImageItem } from '@/lib/frontendImageService';
 
 const getScale = (offset: number) => {
   if (offset === 0) return 1;
@@ -17,9 +11,30 @@ const getScale = (offset: number) => {
 };
 
 const Carousel: React.FC = () => {
+  const [images, setImages] = useState<FrontendImageItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(2);
   const visibleCount = 5;
   const half = Math.floor(visibleCount / 2);
+
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        const carouselImages = await FrontendImageService.getCarouselImages();
+        setImages(carouselImages);
+        // Set current to middle of loaded images
+        if (carouselImages.length > 0) {
+          setCurrent(Math.floor(carouselImages.length / 2));
+        }
+      } catch (error) {
+        console.error('Failed to load carousel images:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadImages();
+  }, []);
 
   const handleClick = (idx: number) => setCurrent(idx);
   const handlePrev = () => setCurrent((prev) => (prev - 1 + images.length) % images.length);
@@ -29,8 +44,31 @@ const Carousel: React.FC = () => {
     return (current - half + i + images.length) % images.length;
   });
 
+  if (loading) {
+    return (
+      <div style={{ width: '100vw', left: '50%', transform: 'translateX(-50%)', position: 'relative', marginTop: '2rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '65vh' }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ width: '40px', height: '40px', border: '4px solid #f3f3f3', borderTop: '4px solid #FF6B35', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 1rem' }}></div>
+            <p style={{ color: '#666' }}>Loading carousel...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (images.length === 0) {
+    return (
+      <div style={{ width: '100vw', left: '50%', transform: 'translateX(-50%)', position: 'relative', marginTop: '2rem', marginBottom: '2rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '65vh' }}>
+          <p style={{ color: '#666' }}>No carousel images available</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ width: '100vw', left: '50%', transform: 'translateX(-50%)', position: 'relative', marginTop: '5rem', marginBottom: '5rem' }}>
+    <div style={{ width: '100vw', left: '50%', transform: 'translateX(-50%)', position: 'relative', marginTop: '2rem', marginBottom: '2rem' }}>
       {/* Left Button */}
       <button
         aria-label="Previous"
@@ -93,8 +131,8 @@ const Carousel: React.FC = () => {
               aria-label={`Show image ${imgIdx + 1}`}
             >
               <img
-                src={images[imgIdx]}
-                alt={`Carousel Image ${imgIdx + 1}`}
+                src={images[imgIdx]?.url || ''}
+                alt={images[imgIdx]?.alt_text || `Carousel Image ${imgIdx + 1}`}
                 style={{
                   width: '100%',
                   height: '100%',

@@ -1,154 +1,33 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
 import CakeCard from '@/components/CakeCard'
-
-// Cake data based on the flavors from the order page
-const cakes = [
-  {
-    id: 'chocolate',
-    name: 'Chocolate Cake',
-    image: '/images/carousel-01.jpg',
-    description: 'Rich and decadent chocolate cake, perfect for chocolate lovers.',
-    flavors: ['Chocolate', 'Chocolate Orange', 'Chocolate Vanilla', 'Chocolate Hazelnut', 'Chocolate Peanut Butter'],
-    pricing: {
-      regular: 'From £50',
-      frilly: 'From £70'
-    },
-    availableSizes: ['regular' as const, 'frilly' as const]
-  },
-  {
-    id: 'carrot-cake',
-    name: 'Carrot Cake',
-    image: '/images/carousel-02.jpg',
-    description: 'Moist carrot cake with cream cheese frosting, a classic favorite.',
-    flavors: ['Carrot Cake'],
-    pricing: {
-      regular: 'From £50',
-      frilly: 'From £70'
-    },
-    availableSizes: ['regular' as const, 'frilly' as const]
-  },
-  {
-    id: 'coffee-walnut',
-    name: 'Coffee & Walnut Cake',
-    image: '/images/carousel-03.jpg',
-    description: 'Delicate coffee-flavored cake with crunchy walnuts and coffee buttercream.',
-    flavors: ['Coffee Walnut', 'Coffee Chocolate'],
-    pricing: {
-      regular: 'From £50',
-      frilly: 'From £70'
-    },
-    availableSizes: ['regular' as const, 'frilly' as const]
-  },
-  {
-    id: 'lemon-raspberry',
-    name: 'Lemon & Raspberry Cake',
-    image: '/images/carousel-04.jpg',
-    description: 'Zesty lemon cake layered with fresh raspberries and lemon buttercream.',
-    flavors: ['Lemon Crumble', 'Lemon Raspberry', 'Vanilla Raspberry'],
-    pricing: {
-      regular: 'From £50',
-      frilly: 'From £70'
-    },
-    availableSizes: ['regular' as const, 'frilly' as const]
-  },
-  {
-    id: 'toffee-biscoff',
-    name: 'Toffee & Biscoff Cake',
-    image: '/images/carousel-05.jpg',
-    description: 'Indulgent toffee cake with Biscoff spread and caramel buttercream.',
-    flavors: ['Toffee Popcorn', 'Toffee Biscoff', 'Toffee Banana'],
-    pricing: {
-      regular: 'From £50',
-      frilly: 'From £70'
-    },
-    availableSizes: ['regular' as const, 'frilly' as const]
-  },
-  {
-    id: 'victoria-sponge',
-    name: 'Victoria Sponge',
-    image: '/images/mud-pie.jpg',
-    description: 'Classic Victoria sponge with jam and cream, a British tradition.',
-    flavors: ['Victoria Sponge'],
-    pricing: {
-      regular: 'From £50',
-      frilly: 'From £70'
-    },
-    availableSizes: ['regular' as const, 'frilly' as const]
-  },
-  {
-    id: 'blackforest-gateau',
-    name: 'Blackforest Gateau',
-    image: '/images/carousel-01.jpg',
-    description: 'Luxurious chocolate gateau with cherries and whipped cream.',
-    flavors: ['Blackforest Gateau', 'Chocolate Gateau'],
-    pricing: {
-      regular: 'From £60'
-    },
-    availableSizes: ['regular' as const]
-  },
-  {
-    id: 'tiramisu',
-    name: 'Tiramisu Cake',
-    image: '/images/carousel-02.jpg',
-    description: 'Coffee-flavored Italian dessert cake with mascarpone cream.',
-    flavors: ['Tiramisu'],
-    pricing: {
-      regular: 'From £60'
-    },
-    availableSizes: ['regular' as const]
-  },
-  {
-    id: 'almond-raspberry',
-    name: 'Almond & Raspberry Cake',
-    image: '/images/carousel-03.jpg',
-    description: 'Delicate almond cake with fresh raspberries and almond buttercream.',
-    flavors: ['Almond Raspberry', 'Almond Cherry'],
-    pricing: {
-      regular: 'From £55'
-    },
-    availableSizes: ['regular' as const]
-  },
-  {
-    id: 'orange-pistachio',
-    name: 'Orange & Pistachio Cake',
-    image: '/images/carousel-04.jpg',
-    description: 'Citrusy orange cake with pistachios and orange buttercream.',
-    flavors: ['Orange Walnut', 'Raspberry Pistachio', 'Orange Pistachio'],
-    pricing: {
-      regular: 'From £55'
-    },
-    availableSizes: ['regular' as const]
-  },
-  {
-    id: 'pumpkin-spice',
-    name: 'Pumpkin Spice Cake',
-    image: '/images/carousel-05.jpg',
-    description: 'Warm spiced pumpkin cake perfect for autumn celebrations.',
-    flavors: ['Pumpkin Spice'],
-    pricing: {
-      regular: 'From £50',
-      frilly: 'From £70'
-    },
-    availableSizes: ['regular' as const, 'frilly' as const]
-  },
-  {
-    id: 'cookies-cream',
-    name: 'Cookies & Cream Cake',
-    image: '/images/mud-pie.jpg',
-    description: 'Chocolate cake with crushed cookies and vanilla buttercream.',
-    flavors: ['Cookies Cream'],
-    pricing: {
-      regular: 'From £50',
-      frilly: 'From £70'
-    },
-    availableSizes: ['regular' as const, 'frilly' as const]
-  }
-]
+import { CakeService, CakeCardData } from '@/lib/cakeService'
 
 export default function CakesPage() {
+  const [cakes, setCakes] = useState<CakeCardData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadCakes()
+  }, [])
+
+  const loadCakes = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const cakeData = await CakeService.getCakesForPage()
+      setCakes(cakeData)
+    } catch (err) {
+      console.error('Failed to load cakes:', err)
+      setError('Failed to load cakes. Please try again later.')
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <div className="min-h-screen bg-light-cream">
       <Navigation />
@@ -165,21 +44,64 @@ export default function CakesPage() {
             </p>
           </div>
 
+          {/* Error State */}
+          {error && (
+            <div className="text-center py-12">
+              <p className="text-red-600 text-lg mb-4">{error}</p>
+              <button 
+                onClick={loadCakes}
+                className="bg-orange hover:bg-orange-900 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {loading && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow-lg border border-orange/20 overflow-hidden animate-pulse">
+                  <div className="h-64 bg-gray-200"></div>
+                  <div className="p-6 space-y-4">
+                    <div className="h-6 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="space-y-2">
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                    </div>
+                    <div className="h-10 bg-gray-200 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Cakes Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {cakes.map((cake) => (
-              <CakeCard
-                key={cake.id}
-                id={cake.id}
-                name={cake.name}
-                image={cake.image}
-                description={cake.description}
-                flavors={cake.flavors}
-                pricing={cake.pricing}
-                availableSizes={cake.availableSizes}
-              />
-            ))}
-          </div>
+          {!loading && !error && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {cakes.map((cake) => (
+                <CakeCard
+                  key={cake.id}
+                  id={cake.id}
+                  name={cake.name}
+                  image={cake.image}
+                  description={cake.description}
+                  flavors={cake.flavors}
+                  pricing={cake.pricing}
+                  availableSizes={cake.availableSizes}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Empty State */}
+          {!loading && !error && cakes.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-gray-600 text-lg">No cakes available at the moment.</p>
+            </div>
+          )}
         </div>
       </main>
       <Footer />

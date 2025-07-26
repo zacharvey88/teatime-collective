@@ -3,14 +3,11 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Heart, Mail } from 'lucide-react'
-import { supabase } from '@/lib/supabaseClient';
-
-const supabaseUrl = 'https://kntdzvkvfyoiwjfnlvgg.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtudGR6dmt2ZnlvaXdqZm5sdmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwNDE2MTUsImV4cCI6MjA2ODYxNzYxNX0.-8oTxt7JZ7eJuGfELaesTGqjugJiO5S15ic4Vhlntqc';
+import { FrontendImageService, FrontendImageItem } from '@/lib/frontendImageService'
 
 const Weddings = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [weddingImages, setWeddingImages] = useState<{ src: string; alt: string }[]>([])
+  const [weddingImages, setWeddingImages] = useState<FrontendImageItem[]>([])
   const [loading, setLoading] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const [isInView, setIsInView] = useState(false)
@@ -20,18 +17,15 @@ const Weddings = () => {
   useEffect(() => {
     const fetchImages = async () => {
       setLoading(true);
-      const { data, error } = await supabase.storage.from('weddings').list('', { limit: 100 });
-      if (error) {
+      try {
+        const images = await FrontendImageService.getWeddingImages();
+        setWeddingImages(images);
+      } catch (error) {
+        console.error('Failed to fetch wedding images:', error);
         setWeddingImages([]);
+      } finally {
         setLoading(false);
-        return;
       }
-      const images = (data?.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i)) || []).map(file => ({
-        src: `${supabaseUrl}/storage/v1/object/public/weddings/${file.name}`,
-        alt: file.name.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
-      }));
-      setWeddingImages(images);
-      setLoading(false);
     };
     fetchImages();
   }, []);
@@ -97,7 +91,7 @@ const Weddings = () => {
   };
 
   return (
-    <section id="weddings" className="py-20 bg-light-cream">
+    <section id="weddings" className="py-12 md:py-20 bg-light-cream">
       <div className="section-container">
         <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-12 lg:space-y-0 lg:space-x-12">
           {/* Content */}
@@ -122,8 +116,8 @@ const Weddings = () => {
             </div>
 
             {/* Wedding Services */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white p-4 rounded-xl shadow-lg border border-orange/20 text-center">
+            <div className="flex flex-row flex-wrap gap-4">
+              <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px]">
                 <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <Heart className="w-4 h-4 text-orange" />
                 </div>
@@ -131,7 +125,7 @@ const Weddings = () => {
                 <p className="text-sm text-gray">Elegant multi-tiered masterpieces</p>
               </div>
               
-              <div className="bg-white p-4 rounded-xl shadow-lg border border-orange/20 text-center">
+              <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px]">
                 <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <span className="text-orange font-bold text-lg">🍰</span>
                 </div>
@@ -139,7 +133,7 @@ const Weddings = () => {
                 <p className="text-sm text-gray">Variety of smaller cakes</p>
               </div>
               
-              <div className="bg-white p-4 rounded-xl shadow-lg border border-orange/20 text-center">
+              <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px]">
                 <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
                   <span className="text-orange font-bold text-lg">✨</span>
                 </div>
@@ -161,8 +155,8 @@ const Weddings = () => {
                 <div className="flex items-center justify-center h-full text-gray">Loading images...</div>
               ) : weddingImages.length > 0 ? (
                 <Image
-                  src={weddingImages[currentSlide].src}
-                  alt={weddingImages[currentSlide].alt}
+                  src={weddingImages[currentSlide].url}
+                  alt={weddingImages[currentSlide].alt_text}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"

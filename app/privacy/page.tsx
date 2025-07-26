@@ -228,7 +228,7 @@ export default function PrivacyPage() {
                 changes by posting the new policy on this page and updating the "Last Updated" date.
               </p>
               <p className="text-gray-600 mt-2">
-                <strong>Last Updated:</strong> {new Date().toLocaleDateString()}
+                <strong>Last Updated:</strong> {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </section>
           </div>

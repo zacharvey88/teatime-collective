@@ -3,12 +3,12 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Music, Users, Calendar, Recycle } from 'lucide-react'
-import { supabase } from '@/lib/supabaseClient';
-const supabaseUrl = 'https://kntdzvkvfyoiwjfnlvgg.supabase.co';
+import { FrontendImageService, FrontendImageItem } from '@/lib/frontendImageService'
+import { getYearsOfExperience } from '@/lib/utils'
 
 const Festivals = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
-  const [festivalImages, setFestivalImages] = useState<{ src: string; alt: string }[]>([])
+  const [festivalImages, setFestivalImages] = useState<FrontendImageItem[]>([])
   const [loading, setLoading] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const [isInView, setIsInView] = useState(false)
@@ -18,18 +18,15 @@ const Festivals = () => {
   useEffect(() => {
     const fetchImages = async () => {
       setLoading(true);
-      const { data, error } = await supabase.storage.from('festivals').list('', { limit: 100 });
-      if (error) {
+      try {
+        const images = await FrontendImageService.getFestivalImages();
+        setFestivalImages(images);
+      } catch (error) {
+        console.error('Failed to fetch festival images:', error);
         setFestivalImages([]);
+      } finally {
         setLoading(false);
-        return;
       }
-      const images = (data?.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i)) || []).map(file => ({
-        src: `${supabaseUrl}/storage/v1/object/public/festivals/${file.name}`,
-        alt: file.name.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
-      }));
-      setFestivalImages(images);
-      setLoading(false);
     };
     fetchImages();
   }, []);
@@ -95,7 +92,7 @@ const Festivals = () => {
   };
 
   return (
-    <section id="festivals" className="py-20 bg-cream">
+    <section id="festivals" className="py-12 md:py-20 bg-cream">
       <div className="section-container">
         <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-12 lg:space-y-0 lg:space-x-12">
           {/* Festival Gallery */}
@@ -109,13 +106,20 @@ const Festivals = () => {
               {loading ? (
                 <div className="flex items-center justify-center h-full text-gray">Loading images...</div>
               ) : festivalImages.length > 0 ? (
-                <Image
-                  src={festivalImages[currentSlide].src}
-                  alt={festivalImages[currentSlide].alt}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
+                <>
+                  <Image
+                    src={festivalImages[currentSlide].url}
+                    alt={festivalImages[currentSlide].alt_text}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                  {festivalImages[currentSlide].alt_text && (
+                    <div className="absolute top-4 left-4 bg-white/90 text-gray-800 text-sm px-3 py-2 rounded-lg shadow-lg">
+                      {festivalImages[currentSlide].alt_text}
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full text-gray">No images found.</div>
               )}
@@ -171,7 +175,7 @@ const Festivals = () => {
 
             <div className="prose prose-lg text-gray space-y-4">
               <p>
-                We have 13 years of festival catering experience, ranging from smaller festivals (up to 500) to Glastonbury. We also cater for food fairs, markets, weddings, corporate events.
+                We have {getYearsOfExperience()} years of festival catering experience, ranging from smaller festivals (up to 500) to Glastonbury. We also cater for food fairs, markets, weddings, corporate events.
               </p>
 
               <p>
@@ -188,16 +192,16 @@ const Festivals = () => {
             </div>
 
             {/* Stats */}
-            <div className="flex flex-row flex-wrap gap-6 mt-8">
-              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[120px] shadow-lg border border-orange/20">
+            <div className="flex flex-row flex-wrap gap-4 mt-8">
+              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Calendar className="w-5 h-5 text-orange" />
-                  <span className="text-2xl font-bold text-dark">13</span>
+                  <span className="text-2xl font-bold text-dark">{getYearsOfExperience()}</span>
                 </div>
                 <p className="text-sm text-gray">Years Experience</p>
               </div>
               
-              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[120px] shadow-lg border border-orange/20">
+              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Users className="w-5 h-5 text-orange" />
                   <span className="text-2xl font-bold text-dark">50+</span>
@@ -205,7 +209,7 @@ const Festivals = () => {
                 <p className="text-sm text-gray">Events Catered</p>
               </div>
 
-              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[120px] shadow-lg border border-orange/20">
+              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Recycle className="w-5 h-5 text-orange" />
                   <span className="text-2xl font-bold text-dark">100%</span>

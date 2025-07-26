@@ -2,32 +2,16 @@
 
 import Image from 'next/image'
 import { Clock, Calendar } from 'lucide-react'
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabaseClient';
-const supabaseUrl = 'https://kntdzvkvfyoiwjfnlvgg.supabase.co';
 
 const OurStory = () => {
-  const [timelineImages, settimelineImages] = useState<{ src: string; alt: string }[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const fetchImages = async () => {
-      setLoading(true);
-      const { data, error } = await supabase.storage.from('timeline').list('', { limit: 100 });
-      if (error) {
-        settimelineImages([]);
-        setLoading(false);
-        return;
-      }
-      const images = (data?.filter(file => file.name.match(/\.(jpg|jpeg|png|webp)$/i)) || []).map(file => ({
-        src: `${supabaseUrl}/storage/v1/object/public/timeline/${file.name}`,
-        alt: file.name.replace(/[-_]/g, ' ').replace(/\.[^.]+$/, '')
-      }));
-      settimelineImages(images);
-      setLoading(false);
-    };
-    fetchImages();
-  }, []);
+  // Local timeline images stored in public/images folder
+  const timelineImages = [
+    { src: '/images/timeline-01.jpg', alt: 'Hulme Cafe Opens' },
+    { src: '/images/timeline-02.jpg', alt: 'Cafe Closes' },
+    { src: '/images/timeline-03.png', alt: 'Rockers' },
+    { src: '/images/timeline-04.jpg', alt: 'Cake Delivery' },
+    { src: '/images/timeline-05.jpg', alt: 'Markets' }
+  ]
 
   const timelineEvents = [
     {
@@ -73,10 +57,10 @@ const OurStory = () => {
   ]
 
   return (
-    <section id="story" className="py-20 bg-light-cream">
+    <section id="story" className="py-12 md:py-20 bg-light-cream">
       <div className="section-container">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-8 md:mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-orange mb-4 underline decoration-4 underline-offset-4 font-lobster">
             Our Story
           </h2>

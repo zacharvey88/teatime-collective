@@ -1,0 +1,293 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { 
+  Save, 
+  Mail, 
+  Phone, 
+  MapPin,
+  Instagram,
+  Facebook,
+  Globe
+} from 'lucide-react'
+import { ContactInfoService, ContactInfo, UpdateContactInfoData } from '@/lib/contactInfoService'
+
+export default function ContactManager() {
+  const [info, setInfo] = useState<ContactInfo | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadContactInfo()
+  }, [])
+
+  const loadContactInfo = async () => {
+    try {
+      setLoading(true)
+      const contactInfo = await ContactInfoService.getContactInfo()
+      setInfo(contactInfo)
+    } catch (err: any) {
+      setError(err.message || 'Failed to load contact info')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!info) return
+
+    setSaving(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const contactData: UpdateContactInfoData = {
+        email: info.email,
+        phone: info.phone,
+        address_line1: info.address_line1,
+        address_line2: info.address_line2,
+        address_line3: info.address_line3,
+        instagram_url: info.instagram_url,
+        facebook_url: info.facebook_url
+      }
+
+      await ContactInfoService.updateContactInfo(contactData)
+      await loadContactInfo()
+      setSuccess('Contact information updated successfully!')
+    } catch (err: any) {
+      setError(err.message || 'Failed to save contact information')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleInputChange = (field: keyof ContactInfo, value: string) => {
+    if (!info) return
+    setInfo(prev => prev ? { ...prev, [field]: value } : null)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-gray mb-2">Contact Information</h1>
+        <p className="text-gray-600">Update your business contact details and social media links</p>
+      </div>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {success && (
+        <Alert>
+          <AlertDescription>{success}</AlertDescription>
+        </Alert>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin"></div>
+          <span className="ml-2 text-gray-600">Loading contact info...</span>
+        </div>
+      ) : !info ? (
+        <Alert variant="destructive">
+          <AlertDescription>Failed to load contact information</AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Contact Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="w-5 h-5 text-orange" />
+                  Contact Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email Address
+                  </label>
+                  <Input
+                    type="email"
+                    value={info?.email || ''}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="info@teatimecollective.co.uk"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray flex items-center gap-2">
+                    <Phone className="w-4 h-4" />
+                    Phone Number
+                  </label>
+                  <Input
+                    type="tel"
+                    value={info?.phone || ''}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    placeholder="+44 07765 833 910"
+                    className="mt-1"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Address */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-orange" />
+                  Address
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray">Address Line 1</label>
+                  <Input
+                    value={info?.address_line1 || ''}
+                    onChange={(e) => handleInputChange('address_line1', e.target.value)}
+                    placeholder="St. Wilfrid's Enterprise Centre"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray">Address Line 2</label>
+                  <Input
+                    value={info?.address_line2 || ''}
+                    onChange={(e) => handleInputChange('address_line2', e.target.value)}
+                    placeholder="Royce Road, Hulme"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray">Address Line 3</label>
+                  <Input
+                    value={info?.address_line3 || ''}
+                    onChange={(e) => handleInputChange('address_line3', e.target.value)}
+                    placeholder="Manchester, M15 5BJ"
+                    className="mt-1"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Social Media */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-orange" />
+                  Social Media
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray flex items-center gap-2">
+                    <Instagram className="w-4 h-4" />
+                    Instagram URL
+                  </label>
+                  <Input
+                    type="url"
+                    value={info?.instagram_url || ''}
+                    onChange={(e) => handleInputChange('instagram_url', e.target.value)}
+                    placeholder="https://www.instagram.com/teatimecollective"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium text-gray flex items-center gap-2">
+                    <Facebook className="w-4 h-4" />
+                    Facebook URL
+                  </label>
+                  <Input
+                    type="url"
+                    value={info?.facebook_url || ''}
+                    onChange={(e) => handleInputChange('facebook_url', e.target.value)}
+                    placeholder="https://www.facebook.com/Teatimecollective"
+                    className="mt-1"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Preview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-orange" />
+                    <a href={`mailto:${info.email}`} className="text-blue-600 hover:underline">
+                      {info.email}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-orange" />
+                    <a href={`tel:${info.phone}`} className="text-blue-600 hover:underline">
+                      {info.phone}
+                    </a>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-orange mt-1" />
+                    <div>
+                      <div>{info.address_line1}</div>
+                      {info.address_line2 && <div>{info.address_line2}</div>}
+                      {info.address_line3 && <div>{info.address_line3}</div>}
+                    </div>
+                  </div>
+                  <div className="flex gap-3 pt-2">
+                    {info.instagram_url && (
+                      <a
+                        href={info.instagram_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-orange text-white rounded-full hover:bg-orange-900 transition-colors"
+                      >
+                        <Instagram className="w-4 h-4" />
+                      </a>
+                    )}
+                    {info.facebook_url && (
+                      <a
+                        href={info.facebook_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-2 bg-orange text-white rounded-full hover:bg-orange-900 transition-colors"
+                      >
+                        <Facebook className="w-4 h-4" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="flex justify-end">
+            <Button 
+              onClick={handleSave}
+              disabled={saving}
+              className="bg-orange hover:bg-orange-900"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </>
+      )}
+    </div>
+  )
+} 

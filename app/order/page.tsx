@@ -24,7 +24,7 @@ export default function OrderPage() {
 
   // Set flavour from URL parameter if present
   useEffect(() => {
-    const flavourParam = searchParams.get('flavour')
+    const flavourParam = searchParams?.get('flavour')
     if (flavourParam) {
       setFormData(prev => ({
         ...prev,
@@ -327,7 +327,7 @@ export default function OrderPage() {
                 <div className="pt-4">
                   <button
                     type="submit"
-                    className="w-full bg-orange text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-orange/90 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2"
+                    className="w-full bg-orange text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-orange-900 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2"
                   >
                     Let there be cake!
                   </button>

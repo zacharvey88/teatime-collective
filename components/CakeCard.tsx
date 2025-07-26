@@ -88,7 +88,7 @@ export default function CakeCard({ id, name, image, description, flavors, pricin
         <div className="mt-auto">
           <Button
             onClick={handleOrderNow}
-            className="w-full bg-orange hover:bg-orange/90 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg"
+            className="w-full bg-orange hover:bg-orange-900 text-white font-semibold py-3 rounded-lg transition-all duration-200 hover:shadow-lg"
           >
             Order Now
           </Button>
