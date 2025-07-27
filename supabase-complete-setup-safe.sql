@@ -158,7 +158,127 @@ CREATE TABLE IF NOT EXISTS customers (
 );
 
 -- ========================================
--- 3. IMAGE TABLES SETUP
+-- 4. CAKE MANAGEMENT TABLES SETUP
+-- ========================================
+
+-- Create cake_categories table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS cake_categories (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  description TEXT,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create cake_sizes table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS cake_sizes (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  category_id UUID REFERENCES cake_categories(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  price DECIMAL(10,2) NOT NULL,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create cake_flavors table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS cake_flavors (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  category_id UUID REFERENCES cake_categories(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  image_url TEXT,
+  display_order INTEGER NOT NULL DEFAULT 0,
+  active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable RLS on cake tables
+ALTER TABLE cake_categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cake_sizes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cake_flavors ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing cake policies if they exist
+DROP POLICY IF EXISTS "Admins can manage cake categories" ON cake_categories;
+DROP POLICY IF EXISTS "Everyone can view cake categories" ON cake_categories;
+DROP POLICY IF EXISTS "Admins can manage cake sizes" ON cake_sizes;
+DROP POLICY IF EXISTS "Everyone can view cake sizes" ON cake_sizes;
+DROP POLICY IF EXISTS "Admins can manage cake flavors" ON cake_flavors;
+DROP POLICY IF EXISTS "Everyone can view cake flavors" ON cake_flavors;
+
+-- Create RLS policies for cake tables
+CREATE POLICY "Admins can manage cake categories" ON cake_categories
+  FOR ALL USING (is_admin_user());
+
+CREATE POLICY "Everyone can view cake categories" ON cake_categories
+  FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage cake sizes" ON cake_sizes
+  FOR ALL USING (is_admin_user());
+
+CREATE POLICY "Everyone can view cake sizes" ON cake_sizes
+  FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage cake flavors" ON cake_flavors
+  FOR ALL USING (is_admin_user());
+
+CREATE POLICY "Everyone can view cake flavors" ON cake_flavors
+  FOR SELECT USING (true);
+
+-- Insert default cake categories
+INSERT INTO cake_categories (name, description, display_order) VALUES
+  ('Regular Cakes', 'Traditional sponge cakes with buttercream or ganache', 1),
+  ('Frilly Cakes', 'Decorated cakes with piped buttercream designs', 2),
+  ('Tray Bakes', 'Large rectangular cakes perfect for sharing', 3),
+  ('Cheesecakes', 'Creamy cheesecakes with various toppings', 4)
+ON CONFLICT (name) DO NOTHING;
+
+-- Insert default cake sizes for Regular Cakes
+INSERT INTO cake_sizes (category_id, name, description, price, display_order) VALUES
+  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), '6 inch', '6-8 Large slices', 50.00, 1),
+  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), '9 inch', '12-14 Large slices', 60.00, 2),
+  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), '12.5 inch', '20 Large slices', 85.00, 3)
+ON CONFLICT DO NOTHING;
+
+-- Insert default cake sizes for Frilly Cakes
+INSERT INTO cake_sizes (category_id, name, description, price, display_order) VALUES
+  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), '6 inch', '8 Large slices', 70.00, 1),
+  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), '9 inch', '12 Large slices', 80.00, 2),
+  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), '12.5 inch', '20 Large slices', 110.00, 3)
+ON CONFLICT DO NOTHING;
+
+-- Insert default cake sizes for Tray Bakes
+INSERT INTO cake_sizes (category_id, name, description, price, display_order) VALUES
+  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Small Tray', 'Serves 12-15 people', 45.00, 1),
+  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Large Tray', 'Serves 20-25 people', 65.00, 2)
+ON CONFLICT DO NOTHING;
+
+-- Insert default cake sizes for Cheesecakes
+INSERT INTO cake_sizes (category_id, name, description, price, display_order) VALUES
+  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), '6 inch', '6-8 slices', 35.00, 1),
+  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), '9 inch', '10-12 slices', 45.00, 2)
+ON CONFLICT DO NOTHING;
+
+-- Insert some default flavors
+INSERT INTO cake_flavors (category_id, name, description, display_order) VALUES
+  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), 'Chocolate', 'Rich chocolate sponge with chocolate buttercream', 1),
+  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), 'Vanilla', 'Light vanilla sponge with vanilla buttercream', 2),
+  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), 'Lemon', 'Zesty lemon sponge with lemon buttercream', 3),
+  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), 'Chocolate Frilly', 'Chocolate cake with piped chocolate buttercream', 1),
+  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), 'Vanilla Frilly', 'Vanilla cake with piped vanilla buttercream', 2),
+  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Chocolate Brownie', 'Rich chocolate brownie tray bake', 1),
+  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Lemon Drizzle', 'Zesty lemon drizzle tray bake', 2),
+  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), 'Classic Vanilla', 'Smooth vanilla cheesecake', 1),
+  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), 'Chocolate', 'Rich chocolate cheesecake', 2)
+ON CONFLICT DO NOTHING;
+
+-- ========================================
+-- 5. IMAGE TABLES SETUP
 -- ========================================
 
 -- Create carousel_images table (safe - won't overwrite)
@@ -369,24 +489,64 @@ SELECT
   'Wedding cake consultation needed'
 WHERE NOT EXISTS (SELECT 1 FROM order_requests LIMIT 1 OFFSET 1);
 
+-- Create market_dates table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS market_dates (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name TEXT NOT NULL,
+  date DATE NOT NULL,
+  start_time TIME NOT NULL,
+  end_time TIME NOT NULL,
+  location TEXT NOT NULL,
+  url TEXT,
+  active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Add url column if it doesn't exist (safe migration)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'market_dates' AND column_name = 'url') THEN
+    ALTER TABLE market_dates ADD COLUMN url TEXT;
+  END IF;
+END $$;
+
+-- Enable RLS
+ALTER TABLE market_dates ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public can read active market dates" ON market_dates;
+DROP POLICY IF EXISTS "Admins can manage market dates" ON market_dates;
+
+-- Create policies
+CREATE POLICY "Public can read active market dates" ON market_dates
+  FOR SELECT USING (active = true);
+
+CREATE POLICY "Admins can manage market dates" ON market_dates
+  FOR ALL USING (
+    auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
+  );
+
 -- Insert sample market dates (only if table is empty)
-INSERT INTO market_dates (name, date, start_time, end_time, location, active)
+INSERT INTO market_dates (name, date, start_time, end_time, location, url, active)
 SELECT 
   'Chorlton Makers Market',
   '2025-01-25',
   '10:00',
   '16:00',
   'Chorlton',
+  'https://www.themakersmarket.co.uk/pages/chorlton-makers-market',
   true
 WHERE NOT EXISTS (SELECT 1 FROM market_dates);
 
-INSERT INTO market_dates (name, date, start_time, end_time, location, active)
+INSERT INTO market_dates (name, date, start_time, end_time, location, url, active)
 SELECT 
   'Northern Quarter Market',
   '2025-01-26',
   '11:00',
   '17:00',
   'Northern Quarter',
+  'https://www.themakersmarket.co.uk/pages/northern-quarter-makers-market',
   true
 WHERE NOT EXISTS (SELECT 1 FROM market_dates LIMIT 1 OFFSET 1);
 

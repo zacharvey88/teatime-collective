@@ -11,7 +11,8 @@ import {
   Edit, 
   Calendar,
   MapPin,
-  Clock
+  Clock,
+  ExternalLink
 } from 'lucide-react'
 import { MarketDatesService, MarketDate, CreateMarketDateData } from '@/lib/marketDatesService'
 
@@ -25,6 +26,7 @@ export default function MarketManager() {
     start_time: '',
     end_time: '',
     location: '',
+    url: '',
     active: true
   })
   const [error, setError] = useState('')
@@ -47,7 +49,7 @@ export default function MarketManager() {
   }
 
   const handleAddMarket = async () => {
-    if (!newMarket.name || !newMarket.date || !newMarket.start_time || !newMarket.end_time || !newMarket.location) {
+    if (!newMarket.name || !newMarket.date || !newMarket.start_time || !newMarket.end_time || !newMarket.location || !newMarket.url) {
       setError('Please fill in all required fields')
       return
     }
@@ -59,12 +61,13 @@ export default function MarketManager() {
         start_time: newMarket.start_time,
         end_time: newMarket.end_time,
         location: newMarket.location,
+        url: newMarket.url,
         active: newMarket.active
       }
 
       await MarketDatesService.createMarketDate(marketData)
       await loadMarketDates()
-      setNewMarket({ name: '', date: '', start_time: '', end_time: '', location: '', active: true })
+      setNewMarket({ name: '', date: '', start_time: '', end_time: '', location: '', url: '', active: true })
       setError('')
     } catch (err: any) {
       setError(err.message || 'Failed to add market date')
@@ -88,6 +91,7 @@ export default function MarketManager() {
       start_time: market.start_time,
       end_time: market.end_time,
       location: market.location,
+      url: market.url,
       active: market.active
     })
   }
@@ -193,6 +197,15 @@ export default function MarketManager() {
                 className="mt-1"
               />
             </div>
+            <div>
+              <label className="text-sm font-medium text-gray">URL</label>
+              <Input
+                value={newMarket.url}
+                onChange={(e) => setNewMarket({ ...newMarket, url: e.target.value })}
+                placeholder="e.g., https://www.themakersmarket.co.uk/pages/chorlton-makers-market"
+                className="mt-1"
+              />
+            </div>
 
           </div>
           <div className="flex items-center gap-4 mt-4">
@@ -223,7 +236,6 @@ export default function MarketManager() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Calendar className="w-5 h-5 text-orange" />
                   <div>
                     <CardTitle className="text-lg">
                       {editingId === market.id ? (
@@ -236,7 +248,7 @@ export default function MarketManager() {
                         market.name
                       )}
                     </CardTitle>
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                    <div className="flex items-center gap-4 text-sm text-gray-600 mt-3">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         {editingId === market.id ? (
@@ -258,14 +270,14 @@ export default function MarketManager() {
                               type="time"
                               value={editingMarket.start_time || ''}
                               onChange={(e) => setEditingMarket({ ...editingMarket, start_time: e.target.value })}
-                              className="text-sm w-20"
+                              className="text-sm w-24"
                             />
                             <span>-</span>
                             <Input
                               type="time"
                               value={editingMarket.end_time || ''}
                               onChange={(e) => setEditingMarket({ ...editingMarket, end_time: e.target.value })}
-                              className="text-sm w-20"
+                              className="text-sm w-24"
                             />
                           </div>
                         ) : (
@@ -282,6 +294,25 @@ export default function MarketManager() {
                           />
                         ) : (
                           market.location
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ExternalLink className="w-4 h-4" />
+                        {editingId === market.id ? (
+                          <Input
+                            value={editingMarket.url || ''}
+                            onChange={(e) => setEditingMarket({ ...editingMarket, url: e.target.value })}
+                            className="text-sm w-64"
+                            placeholder="URL"
+                          />
+                        ) : (
+                          market.url ? (
+                            <a href={market.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                              View Link
+                            </a>
+                          ) : (
+                            <span className="text-gray-400 text-sm">No URL</span>
+                          )
                         )}
                       </div>
                     </div>

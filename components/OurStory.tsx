@@ -57,32 +57,51 @@ const OurStory = () => {
   ]
 
   return (
-    <section id="story" className="py-12 md:py-20 bg-light-cream">
+    <section id="story" className="pt-20 md:pt-20 pb-12 md:pb-20 bg-light-cream">
       <div className="section-container">
         {/* Header */}
-        <div className="text-center mb-8 md:mb-16">
+        <div className="text-center mb-16 md:mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-orange mb-4 underline decoration-4 underline-offset-4 font-lobster">
             Our Story
           </h2>
         </div>
 
         {/* Timeline */}
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto relative">
+          {/* Connecting line for mobile */}
+          <div className="hidden md:block absolute left-8 top-0 bottom-0 w-0.5 bg-orange/30"></div>
+          
           {timelineEvents.map((event, index) => (
-            <div key={index} className="relative flex flex-col lg:flex-row items-start lg:items-center mb-16 last:mb-0">
+            <div key={index} className="relative flex flex-col lg:flex-row items-center lg:items-start mb-16 last:mb-0">
+              {/* Mobile Layout: Date Circle with Heading/Subheading on one side */}
+              <div className="lg:hidden w-full flex items-center justify-center mb-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 relative z-10 mr-4">
+                    <div className="bg-orange text-white rounded-full w-16 h-16 flex flex-col items-center justify-center text-center shadow-lg">
+                      <div className="text-xs font-medium">{event.month}</div>
+                      <div className="text-sm font-bold">{event.year}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex-1">
+                    <p className="text-orange font-medium text-sm">{event.tagline}</p>
+                    <h3 className="text-xl font-bold text-dark">{event.title}</h3>
+                  </div>
+                </div>
+              </div>
 
-              {/* Date Circle */}
-              <div className="flex-shrink-0 flex flex-col items-center lg:items-start mb-6 lg:mb-0 lg:mr-8">
-                <div className="bg-orange text-white rounded-full w-16 h-16 flex flex-col items-center justify-center text-center">
+              {/* Desktop Layout: Original structure */}
+              <div className="hidden lg:flex flex-shrink-0 flex-col items-start mb-0 mr-8 relative z-10">
+                <div className="bg-orange text-white rounded-full w-16 h-16 flex flex-col items-center justify-center text-center shadow-lg">
                   <div className="text-xs font-medium">{event.month}</div>
                   <div className="text-sm font-bold">{event.year}</div>
                 </div>
               </div>
 
               {/* Content */}
-              <div className="flex-1 lg:flex items-center lg:space-x-8 space-y-6 lg:space-y-0">
+              <div className="flex-1 lg:flex items-center lg:space-x-8 space-y-6 lg:space-y-0 text-center lg:text-left">
                 <div className="lg:flex-1">
-                  <div className="mb-4">
+                  <div className="mb-4 lg:block hidden">
                     <p className="text-orange font-medium mb-2">{event.tagline}</p>
                     <h3 className="text-2xl lg:text-3xl font-bold text-dark mb-4">{event.title}</h3>
                   </div>

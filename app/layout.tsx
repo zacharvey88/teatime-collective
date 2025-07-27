@@ -7,6 +7,11 @@ import CookieProvider from '@/components/CookieProvider'
 import { SettingsProvider } from '@/lib/settingsContext'
 import AppWrapper from '@/components/AppWrapper'
 
+// Import debug utils in development
+if (process.env.NODE_ENV === 'development') {
+  import('@/lib/debugUtils')
+}
+
 const lobster = Lobster({
   variable: "--font-lobster",
   subsets: ["latin"],

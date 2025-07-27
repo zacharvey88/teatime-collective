@@ -120,65 +120,107 @@ export class OrderAnalyticsService {
 
   // Get flavor analytics
   static async getFlavorAnalytics(): Promise<FlavorAnalytics> {
-    // Get top flavors by request count and estimated value
-    const { data: flavorData, error: flavorError } = await supabase
-      .from('request_items')
-      .select(`
-        item_name,
-        estimated_total_price,
-        cake_flavor_id,
-        cake_flavors(name)
-      `)
-      .not('cake_flavor_id', 'is', null)
+    try {
+      // First, try to get request items with flavor data using a simpler approach
+      const { data: flavorData, error: flavorError } = await supabase
+        .from('request_items')
+        .select('item_name, estimated_total_price, cake_flavor_id')
+        .not('cake_flavor_id', 'is', null)
 
-    if (flavorError) throw new Error('Failed to fetch flavor data')
-
-    // Group by flavor
-    const flavorStats = new Map()
-    flavorData?.forEach((item: any) => {
-      const flavorName = item.cake_flavors?.name || item.item_name
-      if (!flavorStats.has(flavorName)) {
-        flavorStats.set(flavorName, { orderCount: 0, revenue: 0 })
+      if (flavorError) {
+        console.warn('Flavor analytics error:', flavorError)
+        // Return empty data if there's an error or no data
+        return {
+          topFlavors: [],
+          popularFlavors: []
+        }
       }
-      const stats = flavorStats.get(flavorName)
-      stats.orderCount++
-      stats.revenue += parseFloat(item.estimated_total_price)
-    })
 
-    const topFlavors = Array.from(flavorStats.entries())
-      .map(([name, stats]) => ({
-        name,
-        orderCount: stats.orderCount,
-        revenue: stats.revenue
-      }))
-      .sort((a, b) => b.orderCount - a.orderCount)
-      .slice(0, 5)
+      // If no flavor data, return empty arrays
+      if (!flavorData || flavorData.length === 0) {
+        return {
+          topFlavors: [],
+          popularFlavors: []
+        }
+      }
 
-    // Get popular flavors by unique customers
-    const { data: customerFlavorData, error: customerFlavorError } = await supabase
-      .from('customers')
-      .select('favorite_flavor')
-      .not('favorite_flavor', 'is', null)
+      // Group by flavor - now we need to get flavor names separately
+      const flavorStats = new Map()
+      
+      // Get unique flavor IDs to fetch their names
+      const flavorIds = Array.from(new Set(flavorData.map((item: any) => item.cake_flavor_id).filter(Boolean)))
+      
+      // Fetch flavor names if we have flavor IDs
+      let flavorNames: { [key: string]: string } = {}
+      if (flavorIds.length > 0) {
+        const { data: flavors, error: flavorsError } = await supabase
+          .from('cake_flavors')
+          .select('id, name')
+          .in('id', flavorIds)
+        
+        if (!flavorsError && flavors) {
+          flavors.forEach((flavor: any) => {
+            flavorNames[flavor.id] = flavor.name
+          })
+        }
+      }
+      
+      flavorData.forEach((item: any) => {
+        const flavorName = flavorNames[item.cake_flavor_id] || item.item_name || 'Unknown Flavor'
+        if (!flavorStats.has(flavorName)) {
+          flavorStats.set(flavorName, { orderCount: 0, revenue: 0 })
+        }
+        const stats = flavorStats.get(flavorName)
+        stats.orderCount++
+        stats.revenue += parseFloat(item.estimated_total_price || 0)
+      })
 
-    if (customerFlavorError) throw new Error('Failed to fetch customer flavor data')
+      const topFlavors = Array.from(flavorStats.entries())
+        .map(([name, stats]) => ({
+          name,
+          orderCount: stats.orderCount,
+          revenue: stats.revenue
+        }))
+        .sort((a, b) => b.orderCount - a.orderCount)
+        .slice(0, 5)
 
-    const flavorCustomerCount = new Map()
-    customerFlavorData?.forEach(customer => {
-      const flavor = customer.favorite_flavor
-      flavorCustomerCount.set(flavor, (flavorCustomerCount.get(flavor) || 0) + 1)
-    })
+      // Get popular flavors by unique customers
+      const { data: customerFlavorData, error: customerFlavorError } = await supabase
+        .from('customers')
+        .select('favorite_flavor')
+        .not('favorite_flavor', 'is', null)
 
-    const popularFlavors = Array.from(flavorCustomerCount.entries())
-      .map(([name, count]) => ({
-        name,
-        customerCount: count
-      }))
-      .sort((a, b) => b.customerCount - a.customerCount)
-      .slice(0, 5)
+      if (customerFlavorError) {
+        console.warn('Customer flavor analytics error:', customerFlavorError)
+      }
 
-    return {
-      topFlavors,
-      popularFlavors
+      const flavorCustomerCount = new Map()
+      customerFlavorData?.forEach(customer => {
+        const flavor = customer.favorite_flavor
+        if (flavor) {
+          flavorCustomerCount.set(flavor, (flavorCustomerCount.get(flavor) || 0) + 1)
+        }
+      })
+
+      const popularFlavors = Array.from(flavorCustomerCount.entries())
+        .map(([name, count]) => ({
+          name,
+          customerCount: count
+        }))
+        .sort((a, b) => b.customerCount - a.customerCount)
+        .slice(0, 5)
+
+      return {
+        topFlavors,
+        popularFlavors
+      }
+    } catch (error) {
+      console.error('Error in getFlavorAnalytics:', error)
+      // Return empty data on any error
+      return {
+        topFlavors: [],
+        popularFlavors: []
+      }
     }
   }
 

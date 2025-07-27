@@ -1,145 +1,259 @@
 import { supabase } from './supabaseClient'
 
-export interface CakeFlavor {
+export interface CakeCategory {
   id: string
   name: string
   description: string | null
-  category: string
-  is_active: boolean
+  display_order: number
+  active: boolean
   created_at: string
   updated_at: string
 }
 
 export interface CakeSize {
   id: string
+  category_id: string
   name: string
   description: string | null
-  base_price: number
-  frilly_price: number | null
-  is_active: boolean
+  price: number
+  display_order: number
+  active: boolean
   created_at: string
   updated_at: string
 }
 
-export interface CakePreset {
+export interface CakeFlavor {
   id: string
+  category_id: string
   name: string
   description: string | null
   image_url: string | null
-  flavors: string[]
-  available_sizes: string[]
-  pricing: Record<string, string>
-  is_active: boolean
+  display_order: number
+  active: boolean
   created_at: string
   updated_at: string
 }
 
-export interface CakeCardData {
-  id: string
-  name: string
-  image: string
-  description: string
-  flavors: string[]
-  pricing: Record<string, string>
-  availableSizes: ('regular' | 'frilly' | 'wedding')[]
+export interface CakeWithDetails {
+  category: CakeCategory
+  sizes: CakeSize[]
+  flavors: CakeFlavor[]
 }
 
 export class CakeService {
-  // Get all active cake flavors
-  static async getCakeFlavors(): Promise<CakeFlavor[]> {
+  // Get all cake categories
+  static async getCategories(): Promise<CakeCategory[]> {
     const { data, error } = await supabase
-      .from('cake_flavors')
+      .from('cake_categories')
       .select('*')
-      .eq('is_active', true)
-      .order('name')
+      .eq('active', true)
+      .order('display_order', { ascending: true })
     
-    if (error) throw new Error(`Failed to fetch cake flavors: ${error.message}`)
+    if (error) throw error
     return data || []
   }
 
-  // Get all active cake sizes
-  static async getCakeSizes(): Promise<CakeSize[]> {
+  // Get all cake sizes
+  static async getSizes(): Promise<CakeSize[]> {
     const { data, error } = await supabase
       .from('cake_sizes')
       .select('*')
-      .eq('is_active', true)
-      .order('base_price')
+      .eq('active', true)
+      .order('display_order', { ascending: true })
     
-    if (error) throw new Error(`Failed to fetch cake sizes: ${error.message}`)
+    if (error) throw error
     return data || []
   }
 
-  // Get all active cake presets
-  static async getCakePresets(): Promise<CakePreset[]> {
+  // Get all cake flavors
+  static async getFlavors(): Promise<CakeFlavor[]> {
     const { data, error } = await supabase
-      .from('cake_presets')
+      .from('cake_flavors')
       .select('*')
-      .eq('is_active', true)
-      .order('name')
+      .eq('active', true)
+      .order('display_order', { ascending: true })
     
-    if (error) throw new Error(`Failed to fetch cake presets: ${error.message}`)
+    if (error) throw error
     return data || []
   }
 
-  // Get cake data formatted for the cakes page
-  static async getCakesForPage(): Promise<CakeCardData[]> {
-    try {
-      const presets = await this.getCakePresets()
+  // Get complete cake data organized by category
+  static async getCakesByCategory(): Promise<CakeWithDetails[]> {
+    const { data: categories, error: categoriesError } = await supabase
+      .from('cake_categories')
+      .select('*')
+      .eq('active', true)
+      .order('display_order', { ascending: true })
+    
+    if (categoriesError) throw categoriesError
+
+    const result: CakeWithDetails[] = []
+
+    for (const category of categories || []) {
+      // Get sizes for this category
+      const { data: sizes, error: sizesError } = await supabase
+        .from('cake_sizes')
+        .select('*')
+        .eq('category_id', category.id)
+        .eq('active', true)
+        .order('display_order', { ascending: true })
       
-      return presets.map(preset => ({
-        id: preset.id,
-        name: preset.name,
-        image: preset.image_url || '/images/carousel-01.jpg', // fallback image
-        description: preset.description || '',
-        flavors: preset.flavors || [],
-        pricing: preset.pricing || {},
-        availableSizes: (preset.available_sizes || []).map(size => {
-          // Map database size names to expected types
-          if (size === '6 inch' || size === '8 inch' || size === '10 inch' || size === '12 inch') {
-            return 'regular' as const
-          }
-          return 'regular' as const // fallback to regular
-        })
-      }))
-    } catch (error) {
-      console.error('Error fetching cakes for page:', error)
-      return []
+      if (sizesError) throw sizesError
+
+      // Get flavors for this category
+      const { data: flavors, error: flavorsError } = await supabase
+        .from('cake_flavors')
+        .select('*')
+        .eq('category_id', category.id)
+        .eq('active', true)
+        .order('display_order', { ascending: true })
+      
+      if (flavorsError) throw flavorsError
+
+      result.push({
+        category,
+        sizes: sizes || [],
+        flavors: flavors || []
+      })
     }
+
+    return result
   }
 
-  // Get cake flavor by ID
-  static async getCakeFlavor(id: string): Promise<CakeFlavor | null> {
+  // Create a new category
+  static async createCategory(category: Omit<CakeCategory, 'id' | 'created_at' | 'updated_at'>): Promise<CakeCategory> {
     const { data, error } = await supabase
-      .from('cake_flavors')
-      .select('*')
-      .eq('id', id)
+      .from('cake_categories')
+      .insert(category)
+      .select()
       .single()
     
-    if (error) throw new Error(`Failed to fetch cake flavor: ${error.message}`)
+    if (error) throw error
     return data
   }
 
-  // Get cake size by ID
-  static async getCakeSize(id: string): Promise<CakeSize | null> {
+  // Update a category
+  static async updateCategory(id: string, updates: Partial<CakeCategory>): Promise<CakeCategory> {
+    const { data, error } = await supabase
+      .from('cake_categories')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+
+  // Delete a category (soft delete)
+  static async deleteCategory(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('cake_categories')
+      .update({ active: false, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    
+    if (error) throw error
+  }
+
+  // Create a new size
+  static async createSize(size: Omit<CakeSize, 'id' | 'created_at' | 'updated_at'>): Promise<CakeSize> {
+    const { data, error } = await supabase
+      .from('cake_sizes')
+      .insert(size)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+
+  // Update a size
+  static async updateSize(id: string, updates: Partial<CakeSize>): Promise<CakeSize> {
+    const { data, error } = await supabase
+      .from('cake_sizes')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+
+  // Delete a size (soft delete)
+  static async deleteSize(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('cake_sizes')
+      .update({ active: false, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    
+    if (error) throw error
+  }
+
+  // Create a new flavor
+  static async createFlavor(flavor: Omit<CakeFlavor, 'id' | 'created_at' | 'updated_at'>): Promise<CakeFlavor> {
+    const { data, error } = await supabase
+      .from('cake_flavors')
+      .insert(flavor)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+
+  // Update a flavor
+  static async updateFlavor(id: string, updates: Partial<CakeFlavor>): Promise<CakeFlavor> {
+    const { data, error } = await supabase
+      .from('cake_flavors')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    if (error) throw error
+    return data
+  }
+
+  // Delete a flavor (soft delete)
+  static async deleteFlavor(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('cake_flavors')
+      .update({ active: false, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    
+    if (error) throw error
+  }
+
+  // Get a specific size by ID
+  static async getSizeById(id: string): Promise<CakeSize | null> {
     const { data, error } = await supabase
       .from('cake_sizes')
       .select('*')
       .eq('id', id)
+      .eq('active', true)
       .single()
     
-    if (error) throw new Error(`Failed to fetch cake size: ${error.message}`)
+    if (error) {
+      if (error.code === 'PGRST116') return null // No rows returned
+      throw error
+    }
     return data
   }
 
-  // Get cake preset by ID
-  static async getCakePreset(id: string): Promise<CakePreset | null> {
+  // Get a specific flavor by ID
+  static async getFlavorById(id: string): Promise<CakeFlavor | null> {
     const { data, error } = await supabase
-      .from('cake_presets')
+      .from('cake_flavors')
       .select('*')
       .eq('id', id)
+      .eq('active', true)
       .single()
     
-    if (error) throw new Error(`Failed to fetch cake preset: ${error.message}`)
+    if (error) {
+      if (error.code === 'PGRST116') return null // No rows returned
+      throw error
+    }
     return data
   }
 } 

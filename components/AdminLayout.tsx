@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { AuthService } from '@/lib/auth'
+import { adminTabManager } from '@/lib/adminTabManager'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
@@ -44,6 +45,17 @@ export default function AdminLayout({ children, activeSection, onSectionChange }
 
   useEffect(() => {
     checkAdminPermissions()
+    
+    // Set up auth state listener to check permissions when auth changes
+    const { data: { subscription } } = AuthService.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        await checkAdminPermissions()
+      } else if (event === 'SIGNED_OUT') {
+        setCanManageAdmins(false)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   // Set sidebar collapsed by default on mobile screens
@@ -75,9 +87,13 @@ export default function AdminLayout({ children, activeSection, onSectionChange }
   const handleSignOut = async () => {
     try {
       await AuthService.signOut()
-      window.location.href = '/admin'
+      
+      // Redirect to main site
+      window.location.href = '/'
     } catch (error) {
       console.error('Sign out error:', error)
+      // Even if sign out fails, redirect to main site
+      window.location.href = '/'
     }
   }
 

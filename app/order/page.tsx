@@ -4,125 +4,181 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import { Calendar, Cake, Ruler, AlertTriangle, Type, MessageSquare } from 'lucide-react'
+import { Calendar, Cake, Ruler, AlertTriangle, Type, MessageSquare, Plus, Minus, Trash2 } from 'lucide-react'
 import Image from 'next/image'
+import { CakeService, CakeWithDetails } from '@/lib/cakeService'
+
+interface CartItem {
+  id: string
+  categoryId: string
+  categoryName: string
+  flavorId: string
+  flavorName: string
+  sizeId: string
+  sizeName: string
+  price: number
+  quantity: number
+  imageUrl: string | null
+}
+
+interface CakeOption {
+  id: string
+  categoryId: string
+  categoryName: string
+  flavorId: string
+  flavorName: string
+  imageUrl: string | null
+  sizes: Array<{
+    id: string
+    name: string
+    price: number
+    description: string | null
+  }>
+}
 
 export default function OrderPage() {
   const searchParams = useSearchParams()
+  
+  const [cakes, setCakes] = useState<CakeWithDetails[]>([])
+  const [cakeOptions, setCakeOptions] = useState<CakeOption[]>([])
+  const [cart, setCart] = useState<CartItem[]>([])
+  const [selectedCake, setSelectedCake] = useState<string>('')
+  const [selectedSize, setSelectedSize] = useState<string>('')
+  const [quantity, setQuantity] = useState(1)
+  const [loading, setLoading] = useState(true)
   
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     dateRequired: '',
-    flavour: '',
-    size: '',
     allergies: '',
     writing: '',
     otherInfo: ''
   })
 
-  // Set flavour from URL parameter if present
   useEffect(() => {
-    const flavourParam = searchParams?.get('flavour')
-    if (flavourParam) {
-      setFormData(prev => ({
-        ...prev,
-        flavour: flavourParam
-      }))
+    loadCakes()
+    
+    // Check for selected cake from cakes page
+    const selectedCakeData = sessionStorage.getItem('selectedCake')
+    if (selectedCakeData) {
+      try {
+        const cakeData = JSON.parse(selectedCakeData)
+        // Pre-select the cake and add to cart
+        setSelectedCake(cakeData.flavorId)
+        sessionStorage.removeItem('selectedCake')
+      } catch (err) {
+        console.error('Error parsing selected cake data:', err)
+      }
     }
-  }, [searchParams])
+  }, [])
+
+  const loadCakes = async () => {
+    try {
+      setLoading(true)
+      const cakeData = await CakeService.getCakesByCategory()
+      setCakes(cakeData)
+      
+      // Transform data into cake options
+      const options: CakeOption[] = []
+      cakeData.forEach(category => {
+        category.flavors.forEach(flavor => {
+          options.push({
+            id: flavor.id,
+            categoryId: category.category.id,
+            categoryName: category.category.name,
+            flavorId: flavor.id,
+            flavorName: flavor.name,
+            imageUrl: flavor.image_url,
+            sizes: category.sizes
+          })
+        })
+      })
+      setCakeOptions(options)
+    } catch (err) {
+      console.error('Failed to load cakes:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
+    setFormData({
+      ...formData,
+      [name]: value
+    })
+  }
+
+  const handleAddToCart = () => {
+    if (!selectedCake || !selectedSize) return
+
+    const cake = cakeOptions.find(c => c.id === selectedCake)
+    const size = cake?.sizes.find(s => s.id === selectedSize)
     
-    // If flavour changes, reset size selection
-    if (name === 'flavour') {
-      setFormData({
-        ...formData,
-        [name]: value,
-        size: '' // Reset size when flavour changes
-      })
+    if (!cake || !size) return
+
+    const existingItem = cart.find(item => 
+      item.flavorId === cake.flavorId && item.sizeId === size.id
+    )
+
+    if (existingItem) {
+      // Update quantity of existing item
+      setCart(cart.map(item => 
+        item.id === existingItem.id 
+          ? { ...item, quantity: item.quantity + quantity }
+          : item
+      ))
     } else {
-      setFormData({
-        ...formData,
-        [name]: value
-      })
+      // Add new item
+      const newItem: CartItem = {
+        id: `${cake.flavorId}-${size.id}`,
+        categoryId: cake.categoryId,
+        categoryName: cake.categoryName,
+        flavorId: cake.flavorId,
+        flavorName: cake.flavorName,
+        sizeId: size.id,
+        sizeName: size.name,
+        price: size.price,
+        quantity: quantity,
+        imageUrl: cake.imageUrl
+      }
+      setCart([...cart, newItem])
     }
+
+    // Reset selection
+    setSelectedCake('')
+    setSelectedSize('')
+    setQuantity(1)
+  }
+
+  const updateCartItemQuantity = (itemId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      setCart(cart.filter(item => item.id !== itemId))
+    } else {
+      setCart(cart.map(item => 
+        item.id === itemId 
+          ? { ...item, quantity: newQuantity }
+          : item
+      ))
+    }
+  }
+
+  const removeFromCart = (itemId: string) => {
+    setCart(cart.filter(item => item.id !== itemId))
+  }
+
+  const getTotalPrice = () => {
+    return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
+    console.log('Form submitted:', { formData, cart, total: getTotalPrice() })
   }
 
-  const sizeOptions = [
-    { value: '', label: 'Select size' },
-    { value: '6-inch-regular', label: '6 inch Regular (£50) - serves 6-8', type: 'regular' },
-    { value: '9-inch-regular', label: '9 inch Regular (£60) - serves 12-14', type: 'regular' },
-    { value: '12.5-inch-regular', label: '12.5 inch Regular (£85) - serves 20', type: 'regular' },
-    { value: '6-inch-frilly', label: '6 inch Frilly (£70) - serves 8', type: 'frilly' },
-    { value: '9-inch-frilly', label: '9 inch Frilly (£80) - serves 12', type: 'frilly' },
-    { value: '12.5-inch-frilly', label: '12.5 inch Frilly (£110) - serves 20', type: 'frilly' },
-    { value: 'wedding-cake', label: 'Wedding Cake (quote required)', type: 'wedding' },
-    { value: 'other-bakes', label: 'Other Bakes (traybakes, pies, etc.)', type: 'other' },
-    { value: 'custom', label: 'Custom size', type: 'custom' }
-  ]
-
-  // Flavours that are available in frilly cakes
-  const frillyFlavours = [
-    'chocolate', 'chocolate-orange', 'chocolate-vanilla', 'chocolate-hazelnut', 
-    'chocolate-peanut-butter', 'pumpkin-spice', 'toffee-biscoff', 'toffee-banana', 
-    'cookies-cream', 'carrot-cake', 'coffee-walnut', 'coffee-chocolate', 
-    'lemon-crumble', 'lemon-raspberry', 'vanilla-raspberry', 'victoria-sponge'
-  ]
-
-  // Get filtered size options based on selected flavour
-  const getFilteredSizeOptions = () => {
-    if (!formData.flavour) return sizeOptions
-    
-    // If flavour is available in frilly, show both regular and frilly
-    if (frillyFlavours.includes(formData.flavour)) {
-      return sizeOptions.filter(option => 
-        option.type === 'regular' || option.type === 'frilly' || option.type === 'custom'
-      )
-    }
-    
-    // If flavour is not available in frilly, only show regular
-    return sizeOptions.filter(option => 
-      option.type === 'regular' || option.type === 'custom'
-    )
-  }
-
-  const flavourOptions = [
-    { value: '', label: 'Select flavour' },
-    { value: 'chocolate', label: 'Chocolate' },
-    { value: 'chocolate-orange', label: 'Chocolate Orange' },
-    { value: 'chocolate-vanilla', label: 'Chocolate and Vanilla' },
-    { value: 'chocolate-hazelnut', label: 'Chocolate and Hazelnut' },
-    { value: 'chocolate-peanut-butter', label: 'Chocolate and Peanut Butter' },
-    { value: 'blackforest-gateau', label: 'Blackforest Gateau' },
-    { value: 'pumpkin-spice', label: 'Pumpkin Spice' },
-    { value: 'toffee-popcorn', label: 'Toffee Popcorn' },
-    { value: 'toffee-biscoff', label: 'Toffee and Biscoff' },
-    { value: 'toffee-banana', label: 'Toffee and Banana' },
-    { value: 'cookies-cream', label: 'Cookies and Cream' },
-    { value: 'chocolate-gateau', label: 'Chocolate Gateau' },
-    { value: 'tiramisu', label: 'Tiramisu' },
-    { value: 'carrot-cake', label: 'Carrot Cake' },
-    { value: 'coffee-walnut', label: 'Coffee and Walnut' },
-    { value: 'coffee-chocolate', label: 'Coffee and Chocolate' },
-    { value: 'lemon-crumble', label: 'Lemon Crumble' },
-    { value: 'lemon-raspberry', label: 'Lemon and Raspberry' },
-    { value: 'vanilla-raspberry', label: 'Vanilla and Raspberry' },
-    { value: 'victoria-sponge', label: 'Victoria Sponge' },
-    { value: 'almond-raspberry', label: 'Almond and Raspberry' },
-    { value: 'almond-cherry', label: 'Almond and Cherry' },
-    { value: 'orange-walnut', label: 'Orange and Walnut' },
-    { value: 'raspberry-pistachio', label: 'Raspberry and Pistachio' },
-    { value: 'orange-pistachio', label: 'Orange and Pistachio' },
-    { value: 'custom', label: 'Custom flavour' }
-  ]
+  const selectedCakeData = cakeOptions.find(c => c.id === selectedCake)
 
   return (
     <div className="min-h-screen bg-light-cream">
@@ -132,21 +188,119 @@ export default function OrderPage() {
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-orange mb-4 font-lobster">
-              Order Your Cake
+              Order Your Cakes
             </h1>
             <p className="text-lg text-gray max-w-md mx-auto">
-              Tell us about your perfect cake and we'll get back to you with a quote as soon as soon as possible.
+              Select your cakes and we'll get back to you with a quote as soon as possible.
             </p>
           </div>
 
           {/* Two Column Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-stretch">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             {/* Order Form */}
-            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-orange/20 p-8 md:p-12">
-              <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Contact Information */}
-                <div className="space-y-6">
-                  
+            <div className="space-y-8">
+              {/* Cake Selection */}
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-orange/20 p-8">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">Select Your Cakes</h2>
+                
+                {loading ? (
+                  <div className="space-y-4">
+                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Cake Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray mb-2">
+                        Select Cake
+                      </label>
+                      <select
+                        value={selectedCake}
+                        onChange={(e) => {
+                          setSelectedCake(e.target.value)
+                          setSelectedSize('')
+                        }}
+                        className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                      >
+                        <option value="">Choose a cake...</option>
+                        {cakeOptions.map((cake) => (
+                          <option key={cake.id} value={cake.id}>
+                            {cake.flavorName} ({cake.categoryName})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Size Selection */}
+                    {selectedCakeData && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray mb-2">
+                          Select Size
+                        </label>
+                        <select
+                          value={selectedSize}
+                          onChange={(e) => setSelectedSize(e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                        >
+                          <option value="">Choose a size...</option>
+                          {selectedCakeData.sizes.map((size) => (
+                            <option key={size.id} value={size.id}>
+                              {size.name} - £{size.price.toFixed(2)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {/* Quantity */}
+                    {selectedSize && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray mb-2">
+                          Quantity
+                        </label>
+                        <div className="flex items-center space-x-4">
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="text-lg font-medium">{quantity}</span>
+                          <button
+                            type="button"
+                            onClick={() => setQuantity(quantity + 1)}
+                            className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Add to Cart Button */}
+                    {selectedSize && (
+                      <button
+                        type="button"
+                        onClick={handleAddToCart}
+                        className="w-full bg-orange hover:bg-orange-900 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+                      >
+                        Add to Cart
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+
+
+              {/* Contact Form */}
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-orange/20 p-8">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">Contact Information</h2>
+                
+                <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label htmlFor="name" className="block text-sm font-medium text-gray mb-2">
@@ -214,59 +368,6 @@ export default function OrderPage() {
                       />
                     </div>
                   </div>
-                </div>
-
-                {/* Cake Details */}
-                <div className="space-y-6">
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label htmlFor="flavour" className="block text-sm font-medium text-gray mb-2">
-                        WHAT FLAVOUR *
-                      </label>
-                      <div className="relative">
-                        <Cake className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <select
-                          id="flavour"
-                          name="flavour"
-                          value={formData.flavour}
-                          onChange={handleChange}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent transition-all appearance-none bg-white"
-                          required
-                        >
-                          {flavourOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="size" className="block text-sm font-medium text-gray mb-2">
-                        SIZE *
-                      </label>
-                      <div className="relative">
-                        <Ruler className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                        <select
-                          id="size"
-                          name="size"
-                          value={formData.size}
-                          onChange={handleChange}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent transition-all appearance-none bg-white"
-                          required
-                          disabled={!formData.flavour}
-                        >
-                          {getFilteredSizeOptions().map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  </div>
 
                   <div>
                     <label htmlFor="allergies" className="block text-sm font-medium text-gray mb-2">
@@ -321,126 +422,111 @@ export default function OrderPage() {
                       />
                     </div>
                   </div>
-                </div>
 
-                {/* Submit Button */}
-                <div className="pt-4">
-                  <button
-                    type="submit"
-                    className="w-full bg-orange text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-orange-900 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2"
-                  >
-                    Let there be cake!
-                  </button>
-                </div>
-              </form>
+                  {/* Submit Button */}
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={cart.length === 0}
+                      className="w-full bg-orange text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-orange-900 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                    >
+                      {cart.length === 0 ? 'Add cakes to cart first' : `Order ${cart.length} cake${cart.length === 1 ? '' : 's'} - £${getTotalPrice().toFixed(2)}`}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
 
-                          {/* Cake Showcase */}
-              <div className="flex flex-col h-full">
-                {/* Main Cake Image - Takes up remaining space */}
-                <div className="flex-1 relative rounded-2xl overflow-hidden mb-8 shadow-lg border border-orange/20">
-                  <Image
-                    src="/images/mud-pie.jpg"
-                    alt="Delicious vegan cake showcase"
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
-                </div>
-
-                {/* Pricing Information */}
-                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-orange/20 p-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="bg-white/60 rounded-xl p-4 border border-white/40">
-                      <h4 className="font-bold text-dark mb-3">
-                        Regular Cakes
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray">6 inch (6-8 slices)</span>
-                          <span className="font-semibold text-orange">£50</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray">9 inch (12-14 slices)</span>
-                          <span className="font-semibold text-orange">£60</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray">12.5 inch (20 slices)</span>
-                          <span className="font-semibold text-orange">£85</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-white/60 rounded-xl p-4 border border-white/40">
-                      <h4 className="font-bold text-dark mb-3">
-                        Frilly Cakes
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray">6 inch (8 slices)</span>
-                          <span className="font-semibold text-orange">£70</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray">9 inch (12 slices)</span>
-                          <span className="font-semibold text-orange">£80</span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray">12.5 inch (20 slices)</span>
-                          <span className="font-semibold text-orange">£110</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-white/60 rounded-xl p-4 border border-white/40 mb-4">
-                    <h4 className="font-bold text-dark mb-3">
-                      Other Bakes
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2">
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray">Chocolate & Biscoff Torte (12 inch)</span>
-                        <span className="font-semibold text-orange">£45</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray">Manchester Mud Pie</span>
-                        <span className="font-semibold text-orange">£55</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray">Banana Pie</span>
-                        <span className="font-semibold text-orange">£45</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray">Baked Vanilla Cheesecake (12 inch)</span>
-                        <span className="font-semibold text-orange">£50</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray">Mixed Fruit Cheesecake (12 inch)</span>
-                        <span className="font-semibold text-orange">£60</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray">Bakewell Tray (12 slices)</span>
-                        <span className="font-semibold text-orange">£40</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray">Rocky Road (18 slices)</span>
-                        <span className="font-semibold text-orange">£50</span>
-                      </div>
-                      <div className="flex justify-between items-center text-sm">
-                        <span className="text-gray">Gluten Free Brownies (18 slices)</span>
-                        <span className="font-semibold text-orange">£45</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-orange/5 rounded-xl p-4 border border-orange/20">
-                    <p className="text-s text-gray leading-relaxed">
-                      <strong>Note:</strong> All cakes are vegan but not gluten-free. 
-                      Contains wheat/soya. Some contain nuts - please specify allergies.
-                    </p>
-                  </div>
-                </div>
+            {/* Cart Sidebar */}
+            <div className="flex flex-col h-full">
+              {/* Main Cake Image */}
+              <div className="flex-1 relative rounded-2xl overflow-hidden mb-8 shadow-lg border border-orange/20">
+                <Image
+                  src="/images/mud-pie.jpg"
+                  alt="Delicious vegan cake showcase"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
               </div>
+
+              {/* Cart */}
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-orange/20 p-8">
+                <h3 className="text-xl font-bold text-gray-800 mb-4">Your Cart</h3>
+                
+                {cart.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Cake className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600">Your cart is empty</p>
+                    <p className="text-sm text-gray-500 mt-2">Select cakes from the left to get started</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
+                      {cart.map((item) => (
+                        <div key={item.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                          {/* Image */}
+                          <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0">
+                            {item.imageUrl ? (
+                              <Image
+                                src={item.imageUrl}
+                                alt={item.flavorName}
+                                width={48}
+                                height={48}
+                                className="rounded-lg object-cover"
+                              />
+                            ) : (
+                              <Cake className="w-6 h-6 text-gray-400" />
+                            )}
+                          </div>
+
+                          {/* Details */}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-gray-800 text-sm truncate">{item.flavorName}</h4>
+                            <p className="text-xs text-gray-600">{item.sizeName}</p>
+                            <p className="text-xs text-orange font-medium">£{item.price.toFixed(2)} each</p>
+                          </div>
+
+                          {/* Quantity Controls */}
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={() => updateCartItemQuantity(item.id, item.quantity - 1)}
+                              className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-50 text-xs"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <span className="w-6 text-center text-sm">{item.quantity}</span>
+                            <button
+                              onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)}
+                              className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-50 text-xs"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          {/* Remove Button */}
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="text-red-600 hover:text-red-700 p-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Total */}
+                    <div className="border-t pt-4">
+                      <div className="flex justify-between items-center text-lg font-bold">
+                        <span>Total:</span>
+                        <span className="text-orange">£{getTotalPrice().toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </main>

@@ -93,17 +93,77 @@ const Weddings = () => {
   return (
     <section id="weddings" className="py-12 md:py-20 bg-light-cream">
       <div className="section-container">
-        <div className="flex flex-col lg:flex-row items-center lg:items-start space-y-12 lg:space-y-0 lg:space-x-12">
+        <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-12">
           {/* Content */}
-          <div className="lg:flex-1 space-y-6 order-2 lg:order-1">
-            <div className="flex items-center space-x-2 text-orange mb-4">
+          <div className="lg:flex-1 lg:max-w-[50%] space-y-6 order-1 lg:order-1">
+            <div className="hidden lg:flex items-center justify-center lg:justify-start space-x-2 text-orange mb-4">
               <Heart className="w-6 h-6" />
               <span className="text-sm font-medium uppercase tracking-wider">Special Occasions</span>
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster">
+            <h2 className="text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster text-center lg:text-left">
               Weddings
             </h2>
+
+            {/* Wedding Gallery - Mobile Only */}
+            <div className="lg:hidden w-full mb-6">
+              <div 
+                ref={carouselRef}
+                className="relative h-96 rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-cream"
+                onMouseEnter={handleMouseEnter}
+                onMouseLeave={handleMouseLeave}
+              >
+                {loading ? (
+                  <div className="flex items-center justify-center h-full text-gray">Loading images...</div>
+                ) : weddingImages.length > 0 ? (
+                  <Image
+                    src={weddingImages[currentSlide].url}
+                    alt={weddingImages[currentSlide].alt_text}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray">No images found.</div>
+                )}
+
+                {/* Navigation Arrows */}
+                <button
+                  onClick={prevSlide}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200"
+                  aria-label="Previous wedding cake image"
+                  disabled={weddingImages.length === 0}
+                >
+                  <ChevronLeft className="w-6 h-6" />
+                </button>
+                
+                <button
+                  onClick={nextSlide}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 rounded-full transition-all duration-200"
+                  aria-label="Next wedding cake image"
+                  disabled={weddingImages.length === 0}
+                >
+                  <ChevronRight className="w-6 h-6" />
+                </button>
+
+                {/* Dots Indicator */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/20 rounded-full px-4 py-2">
+                  <div className="flex space-x-2">
+                    {weddingImages.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentSlide(index)}
+                        className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                          index === currentSlide ? 'bg-white scale-125' : 'bg-white/50'
+                        }`}
+                        aria-label={`Go to slide ${index + 1}`}
+                        disabled={weddingImages.length === 0}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="prose prose-lg text-gray space-y-4">
               <p>
@@ -143,11 +203,10 @@ const Weddings = () => {
             </div>
           </div>
 
-          {/* Wedding Gallery */}
-          <div className="lg:flex-1 order-1 lg:order-2">
+          {/* Wedding Gallery - Desktop Only */}
+          <div className="hidden lg:block lg:flex-1 w-full lg:order-2">
             <div 
-              ref={carouselRef}
-              className="relative h-96 lg:h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-cream"
+              className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-cream"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >

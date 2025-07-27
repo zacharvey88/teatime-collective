@@ -41,14 +41,28 @@ export class AdminUserService {
 
   // Create new user
   static async createAdminUser(adminData: CreateAdminUserData): Promise<AdminUser> {
-    const { data, error } = await supabase
-      .from('admin_users')
-      .insert([adminData])
-      .select()
-      .single()
-    
-    if (error) throw new Error(`Failed to create user: ${error.message}`)
-    return data
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/create-admin-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify(adminData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to create user')
+      }
+
+      const result = await response.json()
+      return result.user
+    } catch (error) {
+      throw new Error(`Failed to create user: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
   }
 
   // Update user

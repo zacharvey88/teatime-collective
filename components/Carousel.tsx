@@ -14,7 +14,16 @@ const Carousel: React.FC = () => {
   const [images, setImages] = useState<FrontendImageItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [current, setCurrent] = useState(2);
-  const visibleCount = 5;
+  const [windowWidth, setWindowWidth] = useState(0);
+  
+  // Responsive visible count based on screen width
+  const getVisibleCount = () => {
+    if (windowWidth < 768) return 1; // Mobile: 1 image
+    if (windowWidth < 1024) return 3; // Tablet: 3 images
+    return 5; // Desktop: 5 images
+  };
+  
+  const visibleCount = getVisibleCount();
   const half = Math.floor(visibleCount / 2);
 
   useEffect(() => {
@@ -34,6 +43,19 @@ const Carousel: React.FC = () => {
     };
 
     loadImages();
+  }, []);
+
+  // Track window width for responsive behavior
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    // Set initial width
+    setWindowWidth(window.innerWidth);
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleClick = (idx: number) => setCurrent(idx);
@@ -68,14 +90,14 @@ const Carousel: React.FC = () => {
   }
 
   return (
-    <div style={{ width: '100vw', left: '50%', transform: 'translateX(-50%)', position: 'relative', marginTop: '2rem', marginBottom: '2rem' }}>
+    <div style={{ width: '100vw', left: '50%', transform: 'translateX(-50%)', position: 'relative', marginTop: '2rem', marginBottom: windowWidth < 768 ? '0.5rem' : '2rem' }}>
       {/* Left Button */}
       <button
         aria-label="Previous"
         onClick={handlePrev}
         style={{
           position: 'absolute',
-          left: '18%',
+          left: windowWidth < 768 ? '5%' : '18%',
           top: '50%',
           transform: 'translateY(-50%)',
           zIndex: 20,
@@ -94,24 +116,29 @@ const Carousel: React.FC = () => {
       >
         <svg width="18" height="18" viewBox="0 0 18 18"><path d="M 11.813 14.625 L 6.188 9 L 11.813 3.375" fill="transparent" strokeWidth="2" stroke="rgb(0,0,0)" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </button>
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: '100vw',
-          height: '100%',
-          pointerEvents: 'none',
-          zIndex: 10,
-          background: 'radial-gradient( 60% 100% at 50% 50%, rgba(255,255,255,0) 50%, var(--cream, #FFFBF0) 70%, var(--cream, #FFFBF0) 100%)',
-        }}
-      />
+      {visibleCount > 1 ? (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: '100vw',
+            height: '100%',
+            pointerEvents: 'none',
+            zIndex: 10,
+            background: 'radial-gradient( 60% 100% at 50% 50%, rgba(255,255,255,0) 50%, var(--cream, #FFFBF0) 70%, var(--cream, #FFFBF0) 100%)',
+          }}
+        />
+      ) : null}
       <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center', position: 'relative', zIndex: 1 }}>
         {visibleIndices.map((imgIdx, i) => {
           const offset = i - half;
           const scale = getScale(offset);
-          const width = `${24 * scale}vw`;
-          const height = `${65 * scale}vh`;
+          // Make images wider and shorter based on visible count
+          const baseWidth = visibleCount === 1 ? 85 : visibleCount === 3 ? 32 : 24; // 85vw for single, 32vw for 3 images, 24vw for multiple
+          const baseHeight = visibleCount === 1 ? 50 : visibleCount === 3 ? 45 : 65; // 50vh for single, 45vh for 3 images, 65vh for multiple
+          const width = `${baseWidth * scale}vw`;
+          const height = `${baseHeight * scale}vh`;
           return (
             <div
               key={imgIdx}
@@ -139,6 +166,7 @@ const Carousel: React.FC = () => {
                   objectFit: 'cover',
                   borderRadius: 'inherit',
                   display: 'block',
+
                 }}
               />
             </div>
@@ -151,7 +179,7 @@ const Carousel: React.FC = () => {
         onClick={handleNext}
         style={{
           position: 'absolute',
-          right: '18%',
+          right: windowWidth < 768 ? '5%' : '18%',
           top: '50%',
           transform: 'translateY(-50%)',
           zIndex: 20,

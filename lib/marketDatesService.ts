@@ -7,6 +7,7 @@ export interface MarketDate {
   start_time: string
   end_time: string
   location: string
+  url?: string
   active: boolean
   created_at?: string
   updated_at?: string
@@ -18,6 +19,7 @@ export interface CreateMarketDateData {
   start_time: string
   end_time: string
   location: string
+  url?: string
   active?: boolean
 }
 

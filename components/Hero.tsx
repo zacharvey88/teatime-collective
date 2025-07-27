@@ -6,7 +6,7 @@ import Carousel from './Carousel'
 
 const Hero = () => {
   return (
-    <section className="relative min-h-screen md:flex md:items-center md:justify-center overflow-hidden pt-[120px]">
+    <section className="relative md:min-h-screen md:flex md:items-center md:justify-center overflow-hidden pt-[120px] pb-4 md:pb-0">
       {/* Background Pattern */}
       {/* <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-gradient-radial from-orange/20 to-transparent"></div>
@@ -31,7 +31,7 @@ const Hero = () => {
           Vegan bakery, market traders and amazing cake makers since 2013
         </p>
 
-        <div className="mb-16 animate-slide-up delay-300">
+        <div className="mb-12 md:mb-16 animate-slide-up delay-300">
           <Link href="/cakes" className="btn-primary">
             View Cakes
           </Link>

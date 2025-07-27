@@ -5,7 +5,7 @@ import { getYearsOfExperienceString } from '@/lib/utils'
 
 const Testimonials = () => {
   return (
-    <section className="py-12 md:py-20 bg-cream">
+    <section className="py-12 md:py-20 pb-16 md:pb-24 bg-cream">
       <div className="section-container">
         <div className="max-w-4xl mx-auto text-center">
           <div className="relative">

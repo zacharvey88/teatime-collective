@@ -9,19 +9,7 @@ const Markets = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const marketLinks = [
-    { location: 'Spinningfields', url: 'https://www.themakersmarket.co.uk/pages/spinningfields-makers-market' },
-    { location: 'Northern Quarter', url: 'https://www.themakersmarket.co.uk/pages/northern-quarter-makers-market' },
-    { location: 'Stockport', url: 'https://www.themakersmarket.co.uk/pages/stockport-makers-market' },
-    { location: 'Didsbury', url: 'https://www.themakersmarket.co.uk/pages/west-didsbury-makers-market' },
-    { location: 'Lowry', url: 'https://www.themakersmarket.co.uk/pages/quayside-makers-market' },
-    { location: 'Chorlton', url: 'https://www.themakersmarket.co.uk/pages/chorlton-makers-market' },
-    { location: 'Altrincham', url: 'https://www.themakersmarket.co.uk/pages/altrincham-makers-market' },
-    { location: 'Wilmslow', url: 'https://www.themakersmarket.co.uk/pages/wilmslow-makers-market' },
-    { location: 'Knutsford', url: 'https://www.themakersmarket.co.uk/pages/knutsford-makers-market' },
-    { location: 'Macclesfield', url: 'https://www.themakersmarket.co.uk/pages/macclesfield-makers-market' },
-    { location: 'Bury', url: 'https://www.themakersmarket.co.uk/pages/bury-makers-market' }
-  ]
+
 
   useEffect(() => {
     loadMarketDates()
@@ -40,7 +28,7 @@ const Markets = () => {
   }
 
   return (
-    <section id="markets" className="py-12 md:py-20 bg-cream">
+    <section id="markets" className="pt-20 md:pt-20 pb-12 md:pb-20 bg-cream">
       <div className="section-container">
         <div className="text-center mb-8 md:mb-16 px-4">
           <h2 className="text-4xl md:text-5xl font-bold text-orange mb-4 underline decoration-4 underline-offset-4 font-lobster">
@@ -68,12 +56,25 @@ const Markets = () => {
             </div>
           ) : (
             markets.slice(0, 6).map((market, index) => {
-              const link = marketLinks.find(l => l.location === market.location)
               const formattedDate = new Date(market.date).toLocaleDateString('en-GB', {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric'
               })
+              
+              // Format times
+              const formatTime = (timeString: string) => {
+                if (!timeString) return ''
+                const time = new Date(`2000-01-01T${timeString}`)
+                return time.toLocaleTimeString('en-GB', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  hour12: false
+                })
+              }
+              
+              const startTime = formatTime(market.start_time)
+              const endTime = formatTime(market.end_time)
               
               return (
                 <div
@@ -81,8 +82,8 @@ const Markets = () => {
                   className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer flex flex-col h-full min-w-[200px] max-w-[220px]"
                   role="button"
                   tabIndex={0}
-                  onClick={() => { if (link) window.open(link.url, '_blank', 'noopener') }}
-                  onKeyDown={e => { if (e.key === 'Enter' && link) window.open(link.url, '_blank', 'noopener') }}
+                  onClick={() => { if (market.url) window.open(market.url, '_blank', 'noopener') }}
+                  onKeyDown={e => { if (e.key === 'Enter' && market.url) window.open(market.url, '_blank', 'noopener') }}
                 >
                   {/* Top section with icon and location */}
                   <div className="p-4 pb-3 flex flex-col items-center">
@@ -91,17 +92,23 @@ const Markets = () => {
                     </div>
                     
                     <h3 className="text-base font-semibold text-gray text-center leading-tight">
-                      {market.location}
+                      {market.name}
                     </h3>
                   </div>
 
-                  {/* Bottom section with date - always at bottom */}
+                  {/* Bottom section with date and times - always at bottom */}
                   <div className="mt-auto p-4 pt-2">
                     <div className="bg-orange/5 rounded-lg p-3 group-hover:bg-orange/10 transition-colors duration-200">
-                      <div className="flex items-center justify-center space-x-2">
-                        <Calendar className="w-4 h-4 text-orange flex-shrink-0" />
+                      <div className="flex items-center justify-center mb-2">
                         <span className="text-sm font-semibold text-gray whitespace-nowrap">{formattedDate}</span>
                       </div>
+                      {startTime && endTime && (
+                        <div className="text-center">
+                          <span className="text-xs text-gray-600 font-medium">
+                            {startTime} - {endTime}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     
                     <div className="flex items-center justify-center mt-2 text-orange text-xs font-medium">

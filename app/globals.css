@@ -35,6 +35,16 @@
   .text-balance {
     text-wrap: balance;
   }
+
+  .wave-mobile {
+    background-size: 50% auto !important;
+  }
+  
+  @media (min-width: 768px) {
+    .wave-mobile {
+      background-size: auto !important;
+    }
+  }
 }
 
 @layer utilities {

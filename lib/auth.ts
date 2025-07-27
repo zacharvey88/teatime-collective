@@ -47,13 +47,20 @@ export class AuthService {
       const user = await this.getCurrentUser()
       if (!user) return false
       
-      const { data } = await supabase
+      // Add timeout to the database query
+      const adminCheckPromise = supabase
         .from('admin_users')
         .select('is_active')
         .eq('email', user.email)
         .single()
       
-      return data?.is_active || false
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Admin check timeout')), 3000) // 3 second timeout
+      })
+      
+      const result = await Promise.race([adminCheckPromise, timeoutPromise]) as any
+      
+      return result?.data?.is_active || false
     } catch (error) {
       console.error('Error checking admin status:', error)
       return false
