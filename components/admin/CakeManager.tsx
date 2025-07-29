@@ -306,31 +306,43 @@ export default function CakeManager() {
   }
 
   const handleEditFlavor = (flavor: any) => {
+    console.log('handleEditFlavor called with:', flavor)
     setEditingFlavorData({ name: flavor.name, imageUrl: flavor.image_url || '' })
     setEditingFlavor(flavor.id)
     setIsEditFlavorDialogOpen(true)
+    console.log('Edit flavor dialog should now be open')
   }
 
   const handleSaveFlavorEdit = async () => {
+    console.log('handleSaveFlavorEdit called with:', { editingFlavor, editingFlavorData })
+    
     if (!editingFlavor || !editingFlavorData.name.trim()) {
       setError('Please enter a flavor name')
       return
     }
 
     try {
-      await CakeService.updateFlavor(editingFlavor, {
+      console.log('Calling CakeService.updateFlavor with:', editingFlavor, {
         name: editingFlavorData.name.trim(),
         image_url: editingFlavorData.imageUrl.trim() || null
       })
+      
+      const result = await CakeService.updateFlavor(editingFlavor, {
+        name: editingFlavorData.name.trim(),
+        image_url: editingFlavorData.imageUrl.trim() || null
+      })
+      
+      console.log('Update result:', result)
       
       setEditingFlavor(null)
       setEditingFlavorData({ name: '', imageUrl: '' })
       setIsEditFlavorDialogOpen(false)
       setError('')
       await loadCakes()
+      console.log('Flavor edit completed successfully')
     } catch (err) {
+      console.error('Error in handleSaveFlavorEdit:', err)
       setError('Failed to update flavor')
-      console.error(err)
     }
   }
 
@@ -412,14 +424,14 @@ export default function CakeManager() {
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteCategory(cake.category.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDeleteCategory(cake.category.id)}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
                 </div>
               </div>
               {cake.category.description && (
@@ -471,16 +483,16 @@ export default function CakeManager() {
                         >
                           <Edit className="w-3 h-3" />
                         </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteFlavor(flavor.id)}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteFlavor(flavor.id)}
                           className="text-red-600 hover:text-red-700 h-6 w-6 p-0 flex-shrink-0"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
                     ))}
                     <div 
                       className="border border-dashed border-gray-300 rounded-md p-2 bg-gray-50 flex items-center justify-center cursor-pointer hover:border-gray-400 hover:bg-gray-100 transition-colors" 
@@ -560,7 +572,14 @@ export default function CakeManager() {
       </Dialog>
 
       {/* Edit Flavor Dialog */}
-      <Dialog open={isEditFlavorDialogOpen} onOpenChange={setIsEditFlavorDialogOpen}>
+      <Dialog open={isEditFlavorDialogOpen} onOpenChange={(open) => {
+        console.log('Edit Flavor Dialog onOpenChange:', open)
+        setIsEditFlavorDialogOpen(open)
+        if (!open) {
+          setEditingFlavor(null)
+          setEditingFlavorData({ name: '', imageUrl: '' })
+        }
+      }}>
         <DialogContent className="bg-white border border-gray-200 shadow-lg">
           <DialogHeader>
             <DialogTitle>Edit Flavor</DialogTitle>
@@ -590,6 +609,7 @@ export default function CakeManager() {
               <Button
                 variant="outline"
                 onClick={() => {
+                  console.log('Cancel button clicked')
                   setIsEditFlavorDialogOpen(false)
                   setEditingFlavor(null)
                   setEditingFlavorData({ name: '', imageUrl: '' })
@@ -598,7 +618,10 @@ export default function CakeManager() {
                 Cancel
               </Button>
               <Button
-                onClick={handleSaveFlavorEdit}
+                onClick={() => {
+                  console.log('Save Changes button clicked')
+                  handleSaveFlavorEdit()
+                }}
                 className="bg-orange hover:bg-orange/90 text-white"
               >
                 Save Changes

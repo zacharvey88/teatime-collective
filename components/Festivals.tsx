@@ -66,7 +66,7 @@ const Festivals = () => {
 
     autoPlayRef.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % festivalImages.length);
-    }, 4000);
+    }, 3000);
 
     return () => {
       if (autoPlayRef.current) {
@@ -193,26 +193,26 @@ const Festivals = () => {
 
             {/* Stats */}
             <div className="flex flex-row flex-wrap gap-4 mt-8">
-              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md">
+              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
                 <div className="flex items-center justify-center space-x-2 mb-2">
-                  <Calendar className="w-5 h-5 text-orange" />
-                  <span className="text-2xl font-bold text-dark">{getYearsOfExperience()}</span>
+                  <Calendar className="w-5 h-5 text-orange transition-all duration-300 hover:scale-110" />
+                  <span className="text-2xl font-bold text-dark transition-all duration-300 hover:scale-110">{getYearsOfExperience()}</span>
                 </div>
                 <p className="text-sm text-gray">Years Experience</p>
               </div>
               
-              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md">
+              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
                 <div className="flex items-center justify-center space-x-2 mb-2">
-                  <Users className="w-5 h-5 text-orange" />
-                  <span className="text-2xl font-bold text-dark">50+</span>
+                  <Users className="w-5 h-5 text-orange transition-all duration-300 hover:scale-110" />
+                  <span className="text-2xl font-bold text-dark transition-all duration-300 hover:scale-110">50+</span>
                 </div>
                 <p className="text-sm text-gray">Events Catered</p>
               </div>
 
-              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md">
+              <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
                 <div className="flex items-center justify-center space-x-2 mb-2">
-                  <Recycle className="w-5 h-5 text-orange" />
-                  <span className="text-2xl font-bold text-dark">100%</span>
+                  <Recycle className="w-5 h-5 text-orange transition-all duration-300 hover:scale-110" />
+                  <span className="text-2xl font-bold text-dark transition-all duration-300 hover:scale-110">100%</span>
                 </div>
                 <p className="text-sm text-gray">Eco-Concious</p>
               </div>
@@ -222,6 +222,7 @@ const Festivals = () => {
           {/* Festival Gallery - Desktop Only */}
           <div className="hidden lg:block lg:flex-1 w-full">
             <div 
+              ref={carouselRef}
               className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-light-cream"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}

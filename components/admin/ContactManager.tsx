@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
   Save, 
@@ -102,21 +102,13 @@ export default function ContactManager() {
         </Alert>
       ) : (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Contact Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="w-5 h-5 text-orange" />
-                  Contact Details
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+          <div className="space-y-8">
+            {/* Top Row - Contact Details and Address */}
+            <div className="flex flex-col lg:flex-row gap-8">
+              {/* Contact Details */}
+              <div className="space-y-4 lg:w-96">
                 <div>
-                  <label className="text-sm font-medium text-gray flex items-center gap-2">
-                    <Mail className="w-4 h-4" />
-                    Email Address
-                  </label>
+                  <label className="text-sm font-bold text-gray">Email Address</label>
                   <Input
                     type="email"
                     value={info?.email || ''}
@@ -127,10 +119,7 @@ export default function ContactManager() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray flex items-center gap-2">
-                    <Phone className="w-4 h-4" />
-                    Phone Number
-                  </label>
+                  <label className="text-sm font-bold text-gray">Phone Number</label>
                   <Input
                     type="tel"
                     value={info?.phone || ''}
@@ -139,20 +128,12 @@ export default function ContactManager() {
                     className="mt-1"
                   />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Address */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-orange" />
-                  Address
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              {/* Address */}
+              <div className="space-y-4 lg:w-96">
                 <div>
-                  <label className="text-sm font-medium text-gray">Address Line 1</label>
+                  <label className="text-sm font-bold text-gray">Address Line 1</label>
                   <Input
                     value={info?.address_line1 || ''}
                     onChange={(e) => handleInputChange('address_line1', e.target.value)}
@@ -162,7 +143,7 @@ export default function ContactManager() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray">Address Line 2</label>
+                  <label className="text-sm font-bold text-gray">Address Line 2</label>
                   <Input
                     value={info?.address_line2 || ''}
                     onChange={(e) => handleInputChange('address_line2', e.target.value)}
@@ -172,7 +153,7 @@ export default function ContactManager() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray">Address Line 3</label>
+                  <label className="text-sm font-bold text-gray">Address Line 3</label>
                   <Input
                     value={info?.address_line3 || ''}
                     onChange={(e) => handleInputChange('address_line3', e.target.value)}
@@ -180,23 +161,14 @@ export default function ContactManager() {
                     className="mt-1"
                   />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Social Media */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-orange" />
-                  Social Media
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="text-sm font-medium text-gray flex items-center gap-2">
-                    <Instagram className="w-4 h-4" />
-                    Instagram URL
-                  </label>
+                  <label className="text-sm font-bold text-gray">Instagram URL</label>
                   <Input
                     type="url"
                     value={info?.instagram_url || ''}
@@ -207,10 +179,7 @@ export default function ContactManager() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray flex items-center gap-2">
-                    <Facebook className="w-4 h-4" />
-                    Facebook URL
-                  </label>
+                  <label className="text-sm font-bold text-gray">Facebook URL</label>
                   <Input
                     type="url"
                     value={info?.facebook_url || ''}
@@ -219,15 +188,13 @@ export default function ContactManager() {
                     className="mt-1"
                   />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
             {/* Preview */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Preview</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div className="space-y-4">
+              <div className="p-6 bg-gray-50 rounded-lg border border-gray-200">
+                <h3 className="text-lg font-semibold text-gray mb-4">Preview</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center gap-2">
                     <Mail className="w-4 h-4 text-orange" />
@@ -272,18 +239,27 @@ export default function ContactManager() {
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-6">
             <Button 
               onClick={handleSave}
               disabled={saving}
-              className="bg-orange hover:bg-orange-900"
+              className="bg-orange hover:bg-orange-900 text-white"
             >
-              <Save className="w-4 h-4 mr-2" />
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Changes
+                </>
+              )}
             </Button>
           </div>
         </>

@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   LayoutDashboard, 
   Image as ImageIcon, 
-  Cake, 
+  CakeSlice, 
   Mail, 
   MapPin, 
   Settings, 
@@ -16,7 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Users,
-  Home
+  Home,
+  ShoppingCart
 } from 'lucide-react'
 import Image from 'next/image'
 import { useSettings } from '@/lib/settingsContext'
@@ -29,10 +30,9 @@ interface AdminLayoutProps {
 
 const baseNavigationItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'carousel', label: 'Carousel Images', icon: ImageIcon },
-  { id: 'weddings', label: 'Wedding Images', icon: ImageIcon },
-  { id: 'festivals', label: 'Festival Images', icon: ImageIcon },
-  { id: 'cakes', label: 'Cake Management', icon: Cake },
+  { id: 'orders', label: 'Orders', icon: ShoppingCart },
+  { id: 'images', label: 'Images', icon: ImageIcon },
+  { id: 'cakes', label: 'Cake Management', icon: CakeSlice },
   { id: 'contact', label: 'Contact Info', icon: Mail },
   { id: 'markets', label: 'Market Dates', icon: MapPin },
   { id: 'settings', label: 'Settings', icon: Settings },

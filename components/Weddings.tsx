@@ -65,7 +65,7 @@ const Weddings = () => {
 
     autoPlayRef.current = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % weddingImages.length);
-    }, 4000);
+    }, 3000);
 
     return () => {
       if (autoPlayRef.current) {
@@ -177,25 +177,25 @@ const Weddings = () => {
 
             {/* Wedding Services */}
             <div className="flex flex-row flex-wrap gap-4">
-              <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px]">
-                <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Heart className="w-4 h-4 text-orange" />
+              <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px] transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
+                <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300 hover:bg-orange/20">
+                  <Heart className="w-4 h-4 text-orange transition-all duration-300 hover:scale-110" />
                 </div>
                 <h4 className="font-semibold text-dark mb-1">Tiered Cakes</h4>
                 <p className="text-sm text-gray">Elegant multi-tiered masterpieces</p>
               </div>
               
-              <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px]">
-                <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-orange font-bold text-lg">🍰</span>
+              <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px] transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
+                <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300 hover:bg-orange/20">
+                  <span className="text-orange font-bold text-lg transition-all duration-300 hover:scale-110">🍰</span>
                 </div>
                 <h4 className="font-semibold text-dark mb-1">Cake Buffets</h4>
                 <p className="text-sm text-gray">Variety of smaller cakes</p>
               </div>
               
-              <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px]">
-                <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <span className="text-orange font-bold text-lg">✨</span>
+              <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px] transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
+                <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300 hover:bg-orange/20">
+                  <span className="text-orange font-bold text-lg transition-all duration-300 hover:scale-110">✨</span>
                 </div>
                 <h4 className="font-semibold text-dark mb-1">Custom Designs</h4>
                 <p className="text-sm text-gray">Personalized to your theme</p>
@@ -206,6 +206,7 @@ const Weddings = () => {
           {/* Wedding Gallery - Desktop Only */}
           <div className="hidden lg:block lg:flex-1 w-full lg:order-2">
             <div 
+              ref={carouselRef}
               className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-cream"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}

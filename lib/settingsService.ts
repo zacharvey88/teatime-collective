@@ -7,6 +7,7 @@ export interface Settings {
   site_title: string
   site_description: string
   primary_color: string
+  payment_notice?: string
   created_at?: string
   updated_at?: string
 }
@@ -17,6 +18,7 @@ export interface UpdateSettingsData {
   site_title: string
   site_description: string
   primary_color: string
+  payment_notice?: string
 }
 
 export class SettingsService {

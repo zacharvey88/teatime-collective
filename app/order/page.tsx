@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import { Calendar, Cake, Ruler, AlertTriangle, Type, MessageSquare, Plus, Minus, Trash2 } from 'lucide-react'
+import { Calendar, Cake, Ruler, AlertTriangle, Type, MessageSquare, Plus, Minus, Trash2, CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { CakeService, CakeWithDetails } from '@/lib/cakeService'
+import { OrderService, CreateOrderRequestData } from '@/lib/orderService'
+import { useSettings } from '@/lib/settingsContext'
 
 interface CartItem {
   id: string
@@ -46,6 +48,11 @@ export default function OrderPage() {
   const [selectedSize, setSelectedSize] = useState<string>('')
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+  
+  const { settings } = useSettings()
   
   const [formData, setFormData] = useState({
     name: '',
@@ -65,8 +72,10 @@ export default function OrderPage() {
     if (selectedCakeData) {
       try {
         const cakeData = JSON.parse(selectedCakeData)
-        // Pre-select the cake and add to cart
+        // Pre-select the cake and size
         setSelectedCake(cakeData.flavorId)
+        setSelectedSize(cakeData.sizeId)
+        setQuantity(1)
         sessionStorage.removeItem('selectedCake')
       } catch (err) {
         console.error('Error parsing selected cake data:', err)
@@ -105,11 +114,11 @@ export default function OrderPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData({
-      ...formData,
-      [name]: value
-    })
-  }
+      setFormData({
+        ...formData,
+        [name]: value
+      })
+    }
 
   const handleAddToCart = () => {
     if (!selectedCake || !selectedSize) return
@@ -173,9 +182,82 @@ export default function OrderPage() {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted:', { formData, cart, total: getTotalPrice() })
+    
+    // Validate form
+    if (cart.length === 0) {
+      setSubmitError('Please add at least one cake to your cart')
+      return
+    }
+    
+    if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.dateRequired) {
+      setSubmitError('Please fill in all required fields')
+      return
+    }
+    
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      setSubmitError('Please enter a valid email address')
+      return
+    }
+    
+    setSubmitting(true)
+    setSubmitError('')
+    
+    try {
+      // Prepare order data
+      const orderData: CreateOrderRequestData = {
+        customer_name: formData.name.trim(),
+        customer_email: formData.email.trim(),
+        customer_phone: formData.phone.trim(),
+        notes: formData.otherInfo.trim(),
+        special_requirements: [
+          formData.allergies.trim(),
+          formData.writing.trim()
+        ].filter(Boolean).join(' | '),
+        items: cart.map(item => ({
+          cake_flavor_id: item.flavorId,
+          cake_size_id: item.sizeId,
+          item_name: `${item.flavorName} (${item.sizeName})`,
+          quantity: item.quantity,
+          estimated_unit_price: item.price,
+          estimated_total_price: item.price * item.quantity,
+          special_instructions: ''
+        }))
+      }
+      
+      // Create order request
+      const orderRequest = await OrderService.createOrderRequest(orderData)
+      
+      // Send notification (placeholder)
+      await OrderService.sendOrderNotification(orderRequest)
+      
+      // Show success
+      setSubmitSuccess(true)
+      
+      // Reset form
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        dateRequired: '',
+        allergies: '',
+        writing: '',
+        otherInfo: ''
+      })
+      setCart([])
+      
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      
+    } catch (error: any) {
+      console.error('Error submitting order:', error)
+      setSubmitError(error.message || 'Failed to submit order. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const selectedCakeData = cakeOptions.find(c => c.id === selectedCake)
@@ -185,6 +267,34 @@ export default function OrderPage() {
       <Navigation />
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4">
+          {/* Success Message */}
+          {submitSuccess && (
+            <div className="mb-8 p-6 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center">
+                <CheckCircle className="w-6 h-6 text-green-600 mr-3" />
+                <div>
+                  <h3 className="text-lg font-semibold text-green-800">Order Submitted Successfully!</h3>
+                  <p className="text-green-700 mt-1">
+                    Thank you for your order. We'll review your request and get back to you as soon as possible.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {submitError && (
+            <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center">
+                <XCircle className="w-6 h-6 text-red-600 mr-3" />
+                <div>
+                  <h3 className="text-lg font-semibold text-red-800">Submission Error</h3>
+                  <p className="text-red-700 mt-1">{submitError}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-5xl font-bold text-orange mb-4 font-lobster">
@@ -420,39 +530,57 @@ export default function OrderPage() {
                         className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent transition-all resize-none"
                         placeholder="Any additional details, special requests, or questions..."
                       />
-                    </div>
                   </div>
+                </div>
 
-                  {/* Submit Button */}
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      disabled={cart.length === 0}
-                      className="w-full bg-orange text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-orange-900 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                    >
-                      {cart.length === 0 ? 'Add cakes to cart first' : `Order ${cart.length} cake${cart.length === 1 ? '' : 's'} - £${getTotalPrice().toFixed(2)}`}
-                    </button>
+                {/* Payment Notice */}
+                {settings?.payment_notice && (
+                  <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm text-orange-800 text-center">
+                      {settings.payment_notice}
+                    </p>
                   </div>
-                </form>
+                )}
+
+                {/* Submit Button */}
+                <div className="pt-4">
+                  <button
+                    type="submit"
+                    disabled={cart.length === 0 || submitting}
+                    className="w-full bg-orange text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-orange-900 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin inline" />
+                        Submitting Order...
+                      </>
+                    ) : cart.length === 0 ? (
+                      'Add cakes to cart first'
+                    ) : (
+                      `Order ${cart.length} cake${cart.length === 1 ? '' : 's'} - £${getTotalPrice().toFixed(2)}`
+                    )}
+                  </button>
+                </div>
+              </form>
               </div>
             </div>
 
             {/* Cart Sidebar */}
-            <div className="flex flex-col h-full">
+              <div className="flex flex-col h-full">
               {/* Main Cake Image */}
-              <div className="flex-1 relative rounded-2xl overflow-hidden mb-8 shadow-lg border border-orange/20">
-                <Image
-                  src="/images/mud-pie.jpg"
-                  alt="Delicious vegan cake showcase"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
-              </div>
+                <div className="flex-1 relative rounded-2xl overflow-hidden mb-8 shadow-lg border border-orange/20">
+                  <Image
+                    src="/images/mud-pie.jpg"
+                    alt="Delicious vegan cake showcase"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 1024px) 100vw, 50vw"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
+                </div>
 
               {/* Cart */}
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-orange/20 p-8">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-orange/20 p-8">
                 <h3 className="text-xl font-bold text-gray-800 mb-4">Your Cart</h3>
                 
                 {cart.length === 0 ? (
@@ -460,7 +588,7 @@ export default function OrderPage() {
                     <Cake className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-600">Your cart is empty</p>
                     <p className="text-sm text-gray-500 mt-2">Select cakes from the left to get started</p>
-                  </div>
+                        </div>
                 ) : (
                   <>
                     <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
@@ -479,14 +607,14 @@ export default function OrderPage() {
                             ) : (
                               <Cake className="w-6 h-6 text-gray-400" />
                             )}
-                          </div>
+                        </div>
 
                           {/* Details */}
                           <div className="flex-1 min-w-0">
                             <h4 className="font-medium text-gray-800 text-sm truncate">{item.flavorName}</h4>
                             <p className="text-xs text-gray-600">{item.sizeName}</p>
                             <p className="text-xs text-orange font-medium">£{item.price.toFixed(2)} each</p>
-                          </div>
+                        </div>
 
                           {/* Quantity Controls */}
                           <div className="flex items-center space-x-1">
@@ -503,8 +631,8 @@ export default function OrderPage() {
                             >
                               <Plus className="w-3 h-3" />
                             </button>
-                          </div>
-
+                    </div>
+                    
                           {/* Remove Button */}
                           <button
                             onClick={() => removeFromCart(item.id)}
@@ -514,8 +642,8 @@ export default function OrderPage() {
                           </button>
                         </div>
                       ))}
-                    </div>
-
+                  </div>
+                  
                     {/* Total */}
                     <div className="border-t pt-4">
                       <div className="flex justify-between items-center text-lg font-bold">
@@ -525,8 +653,8 @@ export default function OrderPage() {
                     </div>
                   </>
                 )}
+                </div>
               </div>
-            </div>
           </div>
         </div>
       </main>

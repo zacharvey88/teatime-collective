@@ -17,7 +17,7 @@ import {
 import { OrderAnalyticsService, OrderRequestStats, CustomerInsights, FlavorAnalytics, RecentActivity } from '@/lib/orderAnalyticsService'
 
 interface DashboardOverviewProps {
-  onSectionChange: (section: string) => void
+  onSectionChange: (section: string, filter?: string) => void
 }
 
 export default function DashboardOverview({ onSectionChange }: DashboardOverviewProps) {
@@ -94,7 +94,10 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
               </CardContent>
             </Card>
 
-            <Card className="cursor-default">
+            <Card 
+              className="cursor-pointer hover:shadow-md transition-all duration-200 hover:bg-orange-50"
+              onClick={() => onSectionChange('orders', 'new_request')}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">New Requests</CardTitle>
                 <Clock className="h-4 w-4 text-orange" />
