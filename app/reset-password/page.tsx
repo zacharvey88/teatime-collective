@@ -109,25 +109,17 @@ export default function ResetPassword() {
           return
         }
       } else {
-        // If no refresh token, try to set just the access token
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: token
-        })
-        
-        if (sessionError) {
-          console.error('Session error (no refresh token):', sessionError)
-          // Try alternative approach - set the access token directly
-          try {
-            const { error: userError } = await supabase.auth.getUser(token)
-            if (userError) {
-              setMessage({ type: 'error', text: 'Invalid or expired reset link. Please request a new password reset.' })
-              return
-            }
-          } catch (directError) {
-            console.error('Direct token validation error:', directError)
+        // If no refresh token, try to validate the access token directly
+        try {
+          const { error: userError } = await supabase.auth.getUser(token)
+          if (userError) {
             setMessage({ type: 'error', text: 'Invalid or expired reset link. Please request a new password reset.' })
             return
           }
+        } catch (directError) {
+          console.error('Direct token validation error:', directError)
+          setMessage({ type: 'error', text: 'Invalid or expired reset link. Please request a new password reset.' })
+          return
         }
       }
       
@@ -185,14 +177,12 @@ export default function ResetPassword() {
           }
           console.log('Session established with refresh token')
         } else {
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken!
-          })
-          
-          if (sessionError) {
-            throw new Error('Failed to establish session: ' + sessionError.message)
+          // If no refresh token, we can't establish a session, but we can still validate the token
+          const { error: userError } = await supabase.auth.getUser(accessToken!)
+          if (userError) {
+            throw new Error('Failed to validate token: ' + userError.message)
           }
-          console.log('Session established with access token only')
+          console.log('Token validated without establishing session')
         }
       }
       

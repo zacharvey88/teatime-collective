@@ -192,8 +192,10 @@ export default function StandaloneCakeManager() {
         size_description: newCake.size_description || null,
         image_url: imageUrl,
         category_id: null, // Standalone cakes don't have categories
+        flavor_id: null, // Standalone cakes don't have flavor_id
         cake_type: 'standalone' as const,
-        display_order: cakes.length + 1
+        display_order: cakes.length + 1,
+        active: true
       }
 
       const createdCake = await CakeService.createCake(cakeData)
@@ -223,8 +225,8 @@ export default function StandaloneCakeManager() {
     setNewCake({
       name: cake.name,
       description: cake.description || '',
-      price: cake.price.toString(),
-      size_name: cake.size_name,
+      price: cake.price?.toString() || '0',
+      size_name: cake.size_name || '',
       size_description: cake.size_description || '',
       image_url: cake.image_url || ''
     })

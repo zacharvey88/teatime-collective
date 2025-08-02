@@ -248,12 +248,6 @@ export default function CakesPage() {
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <p className="text-red-600">{error}</p>
-            <button 
-              onClick={loadCakes}
-              className="mt-4 px-4 py-2 bg-orange text-white rounded hover:bg-orange-900"
-            >
-              Try Again
-            </button>
           </div>
         </div>
         <Footer />

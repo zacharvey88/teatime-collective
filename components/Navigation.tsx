@@ -224,22 +224,16 @@ const Navigation = () => {
         }`}>
           <div className="flex flex-col space-y-4 pt-4 px-4 border-t border-orange/20 bg-cream/95 backdrop-blur-sm shadow-lg">
             
-            {navItems.map((item) => {
-              const IconComponent = item.icon
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="font-medium text-dark hover:text-orange transition-colors duration-200 py-2 flex items-center space-x-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {IconComponent && (
-                    <IconComponent className="w-5 h-5" />
-                  )}
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="font-medium text-dark hover:text-orange transition-colors duration-200 py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <span>{item.name}</span>
+              </Link>
+            ))}
             
             {/* Bottom spacing */}
             <div className="pt-4 mt-2"></div>
