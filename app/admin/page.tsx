@@ -9,6 +9,7 @@ import ImagesManager from '@/components/admin/ImagesManager'
 import CakeManager from '@/components/admin/CakeManager'
 import ContactManager from '@/components/admin/ContactManager'
 import MarketManager from '@/components/admin/MarketManager'
+import HolidayManager from '@/components/admin/HolidayManager'
 import SettingsManager from '@/components/admin/SettingsManager'
 import AdminManager from '@/components/admin/AdminManager'
 
@@ -45,6 +46,8 @@ export default function AdminPage() {
         return <ContactManager />
       case 'markets':
         return <MarketManager />
+      case 'holidays':
+        return <HolidayManager />
       case 'settings':
         return <SettingsManager />
       case 'admins':

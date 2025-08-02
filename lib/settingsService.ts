@@ -8,6 +8,7 @@ export interface Settings {
   site_description: string
   primary_color: string
   payment_notice?: string
+  cake_search_enabled?: boolean
   created_at?: string
   updated_at?: string
 }
@@ -19,6 +20,7 @@ export interface UpdateSettingsData {
   site_description: string
   primary_color: string
   payment_notice?: string
+  cake_search_enabled?: boolean
 }
 
 export class SettingsService {

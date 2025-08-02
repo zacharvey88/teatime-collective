@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator'
 import { Plus, Edit, Trash2, User, Shield, Eye, Pencil } from 'lucide-react'
 import { AdminUserService, CreateAdminUserData, UpdateAdminUserData } from '@/lib/adminUserService'
 import { AuthService, AdminUser } from '@/lib/auth'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export default function AdminManager() {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
@@ -23,6 +24,8 @@ export default function AdminManager() {
   // Form states
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [deleteAdmin, setDeleteAdmin] = useState<AdminUser | null>(null)
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -110,21 +113,21 @@ export default function AdminManager() {
     }
   }
 
-  const handleDeleteAdmin = async (id: string) => {
-    const admin = adminUsers.find(u => u.id === id)
-    if (!admin) return
-    
-    const confirmed = window.confirm(
-      `Are you sure you want to deactivate "${admin.name}"? They will no longer be able to access the dashboard.`
-    )
-    
-    if (confirmed) {
-      try {
-        await AdminUserService.deleteAdminUser(id)
-        await loadAdminUsers()
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete user')
-      }
+  const handleDeleteAdmin = (admin: AdminUser) => {
+    setDeleteAdmin(admin)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteAdmin) return
+
+    try {
+      await AdminUserService.deleteAdminUser(deleteAdmin.id)
+      setIsDeleteDialogOpen(false)
+      setDeleteAdmin(null)
+      await loadAdminUsers()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete user')
     }
   }
 
@@ -240,7 +243,10 @@ export default function AdminManager() {
           <p className="text-gray-600">Manage users and their permissions</p>
         </div>
         {!showAddForm && !editingId && (
-          <Button onClick={() => setShowAddForm(true)}>
+          <Button 
+            onClick={() => setShowAddForm(true)}
+            className="bg-orange hover:bg-orange-900 text-white"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add User
           </Button>
@@ -328,9 +334,18 @@ export default function AdminManager() {
             <div className="flex gap-2">
               <Button 
                 onClick={editingId ? handleUpdateAdmin : handleAddAdmin}
-                className="bg-orange hover:bg-orange-900 text-white font-medium px-4 py-2 rounded-md border border-orange shadow-sm"
+                className="bg-orange hover:bg-orange-900 text-white"
               >
-                {editingId ? 'Update User' : 'Add User'}
+                {editingId ? (
+                  <>
+                    <Edit className="w-4 h-4 mr-2" />
+                    Update User
+                  </>
+                ) : (
+                  <>
+                    Create
+                  </>
+                )}
               </Button>
               <Button variant="outline" onClick={() => {
                 resetForm()
@@ -393,7 +408,7 @@ export default function AdminManager() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleDeleteAdmin(admin.id)}
+                          onClick={() => handleDeleteAdmin(admin)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -412,6 +427,59 @@ export default function AdminManager() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="bg-white border border-gray-200 shadow-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">
+              Confirm Deactivation
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-gray-700">
+              {deleteAdmin && (
+                <>
+                  <p className="mb-2">
+                    Are you sure you want to deactivate this user?
+                  </p>
+                  <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                    <p className="font-medium text-red-800">
+                      "{deleteAdmin.name}"
+                    </p>
+                    <p className="text-sm text-red-600 mt-1">
+                      {deleteAdmin.email}
+                    </p>
+                    <p className="text-sm text-red-600 mt-1">
+                      Role: {deleteAdmin.role.charAt(0).toUpperCase() + deleteAdmin.role.slice(1)}
+                    </p>
+                    <p className="text-sm text-red-600 mt-2">
+                      They will no longer be able to access the dashboard.
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsDeleteDialogOpen(false)
+                  setDeleteAdmin(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Deactivate User
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

@@ -17,16 +17,23 @@ import {
   ChevronRight,
   MoreHorizontal,
   Star,
-  List
+  List,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { CakeService, CakeCategory, CakeSize, CakeFlavor, CakeWithDetails } from '@/lib/cakeService'
+import StandaloneCakeManager from './StandaloneCakeManager'
+import { supabase } from '@/lib/supabaseClient'
 
 export default function CakeManager() {
+  const [activeTab, setActiveTab] = useState<'categories' | 'standalone'>('categories')
   const [cakes, setCakes] = useState<CakeWithDetails[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [dialogError, setDialogError] = useState('')
+  const [editDialogError, setEditDialogError] = useState('')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
 
   // Editing states
@@ -34,9 +41,11 @@ export default function CakeManager() {
   const [editingSize, setEditingSize] = useState<string | null>(null)
   const [editingFlavor, setEditingFlavor] = useState<string | null>(null)
   const [editingCategoryData, setEditingCategoryData] = useState({ name: '', description: '' })
-  const [editingFlavorData, setEditingFlavorData] = useState({ name: '', imageUrl: '' })
+  const [editingFlavorData, setEditingFlavorData] = useState({ name: '', description: '', priceOverride: '', imageUrl: '' })
+  const [editingSizeData, setEditingSizeData] = useState({ name: '', description: '', price: '' })
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isEditFlavorDialogOpen, setIsEditFlavorDialogOpen] = useState(false)
+  const [isEditSizeDialogOpen, setIsEditSizeDialogOpen] = useState(false)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [createType, setCreateType] = useState<'category' | 'size' | 'flavor'>('category')
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -49,7 +58,12 @@ export default function CakeManager() {
   // New item states
   const [newCategory, setNewCategory] = useState({ name: '', description: '' })
   const [newSize, setNewSize] = useState({ categoryId: '', name: '', description: '', price: '' })
-  const [newFlavor, setNewFlavor] = useState({ categoryId: '', name: '', imageUrl: '' })
+  const [newFlavor, setNewFlavor] = useState({ categoryId: '', name: '', description: '', priceOverride: '', imageUrl: '' })
+  
+  // Image upload states
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
 
   useEffect(() => {
     loadCakes()
@@ -67,6 +81,130 @@ export default function CakeManager() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleImageUpload = async (file: File) => {
+    try {
+      setUploadingImage(true)
+      setError('')
+      
+      console.log('Starting image upload for file:', file.name, 'Size:', file.size)
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `cakes/${fileName}`
+      
+      console.log('Generated file path:', filePath)
+
+      // Upload to Supabase Storage
+      console.log('Attempting to upload to Supabase...')
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(filePath, file)
+
+      if (error) {
+        console.error('Supabase upload error:', error)
+        throw error
+      }
+
+      console.log('Upload successful, data:', data)
+
+      // Get public URL
+      console.log('Getting public URL...')
+      const { data: urlData } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath)
+
+      console.log('Public URL data:', urlData)
+
+      // Update the image URL field
+      setNewFlavor(prev => ({ ...prev, imageUrl: urlData.publicUrl }))
+      setImagePreview(urlData.publicUrl)
+      setSelectedImage(null)
+      
+      console.log('Image upload completed successfully')
+
+    } catch (err) {
+      console.error('Error uploading image:', err)
+      setError('Failed to upload image. Please try again.')
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const uploadImageForEdit = async (file: File): Promise<string | null> => {
+    try {
+      setUploadingImage(true)
+      setEditDialogError('')
+      
+      console.log('Starting image upload for edit, file:', file.name, 'Size:', file.size)
+
+      // Generate unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+      const filePath = `cakes/${fileName}`
+      
+      console.log('Generated file path:', filePath)
+
+      // Upload to Supabase Storage
+      console.log('Attempting to upload to Supabase...')
+      const { data, error } = await supabase.storage
+        .from('images')
+        .upload(filePath, file)
+
+      if (error) {
+        console.error('Supabase upload error:', error)
+        throw error
+      }
+
+      console.log('Upload successful, data:', data)
+
+      // Get public URL
+      console.log('Getting public URL...')
+      const { data: urlData } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath)
+
+      console.log('Public URL data:', urlData)
+      
+      console.log('Image upload for edit completed successfully')
+      return urlData.publicUrl
+
+    } catch (err) {
+      console.error('Error uploading image for edit:', err)
+      setEditDialogError('Failed to upload image. Please try again.')
+      return null
+    } finally {
+      setUploadingImage(false)
+    }
+  }
+
+  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file')
+        return
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image must be less than 5MB')
+        return
+      }
+
+      setSelectedImage(file)
+      setError('')
+
+      // Create preview
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setImagePreview(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
     }
   }
 
@@ -140,11 +278,12 @@ export default function CakeManager() {
         name: newFlavor.name.trim(),
         description: null,
         image_url: null,
+        price_override: newFlavor.priceOverride ? parseFloat(newFlavor.priceOverride) : null,
         display_order: 1,
         active: true
       })
 
-      setNewFlavor({ categoryId: '', name: '', imageUrl: '' })
+      setNewFlavor({ categoryId: '', name: '', description: '', priceOverride: '', imageUrl: '' })
       setError('')
       await loadCakes()
     } catch (err) {
@@ -186,19 +325,26 @@ export default function CakeManager() {
     // Reset form data when opening
     setNewCategory({ name: '', description: '' })
     setNewSize({ categoryId: '', name: '', description: '', price: '' })
-    setNewFlavor({ categoryId: '', name: '', imageUrl: '' })
+    setNewFlavor({ categoryId: '', name: '', description: '', priceOverride: '', imageUrl: '' })
+    setSelectedImage(null)
+    setImagePreview(null)
     setCreateType(type)
     setIsCreateDialogOpen(true)
+    setError('') // Clear any previous errors
     console.log('Opening create dialog for:', type)
   }
 
   const handleSaveCreateItem = async () => {
     try {
-      console.log('Saving create item:', createType, { newCategory, newSize, newFlavor })
+      console.log('handleSaveCreateItem called')
+      console.log('createType:', createType)
+      console.log('newCategory:', newCategory)
+      console.log('newSize:', newSize)
+      console.log('newFlavor:', newFlavor)
       
       if (createType === 'category') {
         if (!newCategory.name.trim()) {
-          setError('Please enter a category name')
+          setDialogError('Please enter a category name')
           return
         }
         await CakeService.createCategory({
@@ -210,7 +356,7 @@ export default function CakeManager() {
         setNewCategory({ name: '', description: '' })
       } else if (createType === 'size') {
         if (!newSize.categoryId || !newSize.name.trim() || !newSize.price) {
-          setError('Please fill in all size fields')
+          setDialogError('Please fill in all size fields')
           return
         }
         await CakeService.createSize({
@@ -223,28 +369,87 @@ export default function CakeManager() {
         })
         setNewSize({ categoryId: '', name: '', description: '', price: '' })
       } else if (createType === 'flavor') {
+        console.log('Processing flavor creation...')
+        console.log('newFlavor state:', newFlavor)
+        console.log('selectedImage:', selectedImage)
+        console.log('imagePreview:', imagePreview)
+        
         if (!newFlavor.categoryId || !newFlavor.name.trim()) {
-          setError('Please fill in all flavor fields')
+          console.log('Validation failed - categoryId:', newFlavor.categoryId, 'name:', newFlavor.name)
+          setDialogError('Please fill in all flavor fields')
           return
         }
-        console.log('Creating flavor:', newFlavor)
-        await CakeService.createFlavor({
+
+        let finalImageUrl = newFlavor.imageUrl.trim() || null
+
+        // If there's a selected image but no URL, upload it first
+        if (selectedImage && !finalImageUrl) {
+          console.log('Uploading selected image before creating flavor...')
+          try {
+            setUploadingImage(true)
+            
+            // Generate unique filename
+            const fileExt = selectedImage.name.split('.').pop()
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+            const filePath = `cakes/${fileName}`
+            
+            console.log('Generated file path:', filePath)
+
+            // Upload to Supabase Storage
+            console.log('Attempting to upload to Supabase...')
+            const { data, error } = await supabase.storage
+              .from('images')
+              .upload(filePath, selectedImage)
+
+            if (error) {
+              console.error('Supabase upload error:', error)
+              throw error
+            }
+
+            console.log('Upload successful, data:', data)
+
+            // Get public URL
+            console.log('Getting public URL...')
+            const { data: urlData } = supabase.storage
+              .from('images')
+              .getPublicUrl(filePath)
+
+            console.log('Public URL data:', urlData)
+            finalImageUrl = urlData.publicUrl
+            
+          } catch (uploadErr) {
+            console.error('Error uploading image:', uploadErr)
+            setError('Failed to upload image. Please try again.')
+            return
+          } finally {
+            setUploadingImage(false)
+          }
+        }
+
+        console.log('Creating flavor with image URL:', finalImageUrl)
+        const createdFlavor = await CakeService.createFlavor({
           category_id: newFlavor.categoryId,
           name: newFlavor.name.trim(),
-          description: null,
-          image_url: newFlavor.imageUrl.trim() || null,
+          description: newFlavor.description.trim() || null,
+          image_url: finalImageUrl,
+          price_override: newFlavor.priceOverride ? parseFloat(newFlavor.priceOverride) : null,
           display_order: 1,
           active: true
         })
-        setNewFlavor({ categoryId: '', name: '', imageUrl: '' })
+        console.log('Flavor created successfully:', createdFlavor)
+        setNewFlavor({ categoryId: '', name: '', description: '', priceOverride: '', imageUrl: '' })
+        setSelectedImage(null)
+        setImagePreview(null)
       }
       
+      console.log('Closing dialog and reloading cakes...')
       setIsCreateDialogOpen(false)
       setError('')
       await loadCakes()
+      console.log('Create item process completed successfully')
     } catch (err) {
-      setError(`Failed to create ${createType}`)
-      console.error(err)
+      console.error('Error in handleSaveCreateItem:', err)
+      setDialogError(`Failed to create ${createType}`)
     }
   }
 
@@ -273,9 +478,15 @@ export default function CakeManager() {
   }
 
   const handleDeleteFlavor = async (flavorId: string) => {
+    console.log('handleDeleteFlavor called with flavorId:', flavorId)
     const flavor = cakes.flatMap(c => c.flavors).find(f => f.id === flavorId)
-    if (!flavor) return
+    console.log('Found flavor:', flavor)
+    if (!flavor) {
+      console.log('No flavor found, returning')
+      return
+    }
 
+    console.log('Setting delete item and opening dialog')
     setDeleteItem({
       type: 'flavor',
       id: flavorId,
@@ -285,32 +496,94 @@ export default function CakeManager() {
   }
 
   const handleConfirmDelete = async () => {
-    if (!deleteItem) return
+    console.log('handleConfirmDelete called with deleteItem:', deleteItem)
+    if (!deleteItem) {
+      console.log('No deleteItem, returning')
+      return
+    }
 
     try {
+      console.log('Deleting item of type:', deleteItem.type)
       if (deleteItem.type === 'category') {
         await CakeService.deleteCategory(deleteItem.id)
       } else if (deleteItem.type === 'size') {
         await CakeService.deleteSize(deleteItem.id)
       } else if (deleteItem.type === 'flavor') {
+        console.log('Deleting flavor with ID:', deleteItem.id)
         await CakeService.deleteFlavor(deleteItem.id)
       }
       
+      console.log('Delete successful, reloading cakes')
       await loadCakes()
       setIsDeleteDialogOpen(false)
       setDeleteItem(null)
     } catch (err) {
+      console.error('Error in handleConfirmDelete:', err)
       setError(`Failed to delete ${deleteItem.type}`)
-      console.error(err)
     }
   }
 
   const handleEditFlavor = (flavor: any) => {
     console.log('handleEditFlavor called with:', flavor)
-    setEditingFlavorData({ name: flavor.name, imageUrl: flavor.image_url || '' })
+    setEditingFlavorData({ name: flavor.name, description: flavor.description || '', priceOverride: flavor.price_override?.toString() || '', imageUrl: flavor.image_url || '' })
     setEditingFlavor(flavor.id)
+    setImagePreview(flavor.image_url || null)
+    setSelectedImage(null)
+    setEditDialogError('')
     setIsEditFlavorDialogOpen(true)
     console.log('Edit flavor dialog should now be open')
+  }
+
+  const handleEditSize = (size: any) => {
+    console.log('handleEditSize called with:', size)
+    setEditingSizeData({ 
+      name: size.name, 
+      description: size.description || '', 
+      price: size.price.toString() 
+    })
+    setEditingSize(size.id)
+    setIsEditSizeDialogOpen(true)
+  }
+
+  const handleSaveSizeEdit = async () => {
+    console.log('handleSaveSizeEdit called with:', { editingSize, editingSizeData })
+    
+    if (!editingSize || !editingSizeData.name.trim()) {
+      setError('Please enter a size name')
+      return
+    }
+
+    const price = parseFloat(editingSizeData.price)
+    if (isNaN(price) || price < 0) {
+      setError('Please enter a valid price')
+      return
+    }
+
+    try {
+      console.log('Calling CakeService.updateSize with:', editingSize, {
+        name: editingSizeData.name.trim(),
+        description: editingSizeData.description.trim() || null,
+        price: price
+      })
+      
+      const result = await CakeService.updateSize(editingSize, {
+        name: editingSizeData.name.trim(),
+        description: editingSizeData.description.trim() || null,
+        price: price
+      })
+      
+      console.log('Update result:', result)
+      
+      setEditingSize(null)
+      setEditingSizeData({ name: '', description: '', price: '' })
+      setIsEditSizeDialogOpen(false)
+      setError('')
+      await loadCakes()
+      console.log('Size edit completed successfully')
+    } catch (err) {
+      console.error('Error in handleSaveSizeEdit:', err)
+      setError('Failed to update size')
+    }
   }
 
   const handleSaveFlavorEdit = async () => {
@@ -322,20 +595,39 @@ export default function CakeManager() {
     }
 
     try {
+      // If there's a selected image, upload it first
+      let finalImageUrl = editingFlavorData.imageUrl.trim() || null
+      
+      if (selectedImage) {
+        console.log('Uploading selected image for edit...')
+        const uploadedUrl = await uploadImageForEdit(selectedImage)
+        if (uploadedUrl) {
+          finalImageUrl = uploadedUrl
+        } else {
+          setEditDialogError('Failed to upload image')
+          return
+        }
+      }
+
       console.log('Calling CakeService.updateFlavor with:', editingFlavor, {
         name: editingFlavorData.name.trim(),
-        image_url: editingFlavorData.imageUrl.trim() || null
+        description: editingFlavorData.description.trim() || null,
+        image_url: finalImageUrl
       })
       
       const result = await CakeService.updateFlavor(editingFlavor, {
         name: editingFlavorData.name.trim(),
-        image_url: editingFlavorData.imageUrl.trim() || null
+        description: editingFlavorData.description.trim() || null,
+        image_url: finalImageUrl,
+        price_override: editingFlavorData.priceOverride ? parseFloat(editingFlavorData.priceOverride) : null
       })
       
       console.log('Update result:', result)
       
       setEditingFlavor(null)
-      setEditingFlavorData({ name: '', imageUrl: '' })
+      setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '' })
+      setSelectedImage(null)
+      setImagePreview(null)
       setIsEditFlavorDialogOpen(false)
       setError('')
       await loadCakes()
@@ -361,42 +653,76 @@ export default function CakeManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h2 className="text-2xl font-bold text-gray-800">Cake Management</h2>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="bg-orange hover:bg-orange/90 text-white border-orange w-full sm:w-auto">
-              <Plus className="w-4 h-4 mr-2" />
-              Add New
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="bg-white border border-gray-200 shadow-lg">
-            <DropdownMenuItem onClick={() => handleCreateItem('category')} className="hover:bg-gray-50 cursor-pointer text-base">
-              <List className="w-4 h-4 mr-2" />
-              New Category
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleCreateItem('size')} className="hover:bg-gray-50 cursor-pointer text-base">
-              <Plus className="w-4 h-4 mr-2" />
-              New Size
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleCreateItem('flavor')} className="hover:bg-gray-50 cursor-pointer text-base">
-              <Star className="w-4 h-4 mr-2" />
-              New Flavor
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('categories')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'categories'
+                ? 'border-orange text-orange'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Category-Based Cakes
+          </button>
+          <button
+            onClick={() => setActiveTab('standalone')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'standalone'
+                ? 'border-orange text-orange'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Standalone Cakes
+          </button>
+        </nav>
       </div>
 
-      {error && (
-        <Alert>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+      {activeTab === 'categories' && (
+        <>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h2 className="text-2xl font-bold text-gray-800">Category-Based Cakes</h2>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="bg-orange hover:bg-orange/90 text-white border-orange w-full sm:w-auto">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add New
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-white border border-gray-200 shadow-lg">
+                <DropdownMenuItem onClick={() => handleCreateItem('category')} className="hover:bg-gray-50 cursor-pointer text-base">
+                  <List className="w-4 h-4 mr-2" />
+                  New Category
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleCreateItem('size')} className="hover:bg-gray-50 cursor-pointer text-base">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Size
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleCreateItem('flavor')} className="hover:bg-gray-50 cursor-pointer text-base">
+                  <Star className="w-4 h-4 mr-2" />
+                  New Flavor
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </>
       )}
 
+      {activeTab === 'standalone' && (
+        <StandaloneCakeManager />
+      )}
 
+      {activeTab === 'categories' && (
+        <>
+          {error && (
+            <Alert>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      {/* Cake Categories */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Cake Categories */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {cakes.map(cake => (
           <Card key={cake.category.id}>
             <CardHeader>
@@ -449,14 +775,24 @@ export default function CakeManager() {
                       <div key={size.id} className="border rounded-lg p-4 bg-gray-50">
                         <div className="flex items-center justify-between mb-2">
                           <h5 className="font-medium">{size.name}</h5>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteSize(size.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditSize(size)}
+                              className="text-blue-600 hover:text-blue-700 h-6 w-6 p-0 flex-shrink-0"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeleteSize(size.id)}
+                              className="text-red-600 hover:text-red-700 h-6 w-6 p-0 flex-shrink-0"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </div>
                         {size.description && (
                           <p className="text-sm text-gray-600 mb-2">{size.description}</p>
@@ -464,6 +800,27 @@ export default function CakeManager() {
                         <p className="text-lg font-bold text-orange">£{size.price.toFixed(2)}</p>
                       </div>
                     ))}
+                    <div 
+                      className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 flex items-center justify-center cursor-pointer hover:border-gray-400 hover:bg-gray-100 transition-colors" 
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('Add Size button clicked!')
+                        console.log('Category:', cake.category)
+                        
+                        // Reset all form data first
+                        setNewCategory({ name: '', description: '' })
+                        setNewSize({ categoryId: cake.category.id, name: '', description: '', price: '' })
+                        setNewFlavor({ categoryId: '', name: '', description: '', priceOverride: '', imageUrl: '' })
+                        setCreateType('size')
+                        setIsCreateDialogOpen(true)
+                        console.log('Quick add size for category:', cake.category.id)
+                        console.log('Modal should now be open')
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-2 text-gray-600" />
+                      <span className="text-sm font-medium text-gray-600">Add Size</span>
+                    </div>
                   </div>
                 </div>
 
@@ -486,7 +843,10 @@ export default function CakeManager() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDeleteFlavor(flavor.id)}
+                            onClick={() => {
+                              console.log('Delete button clicked for flavor:', flavor.id, flavor.name)
+                              handleDeleteFlavor(flavor.id)
+                            }}
                           className="text-red-600 hover:text-red-700 h-6 w-6 p-0 flex-shrink-0"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -505,7 +865,7 @@ export default function CakeManager() {
                         // Reset all form data first
                         setNewCategory({ name: '', description: '' })
                         setNewSize({ categoryId: '', name: '', description: '', price: '' })
-                        setNewFlavor({ categoryId: cake.category.id, name: '', imageUrl: '' })
+                        setNewFlavor({ categoryId: cake.category.id, name: '', description: '', priceOverride: '', imageUrl: '' })
                         setCreateType('flavor')
                         setIsCreateDialogOpen(true)
                         console.log('Quick add flavor for category:', cake.category.id)
@@ -520,7 +880,9 @@ export default function CakeManager() {
               </CardContent>
           </Card>
         ))}
-      </div>
+          </div>
+        </>
+      )}
 
       {/* Edit Category Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -577,7 +939,10 @@ export default function CakeManager() {
         setIsEditFlavorDialogOpen(open)
         if (!open) {
           setEditingFlavor(null)
-          setEditingFlavorData({ name: '', imageUrl: '' })
+          setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '' })
+          setSelectedImage(null)
+          setImagePreview(null)
+          setEditDialogError('')
         }
       }}>
         <DialogContent className="bg-white border border-gray-200 shadow-lg">
@@ -585,9 +950,16 @@ export default function CakeManager() {
             <DialogTitle>Edit Flavor</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {editDialogError && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertDescription className="text-red-800 font-medium">
+                  {editDialogError}
+                </AlertDescription>
+              </Alert>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Flavor Name
+                Name
               </label>
               <Input
                 value={editingFlavorData.name}
@@ -597,13 +969,110 @@ export default function CakeManager() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Image URL (optional)
+                Description (optional)
               </label>
               <Input
-                value={editingFlavorData.imageUrl}
-                onChange={(e) => setEditingFlavorData({ ...editingFlavorData, imageUrl: e.target.value })}
-                placeholder="https://example.com/image.jpg"
+                value={editingFlavorData.description}
+                onChange={(e) => setEditingFlavorData({ ...editingFlavorData, description: e.target.value })}
+                placeholder="Description"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Price Override (optional)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">£</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editingFlavorData.priceOverride}
+                  onChange={(e) => setEditingFlavorData({ ...editingFlavorData, priceOverride: e.target.value })}
+                  placeholder="0.00"
+                  className="pl-8"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Set a custom price for this flavor. If left empty, uses the category size pricing.
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Image
+              </label>
+              
+              {/* Image Preview */}
+              {imagePreview && (
+                <div className="mb-3">
+                  <div className="relative w-32 h-32 border border-gray-200 rounded-lg overflow-hidden">
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setImagePreview(null)
+                        setSelectedImage(null)
+                        setEditingFlavorData(prev => ({ ...prev, imageUrl: '' }))
+                      }}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Upload Section */}
+              <div className="space-y-3">
+                {/* File Upload */}
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-300 transition-colors">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageSelect}
+                    className="hidden"
+                    id="edit-flavor-image-upload"
+                    disabled={uploadingImage}
+                  />
+                  <label
+                    htmlFor="edit-flavor-image-upload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    {uploadingImage ? (
+                      <div className="flex items-center">
+                        <div className="w-4 h-4 border-2 border-orange border-t-transparent rounded-full animate-spin mr-2"></div>
+                        <span className="text-sm text-gray-600">Uploading...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                        <span className="text-sm text-gray-600">
+                          {selectedImage ? 'Click to change image' : 'Click to upload image'}
+                        </span>
+                        <span className="text-xs text-gray-500 mt-1">
+                          PNG, JPG, GIF up to 5MB
+                        </span>
+                      </>
+                    )}
+                  </label>
+                </div>
+
+                {/* Manual URL Input */}
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <ImageIcon className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <Input
+                    value={editingFlavorData.imageUrl}
+                    onChange={(e) => setEditingFlavorData({ ...editingFlavorData, imageUrl: e.target.value })}
+                    placeholder="Or enter image URL manually"
+                    className="pl-10"
+                  />
+                </div>
+              </div>
             </div>
             <div className="flex justify-end space-x-2 pt-4">
               <Button
@@ -612,7 +1081,10 @@ export default function CakeManager() {
                   console.log('Cancel button clicked')
                   setIsEditFlavorDialogOpen(false)
                   setEditingFlavor(null)
-                  setEditingFlavorData({ name: '', imageUrl: '' })
+                  setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '' })
+                  setSelectedImage(null)
+                  setImagePreview(null)
+                  setEditDialogError('')
                 }}
               >
                 Cancel
@@ -631,10 +1103,96 @@ export default function CakeManager() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Size Dialog */}
+      <Dialog open={isEditSizeDialogOpen} onOpenChange={(open) => {
+        setIsEditSizeDialogOpen(open)
+        if (!open) {
+          setEditingSize(null)
+          setEditingSizeData({ name: '', description: '', price: '' })
+        }
+      }}>
+        <DialogContent className="bg-white border border-gray-200 shadow-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Size</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {error && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertDescription className="text-red-800 font-medium">
+                  {error}
+                </AlertDescription>
+              </Alert>
+            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Size Name
+              </label>
+              <Input
+                value={editingSizeData.name}
+                onChange={(e) => setEditingSizeData({ ...editingSizeData, name: e.target.value })}
+                placeholder="Size name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description (optional)
+              </label>
+              <Input
+                value={editingSizeData.description}
+                onChange={(e) => setEditingSizeData({ ...editingSizeData, description: e.target.value })}
+                placeholder="Description"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Price
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">£</span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editingSizeData.price}
+                  onChange={(e) => setEditingSizeData({ ...editingSizeData, price: e.target.value })}
+                  placeholder="0.00"
+                  className="pl-8"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsEditSizeDialogOpen(false)
+                  setEditingSize(null)
+                  setEditingSizeData({ name: '', description: '', price: '' })
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  console.log('Save Size button clicked!')
+                  console.log('Current editingSizeData:', editingSizeData)
+                  handleSaveSizeEdit()
+                }}
+                className="bg-orange hover:bg-orange/90 text-white"
+              >
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Create Item Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
         console.log('Dialog onOpenChange:', open, 'createType:', createType)
         setIsCreateDialogOpen(open)
+        if (!open) {
+          setDialogError('')
+        }
       }}>
         <DialogContent className="bg-white border border-gray-200 shadow-lg">
           <DialogHeader>
@@ -711,15 +1269,19 @@ export default function CakeManager() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Price (£)
+                    Price
                   </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={newSize.price}
-                    onChange={(e) => setNewSize({ ...newSize, price: e.target.value })}
-                    placeholder="Price"
-                  />
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">£</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newSize.price}
+                      onChange={(e) => setNewSize({ ...newSize, price: e.target.value })}
+                      placeholder="0.00"
+                      className="pl-8"
+                    />
+                  </div>
                 </div>
               </>
             )}
@@ -755,15 +1317,122 @@ export default function CakeManager() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Image URL (optional)
+                    Description (optional)
                   </label>
                   <Input
-                    value={newFlavor.imageUrl}
-                    onChange={(e) => setNewFlavor({ ...newFlavor, imageUrl: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
+                    value={newFlavor.description || ''}
+                    onChange={(e) => setNewFlavor({ ...newFlavor, description: e.target.value })}
+                    placeholder="Description"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Price Override (optional)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">£</span>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newFlavor.priceOverride}
+                      onChange={(e) => setNewFlavor({ ...newFlavor, priceOverride: e.target.value })}
+                      placeholder="0.00"
+                      className="pl-8"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Set a custom price for this flavor. If left empty, uses the category size pricing.
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Flavor Image
+                  </label>
+                  
+                  {/* Image Preview */}
+                  {imagePreview && (
+                    <div className="mb-3">
+                      <div className="relative w-32 h-32 border border-gray-200 rounded-lg overflow-hidden">
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setImagePreview(null)
+                            setSelectedImage(null)
+                            setNewFlavor(prev => ({ ...prev, imageUrl: '' }))
+                          }}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Section */}
+                  <div className="space-y-3">
+                    {/* File Upload */}
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-orange-300 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                        id="flavor-image-upload"
+                        disabled={uploadingImage}
+                      />
+                      <label
+                        htmlFor="flavor-image-upload"
+                        className="cursor-pointer flex flex-col items-center"
+                      >
+                        {uploadingImage ? (
+                          <div className="flex items-center">
+                            <div className="w-4 h-4 border-2 border-orange border-t-transparent rounded-full animate-spin mr-2"></div>
+                            <span className="text-sm text-gray-600">Uploading...</span>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload className="w-6 h-6 text-gray-400 mb-2" />
+                            <span className="text-sm text-gray-600">
+                              {selectedImage ? 'Click to change image' : 'Click to upload image'}
+                            </span>
+                            <span className="text-xs text-gray-500 mt-1">
+                              PNG, JPG, GIF up to 5MB
+                            </span>
+                          </>
+                        )}
+                      </label>
+                    </div>
+
+
+
+                    {/* Manual URL Input */}
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <ImageIcon className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <Input
+                        value={newFlavor.imageUrl}
+                        onChange={(e) => setNewFlavor({ ...newFlavor, imageUrl: e.target.value })}
+                        placeholder="Or enter image URL manually"
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                </div>
               </>
+            )}
+            
+            {dialogError && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertDescription className="text-red-800 font-medium">
+                  {dialogError}
+                </AlertDescription>
+              </Alert>
             )}
             
             <div className="flex justify-end space-x-2 pt-4">
@@ -773,16 +1442,30 @@ export default function CakeManager() {
                   setIsCreateDialogOpen(false)
                   setNewCategory({ name: '', description: '' })
                   setNewSize({ categoryId: '', name: '', description: '', price: '' })
-                  setNewFlavor({ categoryId: '', name: '', imageUrl: '' })
+                  setNewFlavor({ categoryId: '', name: '', description: '', priceOverride: '', imageUrl: '' })
+                  setSelectedImage(null)
+                  setImagePreview(null)
+                  setDialogError('')
                 }}
               >
                 Cancel
               </Button>
               <Button
-                onClick={handleSaveCreateItem}
+                onClick={() => {
+                  console.log('Create button clicked for type:', createType)
+                  handleSaveCreateItem()
+                }}
                 className="bg-orange hover:bg-orange/90 text-white"
+                disabled={uploadingImage}
               >
-                Create {createType === 'category' ? 'Category' : createType === 'size' ? 'Size' : 'Flavor'}
+                {uploadingImage ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Uploading & Creating...
+                  </>
+                ) : (
+                  `Create ${createType === 'category' ? 'Category' : createType === 'size' ? 'Size' : 'Flavor'}`
+                )}
               </Button>
             </div>
           </div>

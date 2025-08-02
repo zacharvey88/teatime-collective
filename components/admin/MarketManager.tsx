@@ -211,7 +211,7 @@ export default function MarketManager() {
           <div className="flex items-center gap-4 mt-4">
             <Button 
               onClick={handleAddMarket}
-              className="bg-orange hover:bg-orange-900"
+              className="bg-orange hover:bg-orange-900 text-white"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Market

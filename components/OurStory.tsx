@@ -85,7 +85,7 @@ const OurStory = () => {
                   
                   <div className="flex-1">
                     <p className="text-orange font-medium text-sm">{event.tagline}</p>
-                    <h3 className="text-xl font-bold text-dark">{event.title}</h3>
+                    <h3 className="text-xl font-bold text-gray">{event.title}</h3>
                   </div>
                 </div>
               </div>
@@ -103,7 +103,7 @@ const OurStory = () => {
                 <div className="lg:flex-1">
                   <div className="mb-4 lg:block hidden">
                     <p className="text-orange font-medium mb-2">{event.tagline}</p>
-                    <h3 className="text-2xl lg:text-3xl font-bold text-dark mb-4">{event.title}</h3>
+                    <h3 className="text-2xl lg:text-3xl font-bold text-gray mb-4">{event.title}</h3>
                   </div>
                   <p className="text-gray leading-relaxed">{event.description}</p>
                 </div>

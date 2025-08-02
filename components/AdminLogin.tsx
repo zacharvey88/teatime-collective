@@ -77,22 +77,22 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-light-cream p-4">
-      <Card className="w-full max-w-md bg-white shadow-xl border-0">
-        <CardHeader className="text-center pb-6">
-          <div className="mx-auto w-16 h-16 bg-orange/20 rounded-full flex items-center justify-center mb-2">
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-8">
+        <div className="text-center mb-6">
+          <div className="mx-auto w-16 h-16 bg-orange/10 rounded-full flex items-center justify-center mb-4">
             <Lock className="w-8 h-8 text-orange" />
           </div>
-          <CardTitle className="text-3xl font-bold text-gray-800 mb-2">Admin Access</CardTitle>
-          <CardDescription className="text-gray-600 text-base">
-            Sign in to manage your website content and settings
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Admin Access</h1>
+        </div>
+        
+        <div className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert className="border-red-200 bg-red-50">
+                <AlertDescription className="text-red-800">
+                  {error}
+                </AlertDescription>
               </Alert>
             )}
             
@@ -137,7 +137,7 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
             <div className="flex gap-3">
               <Button 
                 type="submit" 
-                className="flex-1 bg-orange hover:bg-orange-900"
+                className="flex-1 bg-orange hover:bg-orange-900 text-white"
                 disabled={loading}
               >
                 {loading ? (
@@ -170,8 +170,8 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
               </Button>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 } 

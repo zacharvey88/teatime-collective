@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { SettingsService, Settings, UpdateSettingsData } from '@/lib/settingsService'
 import { useSettings } from '@/lib/settingsContext'
+import { Switch } from '@/components/ui/switch'
 
 export default function SettingsManager() {
   const { settings, refreshSettings } = useSettings()
@@ -45,7 +46,8 @@ export default function SettingsManager() {
         site_title: localSettings.site_title,
         site_description: localSettings.site_description,
         primary_color: localSettings.primary_color,
-        payment_notice: localSettings.payment_notice
+        payment_notice: localSettings.payment_notice,
+        cake_search_enabled: localSettings.cake_search_enabled
       }
 
       await SettingsService.updateSettings(settingsData)
@@ -71,7 +73,7 @@ export default function SettingsManager() {
     }
   }
 
-  const handleInputChange = (field: keyof Settings, value: string) => {
+  const handleInputChange = (field: keyof Settings, value: string | boolean) => {
     if (!localSettings) return
     setLocalSettings(prev => prev ? { ...prev, [field]: value } : null)
   }
@@ -105,16 +107,16 @@ export default function SettingsManager() {
       )}
 
       {success && (
-        <Alert>
-          <AlertDescription>{success}</AlertDescription>
+        <Alert className="border-green-200 bg-green-50">
+          <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
         </Alert>
       )}
 
               <div className="space-y-8">
-          {/* Top Row - Logo, Branding, Order Email */}
+          {/* Top Row - Logo, Branding, Order Email, Cake Search */}
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Logo Management */}
-            <div className="space-y-4 lg:w-96">
+            <div className="space-y-4 lg:w-80">
               <div className="flex items-center gap-4">
                 <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
                   {localSettings.logo_url ? (
@@ -147,7 +149,7 @@ export default function SettingsManager() {
             </div>
 
             {/* Branding */}
-            <div className="space-y-4 lg:w-64">
+            <div className="space-y-4 lg:w-56">
               <div>
                 <label className="text-sm font-bold text-gray">Primary Color</label>
                 <div className="flex items-center gap-3 mt-1">
@@ -171,7 +173,7 @@ export default function SettingsManager() {
             </div>
 
             {/* Order Email */}
-            <div className="space-y-4 lg:w-80">
+            <div className="space-y-4 lg:w-72">
               <div>
                 <label className="text-sm font-bold text-gray">Email for Orders</label>
                 <Input
@@ -184,6 +186,27 @@ export default function SettingsManager() {
                 <p className="text-xs text-gray-600 mt-1">
                   This email will receive all order notifications
                 </p>
+              </div>
+            </div>
+
+            {/* Cake Search Toggle */}
+            <div className="space-y-4 lg:w-48">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-bold text-gray">Cake Search</label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Enable search on cakes page
+                  </p>
+                </div>
+                <Switch
+                  checked={localSettings.cake_search_enabled ?? true}
+                  onCheckedChange={(checked) => handleInputChange('cake_search_enabled', checked)}
+                  style={{
+                    '--tw-bg-opacity': '1',
+                    backgroundColor: localSettings.cake_search_enabled ? 'var(--primary-color)' : '#d1d5db'
+                  } as React.CSSProperties}
+                  className="[&>span]:!bg-white"
+                />
               </div>
             </div>
           </div>

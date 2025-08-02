@@ -9,9 +9,9 @@ const Testimonials = () => {
       <div className="section-container">
         <div className="max-w-4xl mx-auto text-center">
           <div className="relative">
-            <Quote className="w-16 h-16 text-orange/20 mx-auto mb-6" />
+            <Quote className="w-16 h-16 text-orange mx-auto mb-6" />
             
-            <blockquote className="text-2xl md:text-3xl lg:text-4xl font-medium text-dark leading-relaxed mb-8 text-balance">
+            <blockquote className="text-2xl md:text-3xl lg:text-4xl font-medium text-gray leading-relaxed mb-8 text-balance">
               "Huge thank you to all of our customers, also my family, friends and staff for all of your support."
             </blockquote>
             
