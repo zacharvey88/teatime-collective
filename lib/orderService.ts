@@ -231,7 +231,8 @@ export class OrderService {
   // Send email notification
   static async sendOrderNotification(orderRequest: OrderRequest): Promise<void> {
     try {
-      await fetch('/api/send-order-notification', {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || 'https://teatime-collective-six.vercel.app'
+      await fetch(`${baseUrl}/api/send-order-notification`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: orderRequest.id })
