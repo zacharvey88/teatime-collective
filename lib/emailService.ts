@@ -42,7 +42,7 @@ export class EmailService {
         .setTo([recipient])
         .setSubject(`Order Confirmation - #${data.orderId}`)
         .setHtml(await this.generateCustomerEmailHTML(data))
-        .setText(this.generateCustomerEmailText(data))
+        .setText(await this.generateCustomerEmailText(data))
 
       console.log('Email params prepared, sending...')
       await mailerSend.email.send(emailParams)
@@ -184,10 +184,14 @@ export class EmailService {
   }
 
   // Generate text email for customer
-  private static generateCustomerEmailText(data: OrderEmailData): string {
+  private static async generateCustomerEmailText(data: OrderEmailData): Promise<string> {
     const itemsText = data.items.map(item => 
       `- ${item.name} (${item.size}) x${item.quantity} - £${item.price.toFixed(2)}`
     ).join('\n')
+
+    // Get the order email from settings
+    const settings = await SettingsService.getSettings()
+    const contactEmail = settings?.order_email || 'contact@teatimecollective.co.uk'
 
     return `
 Order Confirmation - #${data.orderId}
@@ -221,7 +225,7 @@ Best regards,
 The Teatime Collective Team
 
 Teatime Collective | Vegan Cakes & Bakes
-Contact: ${TO_OWNER_EMAIL}
+Contact: ${contactEmail}
     `.trim()
   }
 
