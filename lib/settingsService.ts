@@ -9,6 +9,10 @@ export interface Settings {
   primary_color: string
   payment_notice?: string
   cake_search_enabled?: boolean
+  cakes_subheading?: string
+  order_subheading?: string
+  show_order_form_notice?: boolean
+  show_cart_notice?: boolean
   created_at?: string
   updated_at?: string
 }
@@ -21,6 +25,10 @@ export interface UpdateSettingsData {
   primary_color: string
   payment_notice?: string
   cake_search_enabled?: boolean
+  cakes_subheading?: string
+  order_subheading?: string
+  show_order_form_notice?: boolean
+  show_cart_notice?: boolean
 }
 
 export class SettingsService {

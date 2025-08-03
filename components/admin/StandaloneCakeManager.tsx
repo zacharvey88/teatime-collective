@@ -16,6 +16,7 @@ import {
   Loader2
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Switch } from '@/components/ui/switch'
 import { CakeService, Cake } from '@/lib/cakeService'
 import { supabase } from '@/lib/supabaseClient'
 
@@ -493,6 +494,23 @@ export default function StandaloneCakeManager() {
                     )}
                   </div>
                   <div className="flex space-x-1 ml-2">
+                    <Switch
+                      checked={cake.active}
+                      onCheckedChange={async (checked) => {
+                        try {
+                          await CakeService.updateCake(cake.id, { active: checked })
+                          await loadCakes() // Refresh the data
+                        } catch (error) {
+                          console.error('Failed to update cake availability:', error)
+                        }
+                      }}
+                      className="mr-2"
+                      style={{
+                        '--tw-bg-opacity': '1',
+                        backgroundColor: cake.active ? 'var(--primary-color)' : '#d1d5db'
+                      } as React.CSSProperties}
+                      className="[&>span]:!bg-white"
+                    />
                     <Button
                       size="sm"
                       variant="outline"

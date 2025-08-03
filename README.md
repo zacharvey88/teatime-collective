@@ -135,7 +135,7 @@ The application uses Supabase with the following main tables:
 ## 🎨 Customisation
 
 ### Styling
-- Primary color: Orange (#FF6B35)
+- Primary colour: Orange (#FF6B35)
 - Built with Tailwind CSS for easy customization
 - Responsive design for all screen sizes
 

@@ -280,7 +280,7 @@ export default function CakesPage() {
             Our Cakes
           </h1>
           <p className="text-lg text-gray max-w-2xl mx-auto mx-16 sm:mx-auto">
-            Plant-powered cakes so good, even the cows are jealous! 🌱🍰✨
+            {settings?.cakes_subheading || "Plant-powered cakes so good, even the cows are jealous! 🌱🍰✨"}
           </p>
         </div>
 

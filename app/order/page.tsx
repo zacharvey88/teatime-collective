@@ -188,7 +188,10 @@ export default function OrderPage() {
         })
       })
       
-      setCakeOptions(options)
+      // Sort cake options alphabetically by flavor name
+      const sortedOptions = options.sort((a, b) => a.flavorName.localeCompare(b.flavorName))
+      
+      setCakeOptions(sortedOptions)
     } catch (error) {
       console.error('Error loading cakes:', error)
     } finally {
@@ -376,7 +379,7 @@ export default function OrderPage() {
               Order Your Cakes
             </h1>
             <p className="text-lg text-gray-600 italic">
-              Don't leave them in the cart - someone else will eat them!
+              {settings?.order_subheading || "Don't leave them in the cart - someone else will eat them!"}
             </p>
           </div>
 
@@ -484,7 +487,9 @@ export default function OrderPage() {
                             className="opacity-40"
                           />
                         </div>
-                        <p className="text-gray-600">Oh no! There's no cakes in your cart.</p>
+                        {settings?.show_cart_notice !== false && (
+                          <p className="text-gray-600">Oh no! There's no cakes in your cart.</p>
+                        )}
                       </div>
                     ) : (
                       <>
@@ -553,11 +558,13 @@ export default function OrderPage() {
                             <span>Total:</span>
                             <span className="text-orange">£{getTotalPrice().toFixed(2)}</span>
                           </div>
-                          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                            <p className="text-center">
-                              <strong>Note:</strong> Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order.
-                            </p>
-                          </div>
+                          {settings?.show_cart_notice !== false && (
+                            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                              <p className="text-center">
+                                <strong>Note:</strong> Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order.
+                              </p>
+                            </div>
+                          )}
 
                         </div>
                       </>
@@ -690,7 +697,7 @@ export default function OrderPage() {
                 </div>
 
                 {/* Payment Notice */}
-                {settings?.payment_notice && (
+                {settings?.payment_notice && settings?.show_order_form_notice !== false && (
                   <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                     <p className="text-sm text-orange-800 text-center">
                       {settings.payment_notice}

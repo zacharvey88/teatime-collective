@@ -47,7 +47,11 @@ export default function SettingsManager() {
         site_description: localSettings.site_description,
         primary_color: localSettings.primary_color,
         payment_notice: localSettings.payment_notice,
-        cake_search_enabled: localSettings.cake_search_enabled
+        cake_search_enabled: localSettings.cake_search_enabled,
+        cakes_subheading: localSettings.cakes_subheading,
+        order_subheading: localSettings.order_subheading,
+        show_order_form_notice: localSettings.show_order_form_notice,
+        show_cart_notice: localSettings.show_cart_notice
       }
 
       await SettingsService.updateSettings(settingsData)
@@ -151,7 +155,7 @@ export default function SettingsManager() {
             {/* Branding */}
             <div className="space-y-4 lg:w-56">
               <div>
-                <label className="text-sm font-bold text-gray">Primary Color</label>
+                <label className="text-sm font-bold text-gray">Accent Colour</label>
                 <div className="flex items-center gap-3 mt-1">
                   <Input
                     type="color"
@@ -189,26 +193,7 @@ export default function SettingsManager() {
               </div>
             </div>
 
-            {/* Cake Search Toggle */}
-            <div className="space-y-4 lg:w-48">
-              <div className="flex items-center justify-between">
-                <div>
-                  <label className="text-sm font-bold text-gray">Cake Search</label>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Enable search on cakes page
-                  </p>
-                </div>
-                <Switch
-                  checked={localSettings.cake_search_enabled ?? true}
-                  onCheckedChange={(checked) => handleInputChange('cake_search_enabled', checked)}
-                  style={{
-                    '--tw-bg-opacity': '1',
-                    backgroundColor: localSettings.cake_search_enabled ? 'var(--primary-color)' : '#d1d5db'
-                  } as React.CSSProperties}
-                  className="[&>span]:!bg-white"
-                />
-              </div>
-            </div>
+
           </div>
 
           {/* Site Information */}
@@ -246,6 +231,93 @@ export default function SettingsManager() {
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
                 rows={4}
               />
+            </div>
+          </div>
+
+          {/* Page Subheadings */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-sm font-bold text-gray">Cakes Page Subheading</label>
+                <Input
+                  value={localSettings.cakes_subheading || ''}
+                  onChange={(e) => handleInputChange('cakes_subheading', e.target.value)}
+                  placeholder="Plant-powered cakes so good, even the cows are jealous! 🌱🍰✨"
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Subtitle that appears below the main heading on the cakes page
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-bold text-gray">Order Page Subheading</label>
+                <Input
+                  value={localSettings.order_subheading || ''}
+                  onChange={(e) => handleInputChange('order_subheading', e.target.value)}
+                  placeholder="Don't leave them in the cart - someone else will eat them!"
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Subtitle that appears below the main heading on the order page
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Notice Toggles */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div>
+                  <label className="text-sm font-bold text-gray">Cake Search</label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Enable search on cakes page
+                  </p>
+                </div>
+                <Switch
+                  checked={localSettings.cake_search_enabled ?? true}
+                  onCheckedChange={(checked) => handleInputChange('cake_search_enabled', checked)}
+                  style={{
+                    '--tw-bg-opacity': '1',
+                    backgroundColor: localSettings.cake_search_enabled ? 'var(--primary-color)' : '#d1d5db'
+                  } as React.CSSProperties}
+                  className="[&>span]:!bg-white"
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div>
+                  <label className="text-sm font-bold text-gray">Order Form Notice</label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Show payment notice on order page
+                  </p>
+                </div>
+                <Switch
+                  checked={localSettings.show_order_form_notice ?? true}
+                  onCheckedChange={(checked) => handleInputChange('show_order_form_notice', checked)}
+                  style={{
+                    '--tw-bg-opacity': '1',
+                    backgroundColor: localSettings.show_order_form_notice ? 'var(--primary-color)' : '#d1d5db'
+                  } as React.CSSProperties}
+                  className="[&>span]:!bg-white"
+                />
+              </div>
+              <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                <div>
+                  <label className="text-sm font-bold text-gray">Cart Notice</label>
+                  <p className="text-xs text-gray-600 mt-1">
+                    Show cart-related notices
+                  </p>
+                </div>
+                <Switch
+                  checked={localSettings.show_cart_notice ?? true}
+                  onCheckedChange={(checked) => handleInputChange('show_cart_notice', checked)}
+                  style={{
+                    '--tw-bg-opacity': '1',
+                    backgroundColor: localSettings.show_cart_notice ? 'var(--primary-color)' : '#d1d5db'
+                  } as React.CSSProperties}
+                  className="[&>span]:!bg-white"
+                />
+              </div>
             </div>
           </div>
         </div>

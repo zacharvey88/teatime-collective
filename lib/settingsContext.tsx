@@ -39,7 +39,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     loadSettings()
   }, [])
 
-  // Apply primary color to CSS custom property when settings change
+  // Apply accentcolor to CSS custom property when settings change
   useEffect(() => {
     if (settings?.primary_color) {
       document.documentElement.style.setProperty('--primary-color', settings.primary_color)

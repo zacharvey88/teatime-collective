@@ -160,6 +160,48 @@ export class CakeService {
     return result
   }
 
+  // Get complete cake data organized by category for admin (includes inactive items)
+  static async getCakesByCategoryForAdmin(): Promise<CakeWithDetails[]> {
+    const { data: categories, error: categoriesError } = await supabase
+      .from('cake_categories')
+      .select('*')
+      .order('display_order', { ascending: true })
+    
+    if (categoriesError) throw categoriesError
+
+    const result: CakeWithDetails[] = []
+
+    for (const category of categories || []) {
+      // Get sizes for this category (from cake_sizes table)
+      const { data: sizes, error: sizesError } = await supabase
+        .from('cake_sizes')
+        .select('*')
+        .eq('category_id', category.id)
+        .order('display_order', { ascending: true })
+      
+      if (sizesError) throw sizesError
+
+      // Get flavors for this category (from cakes table)
+      const { data: flavors, error: flavorsError } = await supabase
+        .from('cakes')
+        .select('*')
+        .eq('category_id', category.id)
+        .eq('cake_type', 'category_flavor')
+        .order('display_order', { ascending: true })
+      
+      if (flavorsError) throw flavorsError
+
+      // Include all categories, even those without sizes or flavors
+      result.push({
+        category,
+        sizes: sizes || [],
+        flavors: flavors || []
+      })
+    }
+
+    return result
+  }
+
   // Get all cake data (standalone + category-based)
   static async getAllCakes(): Promise<CakeDisplayData> {
     const [standaloneCakes, categoryCakes] = await Promise.all([

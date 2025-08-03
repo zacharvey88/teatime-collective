@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Switch } from '@/components/ui/switch'
 import { CakeService, CakeCategory, CakeSize, CakeFlavor, CakeWithDetails } from '@/lib/cakeService'
 import StandaloneCakeManager from './StandaloneCakeManager'
 import { supabase } from '@/lib/supabaseClient'
@@ -35,13 +36,14 @@ export default function CakeManager() {
   const [dialogError, setDialogError] = useState('')
   const [editDialogError, setEditDialogError] = useState('')
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [showUnavailableItems, setShowUnavailableItems] = useState<Set<string>>(new Set())
 
   // Editing states
   const [editingCategory, setEditingCategory] = useState<string | null>(null)
   const [editingSize, setEditingSize] = useState<string | null>(null)
   const [editingFlavor, setEditingFlavor] = useState<string | null>(null)
   const [editingCategoryData, setEditingCategoryData] = useState({ name: '', description: '' })
-  const [editingFlavorData, setEditingFlavorData] = useState({ name: '', description: '', priceOverride: '', imageUrl: '' })
+  const [editingFlavorData, setEditingFlavorData] = useState({ name: '', description: '', priceOverride: '', imageUrl: '', active: true })
   const [editingSizeData, setEditingSizeData] = useState({ name: '', description: '', price: '' })
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isEditFlavorDialogOpen, setIsEditFlavorDialogOpen] = useState(false)
@@ -72,7 +74,7 @@ export default function CakeManager() {
   const loadCakes = async () => {
     try {
       setLoading(true)
-      const data = await CakeService.getCakesByCategory()
+      const data = await CakeService.getCakesByCategoryForAdmin()
       setCakes(data)
       // Expand all categories by default on desktop
       setExpandedCategories(new Set(data.map(cake => cake.category.id)))
@@ -525,7 +527,7 @@ export default function CakeManager() {
 
   const handleEditFlavor = (flavor: any) => {
     console.log('handleEditFlavor called with:', flavor)
-    setEditingFlavorData({ name: flavor.name, description: flavor.description || '', priceOverride: flavor.price_override?.toString() || '', imageUrl: flavor.image_url || '' })
+    setEditingFlavorData({ name: flavor.name, description: flavor.description || '', priceOverride: flavor.price_override?.toString() || '', imageUrl: flavor.image_url || '', active: flavor.active })
     setEditingFlavor(flavor.id)
     setImagePreview(flavor.image_url || null)
     setSelectedImage(null)
@@ -619,13 +621,14 @@ export default function CakeManager() {
         name: editingFlavorData.name.trim(),
         description: editingFlavorData.description.trim() || null,
         image_url: finalImageUrl,
-        price_override: editingFlavorData.priceOverride ? parseFloat(editingFlavorData.priceOverride) : null
+        price_override: editingFlavorData.priceOverride ? parseFloat(editingFlavorData.priceOverride) : null,
+        active: editingFlavorData.active
       })
       
       console.log('Update result:', result)
       
       setEditingFlavor(null)
-      setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '' })
+      setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '', active: true })
       setSelectedImage(null)
       setImagePreview(null)
       setIsEditFlavorDialogOpen(false)
@@ -724,7 +727,7 @@ export default function CakeManager() {
           {/* Cake Categories */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {cakes.map(cake => (
-          <Card key={cake.category.id}>
+          <Card key={cake.category.id} className={!cake.category.active ? 'opacity-60' : ''}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
@@ -739,9 +742,25 @@ export default function CakeManager() {
                       <ChevronRight className="w-4 h-4" />
                     )}
                   </button>
-                  <CardTitle className="!p-0 !m-0">{cake.category.name}</CardTitle>
+                  <CardTitle className={`!p-0 !m-0 ${!cake.category.active ? 'text-gray-500' : ''}`}>{cake.category.name}</CardTitle>
                 </div>
                 <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={cake.category.active}
+                    onCheckedChange={async (checked) => {
+                      try {
+                        await CakeService.updateCategory(cake.category.id, { active: checked })
+                        await loadCakes() // Refresh the data
+                      } catch (error) {
+                        console.error('Failed to update category availability:', error)
+                      }
+                    }}
+                    className="mr-2 [&>span]:!bg-white"
+                    style={{
+                      '--tw-bg-opacity': '1',
+                      backgroundColor: cake.category.active ? 'var(--primary-color)' : '#d1d5db'
+                    } as React.CSSProperties}
+                  />
                   <Button
                     variant="outline"
                     size="sm"
@@ -750,14 +769,14 @@ export default function CakeManager() {
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteCategory(cake.category.id)}
-                  className="text-red-600 hover:text-red-700"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteCategory(cake.category.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
               {cake.category.description && (
@@ -772,10 +791,26 @@ export default function CakeManager() {
                   <h4 className="font-semibold text-gray-800 mb-3">Sizes & Pricing</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {cake.sizes.map(size => (
-                      <div key={size.id} className="border rounded-lg p-4 bg-gray-50">
+                                              <div key={size.id} className={`border rounded-lg p-4 ${size.active ? 'bg-gray-50' : 'bg-gray-100 opacity-60'}`}>
                         <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-medium">{size.name}</h5>
+                          <h5 className={`font-medium ${!size.active ? 'text-gray-500' : ''}`}>{size.name}</h5>
                           <div className="flex items-center gap-1">
+                            <Switch
+                              checked={size.active}
+                              onCheckedChange={async (checked) => {
+                                try {
+                                  await CakeService.updateSize(size.id, { active: checked })
+                                  await loadCakes() // Refresh the data
+                                } catch (error) {
+                                  console.error('Failed to update size availability:', error)
+                                }
+                              }}
+                              className="mr-2 [&>span]:!bg-white"
+                              style={{
+                                '--tw-bg-opacity': '1',
+                                backgroundColor: size.active ? 'var(--primary-color)' : '#d1d5db'
+                              } as React.CSSProperties}
+                            />
                             <Button
                               variant="outline"
                               size="sm"
@@ -824,22 +859,42 @@ export default function CakeManager() {
                   </div>
                 </div>
 
-                {/* Flavors */}
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-3">Available Flavors</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {cake.flavors.map(flavor => (
-                                          <div key={flavor.id} className="border rounded-md p-2 bg-gray-50 flex items-center justify-between min-w-0">
-                      <span className="text-sm font-medium flex-1 min-w-0 break-words pr-2">{flavor.name}</span>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditFlavor(flavor)}
-                          className="text-blue-600 hover:text-blue-700 h-6 w-6 p-0 flex-shrink-0"
+                                  {/* Flavors */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h4 className="font-semibold text-gray-800">Flavors</h4>
+                      {cake.flavors.some(flavor => !flavor.active) && (
+                        <button
+                          onClick={() => {
+                            const newSet = new Set(showUnavailableItems)
+                            if (newSet.has(cake.category.id)) {
+                              newSet.delete(cake.category.id)
+                            } else {
+                              newSet.add(cake.category.id)
+                            }
+                            setShowUnavailableItems(newSet)
+                          }}
+                          className="text-sm text-orange hover:text-orange-900 underline"
                         >
-                          <Edit className="w-3 h-3" />
-                        </Button>
+                          {showUnavailableItems.has(cake.category.id) ? 'Hide unavailable' : 'Show unavailable'}
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {cake.flavors
+                        .filter(flavor => showUnavailableItems.has(cake.category.id) || flavor.active)
+                        .map(flavor => (
+                        <div key={flavor.id} className={`border rounded-md p-2 flex items-center justify-between min-w-0 ${flavor.active ? 'bg-gray-50' : 'bg-gray-100 opacity-50 border-gray-300'}`}>
+                          <span className={`text-sm font-medium flex-1 min-w-0 break-words pr-2 ${!flavor.active ? 'text-gray-400' : ''}`}>{flavor.name}</span>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditFlavor(flavor)}
+                            className="text-blue-600 hover:text-blue-700 h-6 w-6 p-0 flex-shrink-0"
+                          >
+                            <Edit className="w-3 h-3" />
+                          </Button>
                           <Button
                             variant="outline"
                             size="sm"
@@ -847,7 +902,7 @@ export default function CakeManager() {
                               console.log('Delete button clicked for flavor:', flavor.id, flavor.name)
                               handleDeleteFlavor(flavor.id)
                             }}
-                          className="text-red-600 hover:text-red-700 h-6 w-6 p-0 flex-shrink-0"
+                            className="text-red-600 hover:text-red-700 h-6 w-6 p-0 flex-shrink-0"
                           >
                             <Trash2 className="w-3 h-3" />
                           </Button>
@@ -939,7 +994,7 @@ export default function CakeManager() {
         setIsEditFlavorDialogOpen(open)
         if (!open) {
           setEditingFlavor(null)
-          setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '' })
+          setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '', active: true })
           setSelectedImage(null)
           setImagePreview(null)
           setEditDialogError('')
@@ -1074,6 +1129,21 @@ export default function CakeManager() {
                 </div>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">
+                Available
+              </label>
+              <Switch
+                checked={editingFlavorData.active ?? true}
+                onCheckedChange={(checked) => setEditingFlavorData({ ...editingFlavorData, active: checked })}
+                style={{
+                  '--tw-bg-opacity': '1',
+                  backgroundColor: editingFlavorData.active ? 'var(--primary-color)' : '#d1d5db'
+                } as React.CSSProperties}
+                className="[&>span]:!bg-white"
+              />
+            </div>
+
             <div className="flex justify-end space-x-2 pt-4">
               <Button
                 variant="outline"
@@ -1081,7 +1151,7 @@ export default function CakeManager() {
                   console.log('Cancel button clicked')
                   setIsEditFlavorDialogOpen(false)
                   setEditingFlavor(null)
-                  setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '' })
+                  setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '', active: true })
                   setSelectedImage(null)
                   setImagePreview(null)
                   setEditDialogError('')
