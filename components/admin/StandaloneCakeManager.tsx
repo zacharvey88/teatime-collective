@@ -504,12 +504,11 @@ export default function StandaloneCakeManager() {
                           console.error('Failed to update cake availability:', error)
                         }
                       }}
-                      className="mr-2"
+                      className="mr-2 [&>span]:!bg-white"
                       style={{
                         '--tw-bg-opacity': '1',
                         backgroundColor: cake.active ? 'var(--primary-color)' : '#d1d5db'
                       } as React.CSSProperties}
-                      className="[&>span]:!bg-white"
                     />
                     <Button
                       size="sm"
