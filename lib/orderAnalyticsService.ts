@@ -49,7 +49,7 @@ export class OrderAnalyticsService {
 
     // Get total requests and estimated value
     const { data: totalData, error: totalError } = await supabase
-      .from('order_requests')
+      .from('orders')
       .select('estimated_total')
 
     if (totalError) throw new Error('Failed to fetch order request stats')
@@ -60,9 +60,9 @@ export class OrderAnalyticsService {
 
     // Get recent requests (last 7 days)
     const { data: recentData, error: recentError } = await supabase
-      .from('order_requests')
+      .from('orders')
       .select('id')
-      .gte('request_date', weekAgo.toISOString())
+      .gte('collection_date', weekAgo.toISOString())
 
     if (recentError) throw new Error('Failed to fetch recent requests')
 
@@ -70,7 +70,7 @@ export class OrderAnalyticsService {
 
     // Get new requests
     const { data: newData, error: newError } = await supabase
-      .from('order_requests')
+      .from('orders')
       .select('id')
       .eq('status', 'new_request')
 
@@ -123,7 +123,7 @@ export class OrderAnalyticsService {
     try {
       // First, try to get request items with flavor data using a simpler approach
     const { data: flavorData, error: flavorError } = await supabase
-      .from('request_items')
+      .from('order_items')
         .select('item_name, estimated_total_price, cake_flavor_id')
       .not('cake_flavor_id', 'is', null)
 
@@ -227,7 +227,7 @@ export class OrderAnalyticsService {
   // Get recent activity
   static async getRecentActivity(): Promise<RecentActivity[]> {
     const { data: requests, error: requestsError } = await supabase
-      .from('order_requests')
+      .from('orders')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(10)
@@ -253,10 +253,10 @@ export class OrderAnalyticsService {
     const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000)
 
     const { data, error } = await supabase
-      .from('order_requests')
+      .from('orders')
       .select('id')
-      .gte('request_date', weekStart.toISOString())
-      .lt('request_date', weekEnd.toISOString())
+      .gte('collection_date', weekStart.toISOString())
+      .lt('collection_date', weekEnd.toISOString())
 
     if (error) throw new Error('Failed to fetch this week requests')
 

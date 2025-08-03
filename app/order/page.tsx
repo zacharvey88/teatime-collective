@@ -306,19 +306,18 @@ export default function OrderPage() {
         customer_name: formData.name.trim(),
         customer_email: formData.email.trim(),
         customer_phone: formData.phone.trim(),
-        notes: formData.otherInfo.trim(),
-        special_requirements: [
-          formData.allergies.trim(),
-          formData.writing.trim()
-        ].filter(Boolean).join(' | '),
+        request_date: formData.dateRequired, // Use the selected delivery date
+        notes: '', // Admin notes only - not used for customer input
+        allergies: formData.allergies.trim(),
+        writing_on_cake: formData.writing.trim(),
+        special_requests: formData.otherInfo.trim(),
         items: cart.map(item => ({
           cake_flavor_id: item.flavorId,
           cake_size_id: item.sizeId,
           item_name: `${item.flavorName} (${item.sizeName})`,
           quantity: item.quantity,
           estimated_unit_price: item.price,
-          estimated_total_price: item.price * item.quantity,
-          special_instructions: ''
+          estimated_total_price: item.price * item.quantity
         }))
       }
 
@@ -680,7 +679,7 @@ export default function OrderPage() {
 
                 <div>
                   <label htmlFor="otherInfo" className="block text-sm font-medium text-gray mb-2">
-                    Other Info
+                    Special Requests
                   </label>
                   <div className="relative">
                     <MessageSquare className="absolute left-3 top-3 text-gray-400 w-5 h-5" />
@@ -691,7 +690,7 @@ export default function OrderPage() {
                       onChange={handleChange}
                       rows={4}
                       className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent transition-all resize-none"
-                      placeholder="Any additional details, special requests, or questions..."
+                      placeholder="Any additional special requests or questions..."
                     />
                   </div>
                 </div>

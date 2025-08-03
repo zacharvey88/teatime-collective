@@ -5,25 +5,26 @@ export interface OrderRequest {
   customer_name: string
   customer_email: string
   customer_phone: string
-  request_date: string
+  collection_date: string
   estimated_total: number
   status: 'new_request' | 'reviewed' | 'approved' | 'rejected' | 'completed' | 'archived'
   notes: string
-  special_requirements: string
+  allergies: string
+  writing_on_cake: string
+  special_requests: string
   created_at: string
   updated_at: string
 }
 
 export interface OrderItem {
   id: string
-  request_id: string
+  order_id: string
   cake_flavor_id?: string
   cake_size_id?: string
   item_name: string
   quantity: number
   estimated_unit_price: number
   estimated_total_price: number
-  special_instructions?: string
   created_at: string
 }
 
@@ -31,8 +32,11 @@ export interface CreateOrderRequestData {
   customer_name: string
   customer_email: string
   customer_phone: string
+  request_date: string
   notes: string
-  special_requirements: string
+  allergies: string
+  writing_on_cake: string
+  special_requests: string
   items: Array<{
     cake_flavor_id?: string
     cake_size_id?: string
@@ -40,7 +44,6 @@ export interface CreateOrderRequestData {
     quantity: number
     estimated_unit_price: number
     estimated_total_price: number
-    special_instructions?: string
   }>
 }
 
@@ -54,19 +57,75 @@ export class OrderService {
         0
       )
 
+      // First, get or create the customer
+      let customerId: string
+      
+      // Check if customer exists
+      const { data: existingCustomer, error: customerCheckError } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('email', orderData.customer_email)
+        .maybeSingle()
+
+      if (customerCheckError) {
+        console.error('Error checking customer:', customerCheckError)
+        throw new Error('Failed to check customer')
+      }
+
+      if (existingCustomer) {
+        // Customer exists, use their ID
+        customerId = existingCustomer.id
+        
+        // Update customer info
+        await supabase
+          .from('customers')
+          .update({
+            name: orderData.customer_name,
+            phone: orderData.customer_phone,
+            last_request_date: new Date().toISOString()
+          })
+          .eq('id', customerId)
+      } else {
+        // Create new customer
+        const { data: newCustomer, error: createCustomerError } = await supabase
+          .from('customers')
+          .insert({
+            email: orderData.customer_email,
+            name: orderData.customer_name,
+            phone: orderData.customer_phone,
+            first_request_date: new Date().toISOString(),
+            last_request_date: new Date().toISOString(),
+            total_requests: 1,
+            total_estimated_value: estimatedTotal
+          })
+          .select('id')
+          .single()
+
+        if (createCustomerError) {
+          console.error('Error creating customer:', createCustomerError)
+          throw new Error('Failed to create customer')
+        }
+
+        customerId = newCustomer.id
+      }
+
       // Create the order request
       const { data: orderRequest, error: orderError } = await supabase
-        .from('order_requests')
+        .from('orders')
         .insert({
+          customer_id: customerId,
           customer_name: orderData.customer_name,
           customer_email: orderData.customer_email,
           customer_phone: orderData.customer_phone,
+          collection_date: orderData.request_date,
           estimated_total: estimatedTotal,
           notes: orderData.notes,
-          special_requirements: orderData.special_requirements,
+          allergies: orderData.allergies,
+          writing_on_cake: orderData.writing_on_cake,
+          special_requests: orderData.special_requests,
           status: 'new_request'
         })
-        .select()
+        .select('id, customer_id, customer_name, customer_email, customer_phone, collection_date, estimated_total, notes, allergies, writing_on_cake, special_requests, status, created_at, updated_at')
         .single()
 
       if (orderError) {
@@ -76,27 +135,26 @@ export class OrderService {
 
       // Create the order items
       const orderItems = orderData.items.map(item => ({
-        request_id: orderRequest.id,
+        order_id: orderRequest.id,
         cake_flavor_id: item.cake_flavor_id,
         cake_size_id: item.cake_size_id,
         item_name: item.item_name,
         quantity: item.quantity,
         estimated_unit_price: item.estimated_unit_price,
-        estimated_total_price: item.estimated_total_price,
-        special_instructions: item.special_instructions
+        estimated_total_price: item.estimated_total_price
       }))
 
       const { error: itemsError } = await supabase
-        .from('request_items')
+        .from('order_items')
         .insert(orderItems)
 
       if (itemsError) {
         console.error('Error creating order items:', itemsError)
-        // If items fail, we should probably delete the order request
-        await supabase
-          .from('order_requests')
-          .delete()
-          .eq('id', orderRequest.id)
+              // If items fail, we should probably delete the order request
+      await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderRequest.id)
         throw new Error('Failed to create order items')
       }
 
@@ -110,7 +168,7 @@ export class OrderService {
   // Get all order requests (for admin)
   static async getOrderRequests(includeArchived: boolean = false): Promise<OrderRequest[]> {
     let query = supabase
-      .from('order_requests')
+      .from('orders')
       .select('*')
       .order('created_at', { ascending: false })
 
@@ -131,8 +189,8 @@ export class OrderService {
   // Get order request by ID with items
   static async getOrderRequestById(id: string): Promise<OrderRequest & { items: OrderItem[] }> {
     const { data: orderRequest, error: orderError } = await supabase
-      .from('order_requests')
-      .select('*')
+      .from('orders')
+      .select('id, customer_id, customer_name, customer_email, customer_phone, collection_date, estimated_total, notes, allergies, writing_on_cake, special_requests, status, created_at, updated_at')
       .eq('id', id)
       .single()
 
@@ -142,9 +200,9 @@ export class OrderService {
     }
 
     const { data: items, error: itemsError } = await supabase
-      .from('request_items')
+      .from('order_items')
       .select('*')
-      .eq('request_id', id)
+      .eq('order_id', id)
 
     if (itemsError) {
       console.error('Error fetching order items:', itemsError)
@@ -160,7 +218,7 @@ export class OrderService {
   // Update order request status
   static async updateOrderStatus(id: string, status: OrderRequest['status']): Promise<void> {
     const { error } = await supabase
-      .from('order_requests')
+      .from('orders')
       .update({ status, updated_at: new Date().toISOString() })
       .eq('id', id)
 
