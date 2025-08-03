@@ -254,14 +254,14 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
                   </div>
                 )}
 
-                                   {/* Special Requirements */}
-                   {orderDetails.special_requirements && (
+                                   {/* Special Requests */}
+                   {orderDetails.special_requests && (
                      <div className="bg-white rounded-lg p-4 shadow-md">
                     <h4 className="font-bold text-gray-800 mb-3 flex items-center space-x-2">
                       <Star className="w-5 h-5 text-purple-500" />
-                      <span>Special Requirements</span>
+                      <span>Special Requests</span>
                     </h4>
-                                         <p className="text-gray-700 bg-purple-50 p-3 rounded-lg shadow-sm">{orderDetails.special_requirements}</p>
+                                         <p className="text-gray-700 bg-purple-50 p-3 rounded-lg shadow-sm">{orderDetails.special_requests}</p>
                   </div>
                 )}
               </div>
