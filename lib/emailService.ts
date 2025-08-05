@@ -1,3 +1,5 @@
+console.log('MAILERSEND_API_KEY:', process.env.MAILERSEND_API_KEY);
+
 import { MailerSend, EmailParams, Sender, Recipient, Attachment } from 'mailersend'
 import { SettingsService } from './settingsService'
 
@@ -6,8 +8,8 @@ const mailerSend = new MailerSend({
   apiKey: process.env.MAILERSEND_API_KEY || '',
 })
 
-// From email (using MailerSend test domain)
-const FROM_EMAIL = 'orders@est-vz9dlem3z0p4kj50.mlsender.net'
+// From email (using MailerSend verified domain)
+const FROM_EMAIL = 'orders@test-vz9dlem3z0p4kj50.mlsender.net'
 
 export interface OrderEmailData {
   orderId: string
@@ -49,6 +51,9 @@ export class EmailService {
       console.log(`Order confirmation email sent to ${data.customerEmail}`)
     } catch (error) {
       console.error('Failed to send order confirmation email:', error)
+      if (error && typeof error === 'object' && 'body' in error) {
+        console.error('MailerSend error details:', error.body)
+      }
       throw error
     }
   }
@@ -81,6 +86,9 @@ export class EmailService {
       console.log(`Order notification email sent to ${settings.order_email}`)
     } catch (error) {
       console.error('Failed to send order notification email:', error)
+      if (error && typeof error === 'object' && 'body' in error) {
+        console.error('MailerSend error details:', error.body)
+      }
       throw error
     }
   }
