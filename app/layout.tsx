@@ -2,7 +2,7 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Lobster } from "next/font/google";
+import { Lobster, Inter } from "next/font/google";
 import CookieProvider from '@/components/CookieProvider'
 import { SettingsProvider } from '@/lib/settingsContext'
 import AppWrapper from '@/components/AppWrapper'
@@ -16,6 +16,12 @@ const lobster = Lobster({
   variable: "--font-lobster",
   subsets: ["latin"],
   weight: "400",
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -39,7 +45,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} ${lobster.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable} ${lobster.variable} ${inter.variable}`}>
       <head>
         <link rel="icon" href="https://framerusercontent.com/images/9BRXJQRTuoR7dflavQsmPR1Pfpw.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />

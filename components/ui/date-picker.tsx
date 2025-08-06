@@ -121,7 +121,7 @@ export function DatePicker({
           className={`
             h-10 w-10 rounded-lg text-sm font-medium transition-all
             ${isSelected 
-              ? 'bg-orange text-white' 
+              ? 'bg-green-500 text-white' 
               : isBlocked 
                 ? 'bg-red-100 text-red-600 cursor-not-allowed hover:bg-red-200' 
                 : isDisabled 
@@ -204,7 +204,7 @@ export function DatePicker({
                 <span>Unavailable</span>
               </div>
               <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-orange rounded"></div>
+                <div className="w-3 h-3 bg-green-500 rounded"></div>
                 <span>Selected</span>
               </div>
             </div>

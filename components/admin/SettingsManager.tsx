@@ -53,7 +53,9 @@ export default function SettingsManager() {
         show_order_form_notice: localSettings.show_order_form_notice,
         show_cart_notice: localSettings.show_cart_notice,
         home_title: localSettings.home_title,
-        home_subheading: localSettings.home_subheading
+        home_subheading: localSettings.home_subheading,
+        cakes_heading: localSettings.cakes_heading,
+        order_heading: localSettings.order_heading
       }
 
       await SettingsService.updateSettings(settingsData)
@@ -119,87 +121,100 @@ export default function SettingsManager() {
       )}
 
               <div className="space-y-8">
-          {/* Top Row - Logo, Branding, Order Email, Cake Search */}
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Logo Management */}
-            <div className="space-y-4 lg:w-80">
-              <div className="flex items-center gap-4">
-                <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
-                  {localSettings.logo_url ? (
-                    <img
-                      src={localSettings.logo_url}
-                      alt="Logo"
-                      className="w-3/4 h-3/4 object-contain"
+          {/* General Settings */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <Info className="w-5 h-5 mr-2 text-orange" />
+              General Settings
+            </h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Logo Management */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-gray mb-3">Logo</h3>
+                <div className="flex items-center gap-4">
+                  <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
+                    {localSettings.logo_url ? (
+                      <img
+                        src={localSettings.logo_url}
+                        alt="Logo"
+                        className="w-3/4 h-3/4 object-contain"
+                      />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-gray-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
                     />
-                  ) : (
-                    <ImageIcon className="w-8 h-8 text-gray-400" />
-                  )}
+                    <Button variant="outline" onClick={() => logoInputRef.current?.click()}>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Upload Logo
+                    </Button>
+                    <p className="text-xs text-gray-600 mt-1">
+                      Recommended: 200x200px, PNG or SVG format
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <input
-                    ref={logoInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                  />
-                  <Button variant="outline" onClick={() => logoInputRef.current?.click()}>
-                    <Upload className="w-4 h-4 mr-2" />
-                    Upload Logo
-                  </Button>
+              </div>
+
+              {/* Branding */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-gray mb-3">Branding</h3>
+                <div>
+                  <label className="text-sm font-bold text-gray">Accent Colour</label>
+                  <div className="flex items-center gap-3 mt-1">
+                    <Input
+                      type="color"
+                      value={localSettings.primary_color}
+                      onChange={(e) => handleInputChange('primary_color', e.target.value)}
+                      className="w-16 h-10 p-1 cursor-pointer"
+                    />
+                    <Input
+                      value={localSettings.primary_color}
+                      onChange={(e) => handleInputChange('primary_color', e.target.value)}
+                      placeholder="#FF6B35"
+                      className="w-32"
+                    />
+                  </div>
                   <p className="text-xs text-gray-600 mt-1">
-                    Recommended: 200x200px, PNG or SVG format
+                    This color will be used throughout the website
+                  </p>
+                </div>
+              </div>
+
+              {/* Order Email */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold text-gray mb-3">Email</h3>
+                <div>
+                  <label className="text-sm font-bold text-gray">Email for Orders</label>
+                  <Input
+                    type="email"
+                    value={localSettings.order_email}
+                    onChange={(e) => handleInputChange('order_email', e.target.value)}
+                    placeholder="orders@teatimecollective.co.uk"
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-600 mt-1">
+                    This email will receive all order notifications
                   </p>
                 </div>
               </div>
             </div>
-
-            {/* Branding */}
-            <div className="space-y-4 lg:w-56">
-              <div>
-                <label className="text-sm font-bold text-gray">Accent Colour</label>
-                <div className="flex items-center gap-3 mt-1">
-                  <Input
-                    type="color"
-                    value={localSettings.primary_color}
-                    onChange={(e) => handleInputChange('primary_color', e.target.value)}
-                    className="w-16 h-10 p-1 cursor-pointer"
-                  />
-                  <Input
-                    value={localSettings.primary_color}
-                    onChange={(e) => handleInputChange('primary_color', e.target.value)}
-                    placeholder="#FF6B35"
-                    className="w-32"
-                  />
-                </div>
-                <p className="text-xs text-gray-600 mt-1">
-                  This color will be used throughout the website
-                </p>
-              </div>
-            </div>
-
-            {/* Order Email */}
-            <div className="space-y-4 lg:w-72">
-              <div>
-                <label className="text-sm font-bold text-gray">Email for Orders</label>
-                <Input
-                  type="email"
-                  value={localSettings.order_email}
-                  onChange={(e) => handleInputChange('order_email', e.target.value)}
-                  placeholder="orders@teatimecollective.co.uk"
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  This email will receive all order notifications
-                </p>
-              </div>
-            </div>
-
-
           </div>
 
-          {/* Site Information */}
-          <div className="space-y-4">
+          {/* SEO Settings */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <Info className="w-5 h-5 mr-2 text-orange" />
+              SEO Settings
+            </h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-sm font-bold text-gray">Site Title</label>
@@ -228,8 +243,13 @@ export default function SettingsManager() {
             </div>
           </div>
 
-          {/* Home Page Content */}
-          <div className="space-y-4">
+          {/* Home Page Settings */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <Info className="w-5 h-5 mr-2 text-orange" />
+              Home Page Settings
+            </h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-sm font-bold text-gray">Home Page Title</label>
@@ -258,23 +278,26 @@ export default function SettingsManager() {
             </div>
           </div>
 
-          {/* Payment Notice */}
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-bold text-gray">Order Page Notice <span className="text-xs text-gray-600">(This notice will appear on the order page above the submit button)</span></label>
-              <textarea
-                value={localSettings.payment_notice || ''}
-                onChange={(e) => handleInputChange('payment_notice', e.target.value)}
-                placeholder="Please note: No payment will be required at this point. I will review your order and get back to you to confirm or discuss options. Thanks"
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
-                rows={4}
-              />
-            </div>
-          </div>
-
-          {/* Page Subheadings */}
-          <div className="space-y-4">
+          {/* Cakes Page Settings */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <Info className="w-5 h-5 mr-2 text-orange" />
+              Cakes Page Settings
+            </h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-sm font-bold text-gray">Cakes Page Heading</label>
+                <Input
+                  value={localSettings.cakes_heading || ''}
+                  onChange={(e) => handleInputChange('cakes_heading', e.target.value)}
+                  placeholder="Our Cakes"
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Main heading displayed on the cakes page
+                </p>
+              </div>
               <div>
                 <label className="text-sm font-bold text-gray">Cakes Page Subheading</label>
                 <Input
@@ -285,6 +308,29 @@ export default function SettingsManager() {
                 />
                 <p className="text-xs text-gray-600 mt-1">
                   Subtitle that appears below the main heading on the cakes page
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Order Page Settings */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <Info className="w-5 h-5 mr-2 text-orange" />
+              Order Page Settings
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-sm font-bold text-gray">Order Page Heading</label>
+                <Input
+                  value={localSettings.order_heading || ''}
+                  onChange={(e) => handleInputChange('order_heading', e.target.value)}
+                  placeholder="Order Your Cakes"
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Main heading displayed on the order page
                 </p>
               </div>
               <div>
@@ -300,10 +346,29 @@ export default function SettingsManager() {
                 </p>
               </div>
             </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Order Page Notice</label>
+              <textarea
+                value={localSettings.payment_notice || ''}
+                onChange={(e) => handleInputChange('payment_notice', e.target.value)}
+                placeholder="Please note: No payment will be required at this point. I will review your order and get back to you to confirm or discuss options. Thanks"
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
+                rows={4}
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                This notice will appear on the order page above the submit button
+              </p>
+            </div>
           </div>
 
-          {/* Notice Toggles */}
-          <div className="space-y-4">
+          {/* Feature Toggles */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <Info className="w-5 h-5 mr-2 text-orange" />
+              Feature Toggles
+            </h2>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                 <div>

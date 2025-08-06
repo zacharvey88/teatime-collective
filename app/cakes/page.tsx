@@ -276,10 +276,10 @@ export default function CakesPage() {
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-orange mb-4 font-lobster">
-            Our Cakes
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-orange mb-2 font-lobster">
+            {settings?.cakes_heading || 'Our Cakes'}
           </h1>
-          <p className="text-lg text-gray max-w-2xl mx-auto mx-16 sm:mx-auto">
+          <p className="text-lg md:text-xl text-gray max-w-2xl mx-auto font-inter">
             {settings?.cakes_subheading || "Plant-powered cakes so good, even the cows are jealous! 🌱🍰✨"}
           </p>
         </div>

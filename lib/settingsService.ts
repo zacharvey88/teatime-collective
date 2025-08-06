@@ -15,6 +15,8 @@ export interface Settings {
   show_cart_notice?: boolean
   home_title?: string
   home_subheading?: string
+  cakes_heading?: string
+  order_heading?: string
   created_at?: string
   updated_at?: string
 }
@@ -33,6 +35,8 @@ export interface UpdateSettingsData {
   show_cart_notice?: boolean
   home_title?: string
   home_subheading?: string
+  cakes_heading?: string
+  order_heading?: string
 }
 
 export class SettingsService {

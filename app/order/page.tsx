@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Navigation from '@/components/Navigation'
 import Footer from '@/components/Footer'
-import { Calendar, AlertTriangle, Type, MessageSquare, Plus, Minus, Trash2, CheckCircle, XCircle, Loader2, ChevronDown } from 'lucide-react'
+import { Calendar, AlertTriangle, Type, MessageSquare, Plus, Minus, Trash2, CheckCircle, XCircle, Loader2, ChevronDown, CreditCard } from 'lucide-react'
 import Image from 'next/image'
 import { CakeService, CakeWithDetails } from '@/lib/cakeService'
 import WaveTransition from '@/components/WaveTransition'
@@ -374,10 +374,10 @@ export default function OrderPage() {
 
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold text-orange mb-4 font-lobster">
-              Order Your Cakes
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-orange mb-2 font-lobster">
+              {settings?.order_heading || 'Order Your Cakes'}
             </h1>
-            <p className="text-lg text-gray-600 italic">
+            <p className="text-lg md:text-xl text-gray max-w-2xl mx-auto font-inter">
               {settings?.order_subheading || "Don't leave them in the cart - someone else will eat them!"}
             </p>
           </div>
@@ -560,7 +560,7 @@ export default function OrderPage() {
                           {settings?.show_cart_notice !== false && (
                             <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
                               <p className="text-center">
-                                <strong>Note:</strong> Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order.
+                                Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order.
                               </p>
                             </div>
                           )}
@@ -698,9 +698,16 @@ export default function OrderPage() {
                 {/* Payment Notice */}
                 {settings?.payment_notice && settings?.show_order_form_notice !== false && (
                   <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                    <p className="text-sm text-orange-800 text-center">
-                      {settings.payment_notice}
-                    </p>
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-shrink-0">
+                        <CreditCard className="w-6 h-6 text-orange" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm text-orange text-left">
+                          {settings.payment_notice}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
 

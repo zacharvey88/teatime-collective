@@ -45,7 +45,7 @@ const Footer = () => {
                 <h3 className="text-3xl font-bold text-orange font-lobster">
                   Teatime Collective
                 </h3>
-                <p className="text-light-gray font-medium">
+                <p className="text-light-gray font-medium font-inter">
                   Delicious Vegan Cakes
                 </p>
               </div>
