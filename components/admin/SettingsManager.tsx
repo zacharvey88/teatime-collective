@@ -51,7 +51,9 @@ export default function SettingsManager() {
         cakes_subheading: localSettings.cakes_subheading,
         order_subheading: localSettings.order_subheading,
         show_order_form_notice: localSettings.show_order_form_notice,
-        show_cart_notice: localSettings.show_cart_notice
+        show_cart_notice: localSettings.show_cart_notice,
+        home_title: localSettings.home_title,
+        home_subheading: localSettings.home_subheading
       }
 
       await SettingsService.updateSettings(settingsData)
@@ -207,6 +209,9 @@ export default function SettingsManager() {
                   placeholder="Teatime Collective - Delicious Vegan Cakes"
                   className="mt-1"
                 />
+                <p className="text-xs text-gray-600 mt-1">
+                  Used for SEO and browser tab title
+                </p>
               </div>
               <div>
                 <label className="text-sm font-bold text-gray">Site Description</label>
@@ -216,6 +221,39 @@ export default function SettingsManager() {
                   placeholder="Vegan Cakes and Bakes, Festival Caterers and Market Traders since 2013."
                   className="mt-1"
                 />
+                <p className="text-xs text-gray-600 mt-1">
+                  Used for SEO meta description
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Home Page Content */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-sm font-bold text-gray">Home Page Title</label>
+                <Input
+                  value={localSettings.home_title || ''}
+                  onChange={(e) => handleInputChange('home_title', e.target.value)}
+                  placeholder="Teatime Collective"
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Main heading displayed on the home page
+                </p>
+              </div>
+              <div>
+                <label className="text-sm font-bold text-gray">Home Page Subheading</label>
+                <Input
+                  value={localSettings.home_subheading || ''}
+                  onChange={(e) => handleInputChange('home_subheading', e.target.value)}
+                  placeholder="Delicious Vegan Cakes & Bakes"
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Subtitle displayed below the main heading on the home page
+                </p>
               </div>
             </div>
           </div>

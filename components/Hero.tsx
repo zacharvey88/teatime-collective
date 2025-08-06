@@ -3,8 +3,10 @@
 import { Star, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import Carousel from './Carousel'
+import { useSettings } from '@/lib/settingsContext'
 
 const Hero = () => {
+  const { settings } = useSettings()
   return (
     <section className="relative md:min-h-screen md:flex md:items-center md:justify-center overflow-hidden pt-[120px] pb-4 md:pb-0">
       {/* Background Pattern */}
@@ -24,11 +26,11 @@ const Hero = () => {
         </div>
 
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 animate-slide-up text-balance font-lobster text-orange">
-          Delicious Vegan Cakes
+          {settings?.home_title || 'Delicious Vegan Cakes'}
         </h1>
 
         <p className="text-lg md:text-xl text-gray max-w-2xl mx-auto mb-8 animate-slide-up delay-200">
-          Vegan bakery, market traders and amazing cake makers since 2013
+          {settings?.home_subheading || 'Vegan bakery, market traders and amazing cake makers since 2013'}
         </p>
 
         <div className="mb-12 md:mb-16 animate-slide-up delay-300">

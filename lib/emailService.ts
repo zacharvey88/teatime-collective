@@ -34,8 +34,6 @@ export class EmailService {
   // Send order confirmation email to customer
   static async sendOrderConfirmation(data: OrderEmailData): Promise<void> {
     try {
-      console.log('Attempting to send order confirmation email to:', data.customerEmail)
-      
       const sender = new Sender(FROM_EMAIL, 'Teatime Collective')
       const recipient = new Recipient(data.customerEmail, data.customerName)
 
@@ -46,14 +44,9 @@ export class EmailService {
         .setHtml(await this.generateCustomerEmailHTML(data))
         .setText(await this.generateCustomerEmailText(data))
 
-      console.log('Email params prepared, sending...')
       await mailerSend.email.send(emailParams)
-      console.log(`Order confirmation email sent to ${data.customerEmail}`)
     } catch (error) {
       console.error('Failed to send order confirmation email:', error)
-      if (error && typeof error === 'object' && 'body' in error) {
-        console.error('MailerSend error details:', error.body)
-      }
       throw error
     }
   }
@@ -61,11 +54,8 @@ export class EmailService {
   // Send order notification email to owner
   static async sendOrderNotification(data: OrderEmailData): Promise<void> {
     try {
-      console.log('Attempting to send order notification email...')
-      
       // Get the order email from settings
       const settings = await SettingsService.getSettings()
-      console.log('Settings retrieved:', settings)
       
       if (!settings?.order_email) {
         throw new Error('Order email not configured in settings')
@@ -81,14 +71,9 @@ export class EmailService {
         .setHtml(this.generateOwnerEmailHTML(data))
         .setText(this.generateOwnerEmailText(data))
 
-      console.log('Owner email params prepared, sending...')
       await mailerSend.email.send(emailParams)
-      console.log(`Order notification email sent to ${settings.order_email}`)
     } catch (error) {
       console.error('Failed to send order notification email:', error)
-      if (error && typeof error === 'object' && 'body' in error) {
-        console.error('MailerSend error details:', error.body)
-      }
       throw error
     }
   }

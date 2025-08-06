@@ -13,6 +13,8 @@ export interface Settings {
   order_subheading?: string
   show_order_form_notice?: boolean
   show_cart_notice?: boolean
+  home_title?: string
+  home_subheading?: string
   created_at?: string
   updated_at?: string
 }
@@ -29,6 +31,8 @@ export interface UpdateSettingsData {
   order_subheading?: string
   show_order_form_notice?: boolean
   show_cart_notice?: boolean
+  home_title?: string
+  home_subheading?: string
 }
 
 export class SettingsService {
