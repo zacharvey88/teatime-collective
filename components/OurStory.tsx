@@ -1,9 +1,13 @@
 'use client'
 
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Clock, Calendar } from 'lucide-react'
 
 const OurStory = () => {
+  const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set())
+  const timelineRef = useRef<HTMLDivElement>(null)
+
   // Local timeline images stored in public/images folder
   const timelineImages = [
     { src: '/images/timeline-01.jpg', alt: 'Hulme Cafe Opens' },
@@ -56,6 +60,29 @@ const OurStory = () => {
     }
   ]
 
+  // Intersection Observer for scroll animations
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = parseInt(entry.target.getAttribute('data-index') || '0')
+            setVisibleItems(prev => new Set(Array.from(prev).concat(index)))
+          }
+        })
+      },
+      {
+        threshold: 0.3,
+        rootMargin: '0px 0px -100px 0px'
+      }
+    )
+
+    const timelineItems = timelineRef.current?.querySelectorAll('[data-index]')
+    timelineItems?.forEach(item => observer.observe(item))
+
+    return () => observer.disconnect()
+  }, [])
+
   return (
     <section id="story" className="pt-20 md:pt-20 pb-12 md:pb-20 bg-light-cream">
       <div className="section-container">
@@ -66,57 +93,88 @@ const OurStory = () => {
           </h2>
         </div>
 
-        {/* Timeline */}
-        <div className="max-w-4xl mx-auto relative">
-          {/* Connecting line for mobile */}
-          <div className="hidden md:block absolute left-8 top-0 bottom-0 w-0.5 bg-orange/30"></div>
+                   {/* Timeline */}
+           <div ref={timelineRef} className="relative max-w-7xl mx-auto">
+             {/* Center connecting line - becomes visible as you scroll */}
+             <div className="hidden lg:block absolute left-1/2 w-0.5 bg-orange transform -translate-x-1/2 transition-all duration-1000 ease-out"
+                  style={{
+                    top: '10rem', /* Start after first timeline item spacing */
+                    height: 'calc(100% - 20rem)', /* Height minus top and bottom spacing */
+                    background: `linear-gradient(to bottom, 
+                      ${visibleItems.size > 0 ? 'var(--tw-gradient-from)' : 'transparent'} 0%, 
+                      ${visibleItems.size > 0 ? 'var(--tw-gradient-to)' : 'transparent'} ${Math.min(visibleItems.size * 20, 100)}%, 
+                      transparent ${Math.min(visibleItems.size > 0 ? visibleItems.size * 20 : 0, 100)}%, 
+                      transparent 100%)`,
+                    '--tw-gradient-from': '#f97316',
+                    '--tw-gradient-to': '#f97316'
+                  } as React.CSSProperties}>
+             </div>
           
           {timelineEvents.map((event, index) => (
-            <div key={index} className="relative flex flex-col lg:flex-row items-center lg:items-start mb-16 last:mb-0">
-              {/* Mobile Layout: Date Circle with Heading/Subheading on one side */}
-              <div className="lg:hidden w-full flex items-center justify-center mb-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0 relative z-10 mr-4">
-                    <div className="bg-orange text-white rounded-full w-16 h-16 flex flex-col items-center justify-center text-center shadow-lg">
-                      <div className="text-xs font-medium">{event.month}</div>
-                      <div className="text-sm font-bold">{event.year}</div>
-                    </div>
+            <div 
+              key={index} 
+              data-index={index}
+              className={`relative mb-20 last:mb-0 transition-all duration-1000 ease-out ${
+                visibleItems.has(index) 
+                  ? 'opacity-100 transform translate-y-0' 
+                  : 'opacity-0 transform translate-y-10'
+              }`}
+            >
+              {/* Mobile Layout */}
+              <div className="lg:hidden">
+                <div className="flex flex-col items-center text-center mb-8">
+                  <div className="bg-orange text-white rounded-full w-20 h-20 flex flex-col items-center justify-center text-center shadow-lg mb-4">
+                    <div className="text-sm font-medium">{event.month}</div>
+                    <div className="text-base font-bold">{event.year}</div>
                   </div>
-                  
-                  <div className="flex-1">
-                    <p className="text-orange font-medium text-sm">{event.tagline}</p>
+                  <div>
+                    <p className="text-orange font-medium text-sm mb-1">{event.tagline}</p>
                     <h3 className="text-xl font-bold text-gray">{event.title}</h3>
                   </div>
                 </div>
-              </div>
-
-              {/* Desktop Layout: Original structure */}
-              <div className="hidden lg:flex flex-shrink-0 flex-col items-start mb-0 mr-8 relative z-10">
-                <div className="bg-orange text-white rounded-full w-16 h-16 flex flex-col items-center justify-center text-center shadow-lg">
-                  <div className="text-xs font-medium">{event.month}</div>
-                  <div className="text-sm font-bold">{event.year}</div>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 lg:flex items-center lg:space-x-8 space-y-6 lg:space-y-0 text-center lg:text-left">
-                <div className="lg:flex-1">
-                  <div className="mb-4 lg:block hidden">
-                    <p className="text-orange font-medium mb-2">{event.tagline}</p>
-                    <h3 className="text-2xl lg:text-3xl font-bold text-gray mb-4">{event.title}</h3>
-                  </div>
-                  <p className="text-gray leading-relaxed">{event.description}</p>
-                </div>
-
-                {/* Image */}
-                <div className="lg:flex-shrink-0">
-                  <div className="relative w-full lg:w-48 h-48 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 bg-white shadow-[0_4px_12px_-2px_rgba(0,0,0,0.6)]">
+                
+                <div className="space-y-6">
+                  <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-lg">
                     <Image
                       src={event.image}
                       alt={event.title}
                       fill
-                      className="object-cover transition-transform duration-300"
-                      sizes="(max-width: 1024px) 100vw, 192px"
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 100vw, 400px"
+                    />
+                  </div>
+                  <p className="text-gray leading-relaxed">{event.description}</p>
+                </div>
+              </div>
+
+              {/* Desktop Layout */}
+              <div className="hidden lg:flex items-center">
+                {/* Left Content (Text) */}
+                <div className="flex-1 pr-12 text-right">
+                  <div className="max-w-md ml-auto">
+                    <p className="text-orange font-medium text-sm mb-2">{event.tagline}</p>
+                    <h3 className="text-2xl font-bold text-gray mb-4">{event.title}</h3>
+                    <p className="text-gray leading-relaxed">{event.description}</p>
+                  </div>
+                </div>
+
+                {/* Center Date Circle */}
+                <div className="relative z-10 flex-shrink-0">
+                  <div className="bg-orange text-white rounded-full w-20 h-20 flex flex-col items-center justify-center text-center shadow-lg">
+                    <div className="text-sm font-medium">{event.month}</div>
+                    <div className="text-lg font-bold">{event.year}</div>
+                  </div>
+                </div>
+
+                {/* Right Content (Image) */}
+                <div className="flex-1 pl-12">
+                  <div className="relative w-3/4 h-64 rounded-xl overflow-hidden shadow-lg transition-transform duration-500 hover:scale-105">
+                    <Image
+                      src={event.image}
+                      alt={event.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 100vw, 400px"
                     />
                   </div>
                 </div>
