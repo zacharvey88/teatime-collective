@@ -44,48 +44,24 @@ export class AuthService {
   // Check if current user is an admin
   static async isAdmin(): Promise<boolean> {
     try {
-      console.log('🔍 AuthService.isAdmin: Starting...')
-      
-      // First check if user is authenticated (fast)
-      const isAuth = await this.isAuthenticated()
-      if (!isAuth) {
-        console.log('🔍 AuthService.isAdmin: User not authenticated')
-        return false
-      }
-      
-      // Get current user for admin check
       const user = await this.getCurrentUser()
-      console.log('🔍 AuthService.isAdmin: Got user:', !!user)
-      
-      if (!user) return false
-      
-      console.log('🔍 AuthService.isAdmin: Checking admin status in database...')
-      
-      // Add timeout specifically to the database query
-      const databasePromise = supabase
-        .from('admin_users')
-        .select('is_active')
-        .eq('email', user.email)
-        .single()
-      
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Database query timed out after 10 seconds')), 10000)
-      })
-      
-      const { data, error } = await Promise.race([databasePromise, timeoutPromise])
-      
-      console.log('🔍 AuthService.isAdmin: Database response received, error:', !!error)
-      
-      if (error) {
-        console.error('❌ AuthService.isAdmin: Database error:', error)
+      if (!user) {
         return false
       }
-      
-      const result = data?.is_active || false
-      console.log('🔍 AuthService.isAdmin: Admin status result:', result)
-      return result
+
+      // Check admin status in database
+      const { data, error } = await supabase
+        .from('admin_users')
+        .select('*')
+        .eq('user_id', user.id)
+        .single()
+
+      if (error) {
+        return false
+      }
+
+      return !!data
     } catch (error) {
-      console.error('❌ AuthService.isAdmin: Error:', error)
       return false
     }
   }
@@ -154,17 +130,10 @@ export class AuthService {
       })
       
       const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
-      const authenticated = !!session
-      
-      console.log('🔍 AuthService.isAuthenticated: Result:', authenticated)
-      return authenticated
+      return !!session
     } catch (error) {
-      console.log('🔍 AuthService.isAuthenticated: Error:', error)
-      
       // If we get a timeout, try a different approach
       if (error instanceof Error && error.message.includes('timed out')) {
-        console.log('🔍 AuthService.isAuthenticated: Timeout detected, trying alternative method...')
-        
         try {
           // Try to get user directly with a shorter timeout
           const userPromise = supabase.auth.getUser()
@@ -173,20 +142,13 @@ export class AuthService {
           })
           
           const { data: { user } } = await Promise.race([userPromise, userTimeoutPromise])
-          const hasUser = !!user
-          
-          console.log('🔍 AuthService.isAuthenticated: Alternative method result:', hasUser)
-          return hasUser
+          return !!user
         } catch (altError) {
-          console.log('🔍 AuthService.isAuthenticated: Alternative method also failed:', altError)
-          
           // Last resort: check if we have session data in localStorage
           try {
             const hasLocalSession = localStorage.getItem('sb-kntdzvkvfyoiwjfnlvgg-auth-token')
-            console.log('🔍 AuthService.isAuthenticated: LocalStorage fallback result:', !!hasLocalSession)
             return !!hasLocalSession
           } catch (localError) {
-            console.log('🔍 AuthService.isAuthenticated: LocalStorage check failed:', localError)
             return false
           }
         }
@@ -199,8 +161,6 @@ export class AuthService {
   // Get user session (only when needed for API calls)
   static async getSession() {
     try {
-      console.log('🔍 AuthService.getSession: Starting...')
-      
       // Simple session retrieval with timeout
       const sessionPromise = supabase.auth.getSession()
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -208,7 +168,6 @@ export class AuthService {
       })
       
       const { data: { session }, error } = await Promise.race([sessionPromise, timeoutPromise])
-      console.log('🔍 AuthService.getSession: Got response, error:', !!error)
       
       if (error) throw error
       
@@ -220,8 +179,6 @@ export class AuthService {
         
         // If session expires in less than 5 minutes, refresh it
         if (timeUntilExpiry < 5 * 60 * 1000) {
-          console.log('🔍 AuthService.getSession: Session expiring soon, refreshing...')
-          
           // Add timeout to session refresh
           const refreshPromise = supabase.auth.refreshSession()
           const refreshTimeoutPromise = new Promise<never>((_, reject) => {
@@ -231,18 +188,14 @@ export class AuthService {
           const { data: { session: refreshedSession }, error: refreshError } = await Promise.race([refreshPromise, refreshTimeoutPromise])
           
           if (refreshError) {
-            console.error('❌ AuthService.getSession: Session refresh failed:', refreshError)
             return session // Return old session if refresh fails
           }
-          console.log('🔍 AuthService.getSession: Session refreshed successfully')
           return refreshedSession
         }
       }
       
-      console.log('🔍 AuthService.getSession: Returning session:', !!session)
       return session
     } catch (error) {
-      console.error('❌ AuthService.getSession: Error:', error)
       throw error
     }
   }

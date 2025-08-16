@@ -19,8 +19,6 @@ const Markets = () => {
     try {
       setLoading(true)
       const marketDates = await MarketDatesService.getActiveMarketDates()
-      console.log('All market dates:', marketDates)
-      console.log('Number of market dates:', marketDates.length)
       
       // Ensure we always show an even number of markets for balanced rows
       let displayCount = marketDates.length

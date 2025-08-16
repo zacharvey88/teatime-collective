@@ -76,36 +76,34 @@ export class ReviewsService {
 
   // Create a new review
   static async createReview(reviewData: CreateReviewData): Promise<Review> {
-    console.log('ReviewsService.createReview called with:', reviewData)
-    
-    // If no display_order provided, get the next highest order
-    if (reviewData.display_order === undefined) {
-      console.log('Getting next display order...')
-      const { data: maxOrderData } = await supabase
+    try {
+      // Get the next display order
+      const { data: existingReviews } = await supabase
         .from('reviews')
         .select('display_order')
         .order('display_order', { ascending: false })
         .limit(1)
+
+      const nextOrder = existingReviews && existingReviews.length > 0 
+        ? (existingReviews[0].display_order || 0) + 1 
+        : 1
+
+      reviewData.display_order = nextOrder
+
+      const { data, error } = await supabase
+        .from('reviews')
+        .insert([reviewData])
+        .select()
         .single()
 
-      reviewData.display_order = (maxOrderData?.display_order || 0) + 1
-      console.log('Next display order:', reviewData.display_order)
+      if (error) {
+        throw new Error(`Failed to create review: ${error.message}`)
+      }
+
+      return data
+    } catch (error) {
+      throw error
     }
-
-    console.log('Inserting review with data:', reviewData)
-    
-    const { data, error } = await supabase
-      .from('reviews')
-      .insert([reviewData])
-      .select()
-      .single()
-
-    if (error) {
-      throw new Error(`Failed to create review: ${error.message}`)
-    }
-
-    console.log('Review created successfully:', data)
-    return data
   }
 
   // Update a review

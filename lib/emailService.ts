@@ -1,5 +1,3 @@
-console.log('MAILERSEND_API_KEY:', process.env.MAILERSEND_API_KEY);
-
 import { MailerSend, EmailParams, Sender, Recipient, Attachment } from 'mailersend'
 import { SettingsService } from './settingsService'
 

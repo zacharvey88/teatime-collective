@@ -44,7 +44,13 @@ export default function CakeManager() {
   const [editingSize, setEditingSize] = useState<string | null>(null)
   const [editingFlavor, setEditingFlavor] = useState<string | null>(null)
   const [editingCategoryData, setEditingCategoryData] = useState({ name: '', description: '' })
-  const [editingFlavorData, setEditingFlavorData] = useState({ name: '', description: '', priceOverride: '', imageUrl: '', active: true })
+  const [editingFlavorData, setEditingFlavorData] = useState({
+    name: '',
+    description: '',
+    priceOverride: '',
+    imageUrl: '',
+    active: true
+  })
   const [editingSizeData, setEditingSizeData] = useState({ name: '', description: '', price: '' })
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isEditFlavorDialogOpen, setIsEditFlavorDialogOpen] = useState(false)
@@ -92,46 +98,40 @@ export default function CakeManager() {
       setUploadingImage(true)
       setError('')
       
-      console.log('Starting image upload for file:', file.name, 'Size:', file.size)
+      // Check file size (limit to 3MB for better performance)
+      if (file.size > 3 * 1024 * 1024) {
+        throw new Error('File size must be less than 3MB for better upload performance')
+      }
+
+      // Check file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        throw new Error('Please select a JPEG, PNG, or WebP image file')
+      }
 
       // Generate unique filename
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `cakes/${fileName}`
-      
-      console.log('Generated file path:', filePath)
 
-      // Upload to Supabase Storage
-      console.log('Attempting to upload to Supabase...')
-      const { data, error } = await supabase.storage
-        .from('images')
-        .upload(filePath, file)
-
-      if (error) {
-        console.error('Supabase upload error:', error)
-        throw error
-      }
-
-      console.log('Upload successful, data:', data)
+      // Upload with retry mechanism
+      const data = await uploadWithRetry(file, filePath)
 
       // Get public URL
-      console.log('Getting public URL...')
       const { data: urlData } = supabase.storage
         .from('images')
         .getPublicUrl(filePath)
 
-      console.log('Public URL data:', urlData)
-
-      // Update the image URL field
-      setNewFlavor(prev => ({ ...prev, imageUrl: urlData.publicUrl }))
-      setImagePreview(urlData.publicUrl)
-      setSelectedImage(null)
-      
-      console.log('Image upload completed successfully')
+      return urlData.publicUrl
 
     } catch (err) {
-      console.error('Error uploading image:', err)
-      setError('Failed to upload image. Please try again.')
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      if (errorMessage.includes('timeout')) {
+        setError('Upload timeout - please try again with a smaller image or check your connection')
+      } else {
+        setError(`Upload failed: ${errorMessage}`)
+      }
+      throw err
     } finally {
       setUploadingImage(false)
     }
@@ -142,42 +142,24 @@ export default function CakeManager() {
       setUploadingImage(true)
       setEditDialogError('')
       
-      console.log('Starting image upload for edit, file:', file.name, 'Size:', file.size)
-
       // Generate unique filename
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `cakes/${fileName}`
       
-      console.log('Generated file path:', filePath)
-
       // Upload to Supabase Storage
-      console.log('Attempting to upload to Supabase...')
-      const { data, error } = await supabase.storage
-        .from('images')
-        .upload(filePath, file)
-
-      if (error) {
-        console.error('Supabase upload error:', error)
-        throw error
-      }
-
-      console.log('Upload successful, data:', data)
+      const data = await uploadWithRetry(file, filePath)
 
       // Get public URL
-      console.log('Getting public URL...')
       const { data: urlData } = supabase.storage
         .from('images')
         .getPublicUrl(filePath)
 
-      console.log('Public URL data:', urlData)
-      
-      console.log('Image upload for edit completed successfully')
       return urlData.publicUrl
 
     } catch (err) {
-      console.error('Error uploading image for edit:', err)
-      setEditDialogError('Failed to upload image. Please try again.')
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+      setEditDialogError(`Failed to upload image. Please try again: ${errorMessage}`)
       return null
     } finally {
       setUploadingImage(false)
@@ -334,17 +316,10 @@ export default function CakeManager() {
     setCreateType(type)
     setIsCreateDialogOpen(true)
     setError('') // Clear any previous errors
-    console.log('Opening create dialog for:', type)
   }
 
   const handleSaveCreateItem = async () => {
     try {
-      console.log('handleSaveCreateItem called')
-      console.log('createType:', createType)
-      console.log('newCategory:', newCategory)
-      console.log('newSize:', newSize)
-      console.log('newFlavor:', newFlavor)
-      
       if (createType === 'category') {
         if (!newCategory.name.trim()) {
           setDialogError('Please enter a category name')
@@ -372,13 +347,7 @@ export default function CakeManager() {
         })
         setNewSize({ categoryId: '', name: '', description: '', price: '' })
       } else if (createType === 'flavor') {
-        console.log('Processing flavor creation...')
-        console.log('newFlavor state:', newFlavor)
-        console.log('selectedImage:', selectedImage)
-        console.log('imagePreview:', imagePreview)
-        
         if (!newFlavor.categoryId || !newFlavor.name.trim()) {
-          console.log('Validation failed - categoryId:', newFlavor.categoryId, 'name:', newFlavor.name)
           setDialogError('Please fill in all flavor fields')
           return
         }
@@ -387,7 +356,6 @@ export default function CakeManager() {
 
         // If there's a selected image but no URL, upload it first
         if (selectedImage && !finalImageUrl) {
-          console.log('Uploading selected image before creating flavor...')
           try {
             setUploadingImage(true)
             
@@ -396,28 +364,10 @@ export default function CakeManager() {
             const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
             const filePath = `cakes/${fileName}`
             
-            console.log('Generated file path:', filePath)
-
-            // Upload to Supabase Storage
-            console.log('Attempting to upload to Supabase...')
-            const { data, error } = await supabase.storage
-              .from('images')
-              .upload(filePath, selectedImage)
-
-            if (error) {
-              console.error('Supabase upload error:', error)
-              throw error
-            }
-
-            console.log('Upload successful, data:', data)
-
-            // Get public URL
-            console.log('Getting public URL...')
+            const data = await uploadWithRetry(selectedImage, filePath)
             const { data: urlData } = supabase.storage
               .from('images')
               .getPublicUrl(filePath)
-
-            console.log('Public URL data:', urlData)
             finalImageUrl = urlData.publicUrl
             
           } catch (uploadErr) {
@@ -429,7 +379,6 @@ export default function CakeManager() {
           }
         }
 
-        console.log('Creating flavor with image URL:', finalImageUrl)
         const createdFlavor = await CakeService.createFlavor({
           category_id: newFlavor.categoryId,
           name: newFlavor.name.trim(),
@@ -439,17 +388,14 @@ export default function CakeManager() {
           display_order: 1,
           active: true
         })
-        console.log('Flavor created successfully:', createdFlavor)
         setNewFlavor({ categoryId: '', name: '', description: '', priceOverride: '', imageUrl: '' })
         setSelectedImage(null)
         setImagePreview(null)
       }
       
-      console.log('Closing dialog and reloading cakes...')
       setIsCreateDialogOpen(false)
       setError('')
       await loadCakes()
-      console.log('Create item process completed successfully')
     } catch (err) {
       console.error('Error in handleSaveCreateItem:', err)
       setDialogError(`Failed to create ${createType}`)
@@ -481,15 +427,11 @@ export default function CakeManager() {
   }
 
   const handleDeleteFlavor = async (flavorId: string) => {
-    console.log('handleDeleteFlavor called with flavorId:', flavorId)
     const flavor = cakes.flatMap(c => c.flavors).find(f => f.id === flavorId)
-    console.log('Found flavor:', flavor)
     if (!flavor) {
-      console.log('No flavor found, returning')
       return
     }
 
-    console.log('Setting delete item and opening dialog')
     setDeleteItem({
       type: 'flavor',
       id: flavorId,
@@ -499,24 +441,19 @@ export default function CakeManager() {
   }
 
   const handleConfirmDelete = async () => {
-    console.log('handleConfirmDelete called with deleteItem:', deleteItem)
     if (!deleteItem) {
-      console.log('No deleteItem, returning')
       return
     }
 
     try {
-      console.log('Deleting item of type:', deleteItem.type)
       if (deleteItem.type === 'category') {
         await CakeService.deleteCategory(deleteItem.id)
       } else if (deleteItem.type === 'size') {
         await CakeService.deleteSize(deleteItem.id)
       } else if (deleteItem.type === 'flavor') {
-        console.log('Deleting flavor with ID:', deleteItem.id)
         await CakeService.deleteFlavor(deleteItem.id)
       }
       
-      console.log('Delete successful, reloading cakes')
       await loadCakes()
       setIsDeleteDialogOpen(false)
       setDeleteItem(null)
@@ -527,18 +464,15 @@ export default function CakeManager() {
   }
 
   const handleEditFlavor = (flavor: any) => {
-    console.log('handleEditFlavor called with:', flavor)
     setEditingFlavorData({ name: flavor.name, description: flavor.description || '', priceOverride: flavor.price_override?.toString() || '', imageUrl: flavor.image_url || '', active: flavor.active })
     setEditingFlavor(flavor.id)
     setImagePreview(flavor.image_url || null)
     setSelectedImage(null)
     setEditDialogError('')
     setIsEditFlavorDialogOpen(true)
-    console.log('Edit flavor dialog should now be open')
   }
 
   const handleEditSize = (size: any) => {
-    console.log('handleEditSize called with:', size)
     setEditingSizeData({ 
       name: size.name, 
       description: size.description || '', 
@@ -549,7 +483,6 @@ export default function CakeManager() {
   }
 
   const handleSaveSizeEdit = async () => {
-    console.log('handleSaveSizeEdit called with:', { editingSize, editingSizeData })
     
     if (!editingSize || !editingSizeData.name.trim()) {
       setError('Please enter a size name')
@@ -563,26 +496,17 @@ export default function CakeManager() {
     }
 
     try {
-      console.log('Calling CakeService.updateSize with:', editingSize, {
-        name: editingSizeData.name.trim(),
-        description: editingSizeData.description.trim() || null,
-        price: price
-      })
-      
       const result = await CakeService.updateSize(editingSize, {
         name: editingSizeData.name.trim(),
         description: editingSizeData.description.trim() || null,
         price: price
       })
       
-      console.log('Update result:', result)
-      
       setEditingSize(null)
       setEditingSizeData({ name: '', description: '', price: '' })
       setIsEditSizeDialogOpen(false)
       setError('')
       await loadCakes()
-      console.log('Size edit completed successfully')
     } catch (err) {
       console.error('Error in handleSaveSizeEdit:', err)
       setError('Failed to update size')
@@ -590,7 +514,6 @@ export default function CakeManager() {
   }
 
   const handleSaveFlavorEdit = async () => {
-    console.log('handleSaveFlavorEdit called with:', { editingFlavor, editingFlavorData })
     
     if (!editingFlavor || !editingFlavorData.name.trim()) {
       setError('Please enter a flavor name')
@@ -602,7 +525,6 @@ export default function CakeManager() {
       let finalImageUrl = editingFlavorData.imageUrl.trim() || null
       
       if (selectedImage) {
-        console.log('Uploading selected image for edit...')
         const uploadedUrl = await uploadImageForEdit(selectedImage)
         if (uploadedUrl) {
           finalImageUrl = uploadedUrl
@@ -612,12 +534,6 @@ export default function CakeManager() {
         }
       }
 
-      console.log('Calling CakeService.updateFlavor with:', editingFlavor, {
-        name: editingFlavorData.name.trim(),
-        description: editingFlavorData.description.trim() || null,
-        image_url: finalImageUrl
-      })
-      
       const result = await CakeService.updateFlavor(editingFlavor, {
         name: editingFlavorData.name.trim(),
         description: editingFlavorData.description.trim() || null,
@@ -626,8 +542,6 @@ export default function CakeManager() {
         active: editingFlavorData.active
       })
       
-      console.log('Update result:', result)
-      
       setEditingFlavor(null)
       setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '', active: true })
       setSelectedImage(null)
@@ -635,13 +549,47 @@ export default function CakeManager() {
       setIsEditFlavorDialogOpen(false)
       setError('')
       await loadCakes()
-      console.log('Flavor edit completed successfully')
     } catch (err) {
       console.error('Error in handleSaveFlavorEdit:', err)
       setError('Failed to update flavor')
     }
   }
 
+  const uploadWithRetry = async (file: File, filePath: string, maxRetries = 2) => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const uploadPromise = supabase.storage
+          .from('images')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          })
+
+        // Add timeout of 60 seconds
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Upload timeout')), 60000)
+        )
+
+        const { data, error } = await Promise.race([uploadPromise, timeoutPromise]) as any
+
+        if (error) {
+          if (attempt === maxRetries) {
+            throw error
+          }
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+          continue
+        }
+
+        return data
+      } catch (err) {
+        if (attempt === maxRetries) {
+          throw err
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
+      }
+    }
+  }
 
 
   if (loading) {
@@ -838,8 +786,6 @@ export default function CakeManager() {
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        console.log('Add Size button clicked!')
-                        console.log('Category:', cake.category)
                         
                         // Reset all form data first
                         setNewCategory({ name: '', description: '' })
@@ -847,8 +793,6 @@ export default function CakeManager() {
                         setNewFlavor({ categoryId: '', name: '', description: '', priceOverride: '', imageUrl: '' })
                         setCreateType('size')
                         setIsCreateDialogOpen(true)
-                        console.log('Quick add size for category:', cake.category.id)
-                        console.log('Modal should now be open')
                       }}
                     >
                       <Plus className="w-4 h-4 mr-2 text-gray-600" />
@@ -897,7 +841,6 @@ export default function CakeManager() {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              console.log('Delete button clicked for flavor:', flavor.id, flavor.name)
                               handleDeleteFlavor(flavor.id)
                             }}
                             className="text-red-600 hover:text-red-700 h-6 w-6 p-0 flex-shrink-0"
@@ -912,8 +855,6 @@ export default function CakeManager() {
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        console.log('Add Flavor button clicked!')
-                        console.log('Category:', cake.category)
                         
                         // Reset all form data first
                         setNewCategory({ name: '', description: '' })
@@ -921,8 +862,6 @@ export default function CakeManager() {
                         setNewFlavor({ categoryId: cake.category.id, name: '', description: '', priceOverride: '', imageUrl: '' })
                         setCreateType('flavor')
                         setIsCreateDialogOpen(true)
-                        console.log('Quick add flavor for category:', cake.category.id)
-                        console.log('Modal should now be open')
                       }}
                     >
                       <Plus className="w-3 h-3 mr-1 text-gray-600" />
@@ -988,7 +927,6 @@ export default function CakeManager() {
 
       {/* Edit Flavor Dialog */}
       <Dialog open={isEditFlavorDialogOpen} onOpenChange={(open) => {
-        console.log('Edit Flavor Dialog onOpenChange:', open)
         setIsEditFlavorDialogOpen(open)
         if (!open) {
           setEditingFlavor(null)
@@ -1146,7 +1084,6 @@ export default function CakeManager() {
               <Button
                 variant="outline"
                 onClick={() => {
-                  console.log('Cancel button clicked')
                   setIsEditFlavorDialogOpen(false)
                   setEditingFlavor(null)
                   setEditingFlavorData({ name: '', description: '', priceOverride: '', imageUrl: '', active: true })
@@ -1159,7 +1096,6 @@ export default function CakeManager() {
               </Button>
               <Button
                 onClick={() => {
-                  console.log('Save Changes button clicked')
                   handleSaveFlavorEdit()
                 }}
                 className="bg-orange hover:bg-orange/90 text-white"
@@ -1241,8 +1177,6 @@ export default function CakeManager() {
               </Button>
               <Button
                 onClick={() => {
-                  console.log('Save Size button clicked!')
-                  console.log('Current editingSizeData:', editingSizeData)
                   handleSaveSizeEdit()
                 }}
                 className="bg-orange hover:bg-orange/90 text-white"
@@ -1256,7 +1190,6 @@ export default function CakeManager() {
 
       {/* Create Item Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
-        console.log('Dialog onOpenChange:', open, 'createType:', createType)
         setIsCreateDialogOpen(open)
         if (!open) {
           setDialogError('')
@@ -1520,7 +1453,6 @@ export default function CakeManager() {
               </Button>
               <Button
                 onClick={() => {
-                  console.log('Create button clicked for type:', createType)
                   handleSaveCreateItem()
                 }}
                 className="bg-orange hover:bg-orange/90 text-white"

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { AuthService } from '@/lib/auth'
 import { RouteGuard } from '@/lib/routeGuard'
 import AdminLogin from '@/components/AdminLogin'
@@ -17,92 +17,63 @@ export default function AdminProtected({ children }: AdminProtectedProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const isCheckingAuth = useRef(false)
 
+  // Listen for auth state changes
   useEffect(() => {
-    checkAuth()
-    
-    // Set up real-time auth state listener
     const { data: { subscription } } = AuthService.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
-        // Show logout screen and redirect after a moment
-        setIsLoggingOut(true)
+        setIsLoggingOut(true) // Show logout screen
         setIsAuthenticated(false)
         setIsLoading(false)
         setAuthError(null)
-        
-        // Redirect to login page after showing logout screen briefly
-        setTimeout(() => {
+        setTimeout(() => { // Redirect after showing logout screen
           window.location.href = '/admin'
         }, 1500)
       } else if (event === 'SIGNED_IN' && session) {
-        // Only check auth if we don't have a session and we're not already checking
         if (!isAuthenticated && !isCheckingAuth.current) {
-          console.log('🔍 Auth state change detected, triggering auth check...')
           checkAuth()
-        } else {
-          console.log('🔒 Skipping auth check - already authenticated or check in progress')
         }
       }
     })
 
-    // Set up navigation guard
-    const cleanupNavigationGuard = RouteGuard.setupNavigationGuard()
+    return () => subscription.unsubscribe()
+  }, [isAuthenticated])
 
-    // Cleanup subscriptions on unmount
-    return () => {
-      subscription.unsubscribe()
-      cleanupNavigationGuard()
-    }
-  }, [])
-
-  const checkAuth = async () => {
-    // Prevent multiple simultaneous auth checks
+  const checkAuth = useCallback(async () => {
     if (isCheckingAuth.current) {
-      console.log('🔒 Authentication check already in progress, skipping...')
       return
     }
 
+    isCheckingAuth.current = true
+    setIsLoading(true)
+    setAuthError(null)
+
     try {
-      console.log('🔍 Starting authentication check...')
-      isCheckingAuth.current = true
-      setIsLoading(true)
-      setAuthError(null)
-      
-      console.log('🔍 Step 1: Checking if user is authenticated...')
-      // Fast authentication check (no network calls)
       const isAuth = await AuthService.isAuthenticated()
-      console.log('🔍 Authentication result:', isAuth)
       
       if (!isAuth) {
-        console.log('🔍 User not authenticated')
         setIsAuthenticated(false)
         setIsLoading(false)
-        // Don't set authError for normal "not authenticated" state
         return
       }
-      
-      console.log('🔍 Step 2: Checking admin status...')
-      // Simple admin check - no complex timeouts
+
       const isAdmin = await AuthService.isAdmin()
-      console.log('🔍 Admin check result:', isAdmin)
       
-      setIsAuthenticated(isAdmin)
-      setIsLoading(false)
-      
-      if (!isAdmin) {
-        setAuthError('User is not an admin')
+      if (isAdmin) {
+        setIsAuthenticated(true)
+        setIsLoading(false)
+      } else {
+        setAuthError('Access denied. Admin privileges required.')
+        setIsAuthenticated(false)
+        setIsLoading(false)
       }
-      
-      console.log('🔍 Authentication check completed successfully')
-      
-    } catch (error) {
-      console.error('❌ Authentication check failed:', error)
+    } catch (error: any) {
+      setAuthError(error.message || 'Authentication failed')
       setIsAuthenticated(false)
       setIsLoading(false)
-      setAuthError('Authentication failed')
     } finally {
       isCheckingAuth.current = false
     }
-  }
+  }, [])
 
   const handleLoginSuccess = () => {
     setIsAuthenticated(true)

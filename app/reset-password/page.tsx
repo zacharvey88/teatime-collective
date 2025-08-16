@@ -42,55 +42,27 @@ export default function ResetPassword() {
   }, [searchParams, hashParams, accessToken, refreshToken])
   
   useEffect(() => {
-    // Check for hash fragment errors first
-    if (hashParams.includes('error=')) {
-      const errorMatch = hashParams.match(/error=([^&]+)/)
-      const errorCodeMatch = hashParams.match(/error_code=([^&]+)/)
-      const errorDescriptionMatch = hashParams.match(/error_description=([^&]+)/)
-      
-      const error = errorMatch ? decodeURIComponent(errorMatch[1]) : ''
-      const errorCode = errorCodeMatch ? decodeURIComponent(errorCodeMatch[1]) : ''
-      const errorDescription = errorDescriptionMatch ? decodeURIComponent(errorDescriptionMatch[1]) : ''
-      
-      if (error === 'access_denied' && errorCode === 'otp_expired') {
-        setMessage({ 
-          type: 'error', 
-          text: 'The password reset link has expired. Please request a new password reset.' 
-        })
-        return
-      }
-      
-      setMessage({ 
-        type: 'error', 
-        text: `Reset link error: ${errorDescription || error}` 
-      })
-      return
+    // Extract tokens from URL hash fragment or search params
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const searchParams = new URLSearchParams(window.location.search)
+    
+    let token = hashParams.get('access_token') || searchParams.get('access_token')
+    let refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token')
+    
+    if (token && refreshToken) {
+      // Found tokens in hash fragment
+      setToken(token)
+      setRefreshToken(refreshToken)
+    } else if (token) {
+      // Found token in search params
+      setToken(token)
     }
     
-    // Check for tokens in hash fragment
-    if (hashParams.includes('access_token=') || hashParams.includes('token=')) {
-      const tokenMatch = hashParams.match(/access_token=([^&]+)/) || hashParams.match(/token=([^&]+)/)
-      const refreshTokenMatch = hashParams.match(/refresh_token=([^&]+)/)
-      
-      if (tokenMatch) {
-        const token = decodeURIComponent(tokenMatch[1])
-        const refreshToken = refreshTokenMatch ? decodeURIComponent(refreshTokenMatch[1]) : null
-        
-        console.log('Found tokens in hash fragment:', { token, refreshToken })
-        validateTokenWithTokens(token, refreshToken)
-        return
-      }
+    // Validate token if we have one
+    if (token) {
+      validateToken(token, refreshToken)
     }
-    
-    // Validate the token when component mounts
-    if (accessToken) {
-      console.log('Using tokens from search params')
-      validateTokenWithTokens(accessToken, refreshToken)
-    } else {
-      console.log('No tokens found')
-      setMessage({ type: 'error', text: 'Invalid or missing reset link. Please request a new password reset.' })
-    }
-  }, [accessToken, refreshToken, hashParams])
+  }, [])
   
   const validateTokenWithTokens = async (token: string, refreshToken?: string | null) => {
     try {
@@ -127,12 +99,10 @@ export default function ResetPassword() {
       const { data, error } = await supabase.auth.getUser()
       
       if (error || !data.user) {
-        console.error('Get user error:', error)
         setMessage({ type: 'error', text: 'Invalid or expired reset link. Please request a new password reset.' })
         return
       }
       
-      console.log('Token validation successful for user:', data.user.email)
       setUserEmail(data.user.email || '')
       setIsValidToken(true)
       setMessage(null) // Clear any existing error messages
@@ -162,7 +132,6 @@ export default function ResetPassword() {
     try {
       // Ensure we have a valid session before updating password
       const { data: sessionData } = await supabase.auth.getSession()
-      console.log('Current session data:', sessionData)
       
       if (!sessionData.session) {
         // If no session, try to set it up again with the tokens
@@ -175,14 +144,12 @@ export default function ResetPassword() {
           if (sessionError) {
             throw new Error('Failed to establish session: ' + sessionError.message)
           }
-          console.log('Session established with refresh token')
         } else {
           // If no refresh token, we can't establish a session, but we can still validate the token
           const { error: userError } = await supabase.auth.getUser(accessToken!)
           if (userError) {
             throw new Error('Failed to validate token: ' + userError.message)
           }
-          console.log('Token validated without establishing session')
         }
       }
       

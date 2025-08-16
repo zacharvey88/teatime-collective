@@ -66,8 +66,6 @@ export default function StandaloneCakeManager() {
   const uploadWithRetry = async (file: File, filePath: string, maxRetries = 2) => {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        console.log(`Upload attempt ${attempt}/${maxRetries}`)
-        
         const uploadPromise = supabase.storage
           .from('images')
           .upload(filePath, file, {
@@ -83,7 +81,6 @@ export default function StandaloneCakeManager() {
         const { data, error } = await Promise.race([uploadPromise, timeoutPromise]) as any
 
         if (error) {
-          console.error(`Upload error on attempt ${attempt}:`, error)
           if (attempt === maxRetries) {
             throw error
           }
@@ -97,7 +94,6 @@ export default function StandaloneCakeManager() {
         if (attempt === maxRetries) {
           throw err
         }
-        console.log(`Attempt ${attempt} failed, retrying...`)
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt))
       }
     }
@@ -108,8 +104,6 @@ export default function StandaloneCakeManager() {
       setUploadingImage(true)
       setError('')
       
-      console.log('Starting image upload for file:', file.name, 'Size:', file.size)
-
       // Check file size (limit to 3MB for better performance)
       if (file.size > 3 * 1024 * 1024) {
         throw new Error('File size must be less than 3MB for better upload performance')
@@ -125,21 +119,15 @@ export default function StandaloneCakeManager() {
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
       const filePath = `cakes/${fileName}`
-      
-      console.log('Generated file path:', filePath)
 
       // Upload with retry mechanism
-      console.log('Attempting to upload to Supabase...')
       const data = await uploadWithRetry(file, filePath)
-
-      console.log('Upload successful:', data)
 
       // Get public URL
       const { data: urlData } = supabase.storage
         .from('images')
         .getPublicUrl(filePath)
 
-      console.log('Public URL:', urlData.publicUrl)
       return urlData.publicUrl
 
     } catch (err) {

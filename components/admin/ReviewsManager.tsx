@@ -77,8 +77,6 @@ const ReviewsManager = () => {
   }
 
   const handleCreate = useCallback(async () => {
-    console.log('handleCreate called with formData:', formData)
-    
     try {
       const createData: CreateReviewData = {
         customer_name: formData.customer_name,
@@ -88,16 +86,13 @@ const ReviewsManager = () => {
         is_active: formData.is_active
       }
 
-      console.log('Sending create data:', createData)
       await ReviewsService.createReview(createData)
-      console.log('Review created successfully')
       toast.success('Review created successfully')
       setIsCreateDialogOpen(false)
       resetForm()
       fetchReviews()
-    } catch (error) {
-      console.error('Failed to create review:', error)
-      toast.error(`Failed to create review: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } catch (error: any) {
+      toast.error(`Failed to create review: ${error.message || 'Unknown error'}`)
     }
   }, [formData, resetForm, fetchReviews])
 
@@ -119,8 +114,7 @@ const ReviewsManager = () => {
       setSelectedReview(null)
       resetForm()
       fetchReviews()
-    } catch (error) {
-      console.error('Failed to update review:', error)
+    } catch (error: any) {
       toast.error('Failed to update review')
     }
   }
@@ -134,17 +128,13 @@ const ReviewsManager = () => {
     if (!deleteReview) return
 
     try {
-      console.log('Starting delete operation for review:', deleteReview.id)
-      
       await ReviewsService.deleteReview(deleteReview.id)
-      console.log('Review deleted successfully')
       toast.success('Review deleted successfully')
       setIsDeleteDialogOpen(false)
       setDeleteReview(null)
       fetchReviews()
-    } catch (error) {
-      console.error('Failed to delete review:', error)
-      toast.error(`Failed to delete review: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } catch (error: any) {
+      toast.error(`Failed to delete review: ${error.message || 'Unknown error'}`)
     }
   }
 
@@ -153,8 +143,7 @@ const ReviewsManager = () => {
       await ReviewsService.toggleReviewStatus(review.id)
       toast.success(`Review ${review.is_active ? 'hidden' : 'shown'} successfully`)
       fetchReviews()
-    } catch (error) {
-      console.error('Failed to toggle review status:', error)
+    } catch (error: any) {
       toast.error('Failed to update review status')
     }
   }

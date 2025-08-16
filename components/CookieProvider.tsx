@@ -17,28 +17,25 @@ export default function CookieProvider({ children }: CookieProviderProps) {
     setHasConsented(consentStatus !== null)
   }, [])
 
-  const handleAccept = () => {
-    CookieManager.acceptAll()
-    setHasConsented(true)
-    
-    // Initialize analytics or other services here
-    console.log('All cookies accepted')
+  const handleAcceptAll = () => {
+    setCookieConsent('all')
+    setShowBanner(false)
+    // Store consent in localStorage
+    localStorage.setItem('cookie-consent', 'all')
   }
 
-  const handleDecline = () => {
-    CookieManager.declineNonEssential()
-    setHasConsented(true)
-    
-    // Clear any existing non-essential cookies
-    CookieManager.clearNonEssentialCookies()
-    console.log('Non-essential cookies declined')
+  const handleDeclineNonEssential = () => {
+    setCookieConsent('essential')
+    setShowBanner(false)
+    // Store consent in localStorage
+    localStorage.setItem('cookie-consent', 'essential')
   }
 
   return (
     <>
       {children}
       {hasConsented === false && (
-        <CookieConsent onAccept={handleAccept} onDecline={handleDecline} />
+        <CookieConsent onAccept={handleAcceptAll} onDecline={handleDeclineNonEssential} />
       )}
     </>
   )
