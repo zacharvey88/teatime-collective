@@ -12,6 +12,7 @@ import { OrderService, CreateOrderRequestData } from '@/lib/orderService'
 import { HolidayService } from '@/lib/holidayService'
 import { useSettings } from '@/lib/settingsContext'
 import { DatePicker } from '@/components/ui/date-picker'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 interface CartItem {
   id: string
@@ -558,12 +559,19 @@ export default function OrderPage() {
                             <span className="text-orange">£{getTotalPrice().toFixed(2)}</span>
                           </div>
                           {settings?.show_cart_notice !== false && (
-                            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
-                              <p className="text-center">
-                                Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order.
-                              </p>
-                            </div>
-                          )}
+                            <div className="mt-2 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                              <div className="flex items-center space-x-3">
+                                <div className="flex-shrink-0">
+                                  <AlertTriangle className="w-6 h-6 text-orange" />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-sm text-orange text-left">
+                                    {settings?.cart_notice || "Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order."}
+                                  </p>
+                                </div>
+                                </div>
+                              </div>
+                            )}
 
                         </div>
                       </>

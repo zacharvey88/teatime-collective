@@ -14,6 +14,7 @@ import { Plus, Edit, Trash2, User, Shield, Eye, Pencil } from 'lucide-react'
 import { AdminUserService, CreateAdminUserData, UpdateAdminUserData } from '@/lib/adminUserService'
 import { AuthService, AdminUser } from '@/lib/auth'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 export default function AdminManager() {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([])
@@ -226,10 +227,7 @@ export default function AdminManager() {
           <CardDescription>Loading users...</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          </div>
+          <LoadingSpinner message="Loading users..." />
         </CardContent>
       </Card>
     )

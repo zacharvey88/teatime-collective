@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Heart, Mail } from 'lucide-react'
 import { FrontendImageService, FrontendImageItem } from '@/lib/frontendImageService'
+import LoadingSpinner from './ui/loading-spinner'
 
 const Weddings = () => {
   const [currentSlide, setCurrentSlide] = useState(0)
@@ -11,8 +12,10 @@ const Weddings = () => {
   const [loading, setLoading] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const [isInView, setIsInView] = useState(false)
+  const [isAnimated, setIsAnimated] = useState(false)
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -30,9 +33,9 @@ const Weddings = () => {
     fetchImages();
   }, []);
 
-  // Intersection Observer for viewport detection
+  // Intersection Observer for viewport detection and animations
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    const carouselObserver = new IntersectionObserver(
       ([entry]) => {
         setIsInView(entry.isIntersecting);
       },
@@ -42,13 +45,32 @@ const Weddings = () => {
       }
     );
 
+    const animationObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsAnimated(true);
+        }
+      },
+      {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
     if (carouselRef.current) {
-      observer.observe(carouselRef.current);
+      carouselObserver.observe(carouselRef.current);
+    }
+
+    if (sectionRef.current) {
+      animationObserver.observe(sectionRef.current);
     }
 
     return () => {
       if (carouselRef.current) {
-        observer.unobserve(carouselRef.current);
+        carouselObserver.unobserve(carouselRef.current);
+      }
+      if (sectionRef.current) {
+        animationObserver.unobserve(sectionRef.current);
       }
     };
   }, []);
@@ -91,17 +113,17 @@ const Weddings = () => {
   };
 
   return (
-    <section id="weddings" className="py-12 md:py-20 bg-light-cream">
+    <section id="weddings" className="py-12 md:py-20 bg-light-cream" ref={sectionRef}>
       <div className="section-container">
         <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-12">
           {/* Content */}
           <div className="lg:flex-1 lg:max-w-[50%] space-y-6 order-1 lg:order-1">
-            <div className="hidden lg:flex items-center justify-center lg:justify-start space-x-2 text-orange mb-4">
+            <div className={`hidden lg:flex items-center justify-center lg:justify-start space-x-2 text-orange mb-4 transition-all duration-1000 ${isAnimated ? 'animate-fade-in' : 'opacity-0'}`}>
               <Heart className="w-6 h-6" />
               <span className="text-sm font-medium uppercase tracking-wider">Special Occasions</span>
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster text-center lg:text-left">
+            <h2 className={`text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster text-center lg:text-left transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               Weddings
             </h2>
 
@@ -165,7 +187,7 @@ const Weddings = () => {
               </div>
             </div>
 
-            <div className="prose prose-lg text-gray space-y-4">
+            <div className={`prose prose-lg text-gray space-y-4 transition-all duration-1000 delay-200 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               <p>
                 Yes, we cater for weddings and other special occasions too! And that doesn't have to mean just one magnificent tiered cake; we also do cake buffets! So for the cherry on top of your day, get in touch for a quote or to discuss any ideas.
               </p>
@@ -176,7 +198,7 @@ const Weddings = () => {
             </div>
 
             {/* Wedding Services */}
-            <div className="flex flex-row flex-wrap gap-4">
+            <div className={`flex flex-row flex-wrap gap-4 transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px] transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
                 <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300 hover:bg-orange/20">
                   <Heart className="w-4 h-4 text-orange transition-all duration-300 hover:scale-110" />
@@ -204,7 +226,7 @@ const Weddings = () => {
           </div>
 
           {/* Wedding Gallery - Desktop Only */}
-          <div className="hidden lg:block lg:flex-1 w-full lg:order-2">
+          <div className={`hidden lg:block lg:flex-1 w-full lg:order-2 transition-all duration-1000 delay-100 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
             <div 
               ref={carouselRef}
               className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-cream"

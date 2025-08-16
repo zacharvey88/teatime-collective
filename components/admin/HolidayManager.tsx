@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { HolidayService, Holiday, CreateHolidayData } from '@/lib/holidayService'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 export default function HolidayManager() {
   const [holidays, setHolidays] = useState<Holiday[]>([])
@@ -265,10 +266,7 @@ export default function HolidayManager() {
 
       {/* Loading State */}
       {loading && (
-        <div className="text-center py-12">
-          <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-gray-600 mt-2">Loading holidays...</p>
-        </div>
+        <LoadingSpinner message="Loading holidays..." />
       )}
 
       {/* Holidays List */}

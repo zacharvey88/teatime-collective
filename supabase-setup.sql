@@ -63,17 +63,102 @@ CREATE TABLE IF NOT EXISTS settings (
   site_title TEXT NOT NULL,
   site_description TEXT NOT NULL,
   primary_color TEXT NOT NULL DEFAULT '#FF6B35',
+  payment_notice TEXT,
+  cart_notice TEXT,
+  cake_search_enabled BOOLEAN DEFAULT true,
+  cakes_subheading TEXT,
+  order_subheading TEXT,
+  show_order_form_notice BOOLEAN DEFAULT true,
+  show_cart_notice BOOLEAN DEFAULT true,
+  home_title TEXT,
+  home_subheading TEXT,
+  cakes_heading TEXT,
+  order_heading TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Add missing columns if they don't exist (safe migration)
+DO $$ 
+BEGIN
+  -- Add payment_notice column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'payment_notice') THEN
+    ALTER TABLE settings ADD COLUMN payment_notice TEXT;
+  END IF;
+  
+  -- Add cart_notice column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'cart_notice') THEN
+    ALTER TABLE settings ADD COLUMN cart_notice TEXT;
+  END IF;
+  
+  -- Add cake_search_enabled column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'cake_search_enabled') THEN
+    ALTER TABLE settings ADD COLUMN cake_search_enabled BOOLEAN DEFAULT true;
+  END IF;
+  
+  -- Add cakes_subheading column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'cakes_subheading') THEN
+    ALTER TABLE settings ADD COLUMN cakes_subheading TEXT;
+  END IF;
+  
+  -- Add order_subheading column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'order_subheading') THEN
+    ALTER TABLE settings ADD COLUMN order_subheading TEXT;
+  END IF;
+  
+  -- Add show_order_form_notice column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'show_order_form_notice') THEN
+    ALTER TABLE settings ADD COLUMN show_order_form_notice BOOLEAN DEFAULT true;
+  END IF;
+  
+  -- Add show_cart_notice column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'show_cart_notice') THEN
+    ALTER TABLE settings ADD COLUMN show_cart_notice BOOLEAN DEFAULT true;
+  END IF;
+  
+  -- Add home_title column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'home_title') THEN
+    ALTER TABLE settings ADD COLUMN home_title TEXT;
+  END IF;
+  
+  -- Add home_subheading column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'home_subheading') THEN
+    ALTER TABLE settings ADD COLUMN home_subheading TEXT;
+  END IF;
+  
+  -- Add cakes_heading column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'cakes_heading') THEN
+    ALTER TABLE settings ADD COLUMN cakes_heading TEXT;
+  END IF;
+  
+  -- Add order_heading column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'order_heading') THEN
+    ALTER TABLE settings ADD COLUMN order_heading TEXT;
+  END IF;
+END $$;
+
 -- Insert default settings (only if table is empty)
-INSERT INTO settings (order_email, site_title, site_description, primary_color)
+INSERT INTO settings (
+  order_email, 
+  site_title, 
+  site_description, 
+  primary_color,
+  payment_notice,
+  cart_notice,
+  cake_search_enabled,
+  show_order_form_notice,
+  show_cart_notice
+)
 SELECT 
   'orders@teatimecollective.co.uk',
   'Teatime Collective - Delicious Vegan Cakes',
   'Vegan Cakes and Bakes, Festival Caterers and Market Traders since 2013.',
-  '#FF6B35'
+  '#FF6B35',
+  'Please note: No payment will be required at this point. I will review your order and get back to you to confirm or discuss options. Thanks',
+  'Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order.',
+  true,
+  true,
+  true
 WHERE NOT EXISTS (SELECT 1 FROM settings);
 
 -- Enable RLS

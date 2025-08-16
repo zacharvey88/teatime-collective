@@ -27,6 +27,7 @@ import { Switch } from '@/components/ui/switch'
 import { CakeService, CakeCategory, CakeSize, CakeFlavor, CakeWithDetails } from '@/lib/cakeService'
 import StandaloneCakeManager from './StandaloneCakeManager'
 import { supabase } from '@/lib/supabaseClient'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 export default function CakeManager() {
   const [activeTab, setActiveTab] = useState<'categories' | 'standalone'>('categories')
@@ -646,10 +647,7 @@ export default function CakeManager() {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading cakes...</p>
-        </div>
+        <LoadingSpinner message="Loading cakes..." />
       </div>
     )
   }

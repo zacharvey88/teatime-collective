@@ -15,6 +15,7 @@ import {
   Globe
 } from 'lucide-react'
 import { ContactInfoService, ContactInfo, UpdateContactInfoData } from '@/lib/contactInfoService'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 export default function ContactManager() {
   const [info, setInfo] = useState<ContactInfo | null>(null)
@@ -92,10 +93,7 @@ export default function ContactManager() {
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin"></div>
-          <span className="ml-2 text-gray-600">Loading contact info...</span>
-        </div>
+        <LoadingSpinner message="Loading contact info..." />
       ) : !info ? (
         <Alert variant="destructive">
           <AlertDescription>Failed to load contact information</AlertDescription>

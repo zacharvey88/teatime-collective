@@ -15,6 +15,7 @@ import {
   Star
 } from 'lucide-react'
 import { OrderAnalyticsService, OrderRequestStats, CustomerInsights, FlavorAnalytics, RecentActivity } from '@/lib/orderAnalyticsService'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 interface DashboardOverviewProps {
   onSectionChange: (section: string, filter?: string) => void
@@ -60,10 +61,7 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin"></div>
-          <span className="ml-2 text-gray-600">Loading dashboard...</span>
-        </div>
+        <LoadingSpinner message="Loading dashboard..." size={120} />
       ) : error ? (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-red-600">{error}</p>

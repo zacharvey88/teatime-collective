@@ -6,6 +6,7 @@ import { Clock, Calendar } from 'lucide-react'
 
 const OurStory = () => {
   const [visibleItems, setVisibleItems] = useState<Set<number>>(new Set())
+  const [scrollPercentage, setScrollPercentage] = useState(0)
   const timelineRef = useRef<HTMLDivElement>(null)
 
   // Local timeline images stored in public/images folder
@@ -60,6 +61,57 @@ const OurStory = () => {
     }
   ]
 
+  // Timeline section scroll-based line growth effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!timelineRef.current) return
+      
+      const timelineRect = timelineRef.current.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+      
+      // Calculate when timeline section enters and exits viewport
+      const timelineTop = timelineRect.top
+      const timelineHeight = timelineRect.height
+      
+      // Timeline is fully in view when top is 0 or negative and bottom is positive
+      const timelineBottom = timelineTop + timelineHeight
+      
+      // Calculate progress within the timeline section (0-100)
+      let percentage = 0
+      
+      if (timelineTop <= windowHeight && timelineBottom >= 0) {
+        // Timeline is partially or fully visible
+        const visibleHeight = Math.min(timelineHeight, windowHeight - timelineTop)
+        const totalScrollDistance = timelineHeight * 0.7 + windowHeight // Reduced multiplier for faster growth
+        const currentScrollDistance = windowHeight - timelineTop
+        
+        // Delay the start so line doesn't appear before first circle
+        const delayedScrollDistance = Math.max(0, currentScrollDistance - 50) // 50px delay
+        
+        percentage = Math.min(100, Math.max(0, (delayedScrollDistance / totalScrollDistance) * 100))
+      } else if (timelineTop > windowHeight) {
+        // Timeline hasn't entered viewport yet
+        percentage = 0
+      } else if (timelineBottom < 0) {
+        // Timeline has completely exited viewport
+        percentage = 100
+      }
+      
+      setScrollPercentage(percentage)
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    window.addEventListener('resize', handleScroll)
+    
+    // Initial calculation
+    handleScroll()
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleScroll)
+    }
+  }, [])
+
   // Intersection Observer for scroll animations
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -72,8 +124,8 @@ const OurStory = () => {
         })
       },
       {
-        threshold: 0.3,
-        rootMargin: '0px 0px -100px 0px'
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
       }
     )
 
@@ -95,18 +147,12 @@ const OurStory = () => {
 
                    {/* Timeline */}
            <div ref={timelineRef} className="relative max-w-7xl mx-auto">
-             {/* Center connecting line - becomes visible as you scroll */}
-             <div className="hidden lg:block absolute left-1/2 w-0.5 bg-orange transform -translate-x-1/2 transition-all duration-1000 ease-out"
+             {/* Center connecting line - grows with timeline scroll */}
+             <div className="hidden lg:block absolute left-1/2 w-1 bg-orange transform -translate-x-1/2 transition-all duration-300 ease-out"
                   style={{
                     top: '10rem', /* Start after first timeline item spacing */
-                    height: 'calc(100% - 20rem)', /* Height minus top and bottom spacing */
-                    background: `linear-gradient(to bottom, 
-                      ${visibleItems.size > 0 ? 'var(--tw-gradient-from)' : 'transparent'} 0%, 
-                      ${visibleItems.size > 0 ? 'var(--tw-gradient-to)' : 'transparent'} ${Math.min(visibleItems.size * 20, 100)}%, 
-                      transparent ${Math.min(visibleItems.size > 0 ? visibleItems.size * 20 : 0, 100)}%, 
-                      transparent 100%)`,
-                    '--tw-gradient-from': '#f97316',
-                    '--tw-gradient-to': '#f97316'
+                    height: scrollPercentage > 0 ? `${Math.max(0, (scrollPercentage / 100) * (timelineRef.current?.offsetHeight || 800) - 200)}px` : '0px', /* Only visible when growing */
+                    maxHeight: 'calc(100% - 20rem)' /* Maximum height constraint */
                   } as React.CSSProperties}>
              </div>
           
@@ -149,35 +195,71 @@ const OurStory = () => {
 
               {/* Desktop Layout */}
               <div className="hidden lg:flex items-center">
-                {/* Left Content (Text) */}
-                <div className="flex-1 pr-12 text-right">
-                  <div className="max-w-md ml-auto">
-                    <p className="text-orange font-medium text-sm mb-2">{event.tagline}</p>
-                    <h3 className="text-2xl font-bold text-gray mb-4">{event.title}</h3>
-                    <p className="text-gray leading-relaxed">{event.description}</p>
-                  </div>
-                </div>
+                {index % 2 === 0 ? (
+                  <>
+                    {/* Left Content (Text) */}
+                    <div className="flex-1 pr-12 text-right">
+                      <div className="max-w-md ml-auto">
+                        <p className="text-orange font-medium text-sm mb-2">{event.tagline}</p>
+                        <h3 className="text-2xl font-bold text-gray mb-4">{event.title}</h3>
+                        <p className="text-gray leading-relaxed">{event.description}</p>
+                      </div>
+                    </div>
 
-                {/* Center Date Circle */}
-                <div className="relative z-10 flex-shrink-0">
-                  <div className="bg-orange text-white rounded-full w-20 h-20 flex flex-col items-center justify-center text-center shadow-lg">
-                    <div className="text-sm font-medium">{event.month}</div>
-                    <div className="text-lg font-bold">{event.year}</div>
-                  </div>
-                </div>
+                    {/* Center Date Circle */}
+                    <div className="relative z-10 flex-shrink-0">
+                      <div className="bg-orange text-white rounded-full w-20 h-20 flex flex-col items-center justify-center text-center shadow-lg">
+                        <div className="text-sm font-medium">{event.month}</div>
+                        <div className="text-lg font-bold">{event.year}</div>
+                      </div>
+                    </div>
 
-                {/* Right Content (Image) */}
-                <div className="flex-1 pl-12">
-                  <div className="relative w-3/4 h-64 rounded-xl overflow-hidden shadow-lg transition-transform duration-500 hover:scale-105">
-                    <Image
-                      src={event.image}
-                      alt={event.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 400px"
-                    />
-                  </div>
-                </div>
+                    {/* Right Content (Image) */}
+                    <div className="flex-1 pl-12">
+                      <div className="relative w-3/4 h-64 rounded-xl overflow-hidden shadow-lg transition-transform duration-500 hover:scale-105">
+                        <Image
+                          src={event.image}
+                          alt={event.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 1024px) 100vw, 400px"
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Left Content (Image) */}
+                    <div className="flex-1 pr-12">
+                      <div className="relative w-3/4 ml-auto h-64 rounded-xl overflow-hidden shadow-lg transition-transform duration-500 hover:scale-105">
+                        <Image
+                          src={event.image}
+                          alt={event.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 1024px) 100vw, 400px"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Center Date Circle */}
+                    <div className="relative z-10 flex-shrink-0">
+                      <div className="bg-orange text-white rounded-full w-20 h-20 flex flex-col items-center justify-center text-center shadow-lg">
+                        <div className="text-sm font-medium">{event.month}</div>
+                        <div className="text-lg font-bold">{event.year}</div>
+                      </div>
+                    </div>
+
+                    {/* Right Content (Text) */}
+                    <div className="flex-1 pl-12 text-left">
+                      <div className="max-w-md mr-auto">
+                        <p className="text-orange font-medium text-sm mb-2">{event.tagline}</p>
+                        <h3 className="text-2xl font-bold text-gray mb-4">{event.title}</h3>
+                        <p className="text-gray leading-relaxed">{event.description}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           ))}

@@ -13,6 +13,9 @@ const Navigation = () => {
   const [cartCount, setCartCount] = useState(0)
   const [cartItems, setCartItems] = useState<any[]>([])
   const [showCartPreview, setShowCartPreview] = useState(false)
+  const [isMenuExpanded, setIsMenuExpanded] = useState(false)
+  const [menuCloseTimeout, setMenuCloseTimeout] = useState<NodeJS.Timeout | null>(null)
+  const [cartPreviewCloseTimeout, setCartPreviewCloseTimeout] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     const handleScroll = () => {
@@ -67,6 +70,18 @@ const Navigation = () => {
     return () => window.removeEventListener('storage', handleStorageChange)
   }, [])
 
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (menuCloseTimeout) {
+        clearTimeout(menuCloseTimeout)
+      }
+      if (cartPreviewCloseTimeout) {
+        clearTimeout(cartPreviewCloseTimeout)
+      }
+    }
+  }, [menuCloseTimeout, cartPreviewCloseTimeout])
+
   const navItems = [
     { name: 'Cakes', href: '/cakes' },
     { name: 'Order', href: '/order' },
@@ -75,6 +90,40 @@ const Navigation = () => {
     { name: 'Festivals', href: '/#festivals' },
     { name: 'Weddings', href: '/#weddings' }
   ]
+
+  const handleMenuMouseEnter = () => {
+    // Clear any existing timeout
+    if (menuCloseTimeout) {
+      clearTimeout(menuCloseTimeout)
+      setMenuCloseTimeout(null)
+    }
+    setIsMenuExpanded(true)
+  }
+
+  const handleMenuMouseLeave = () => {
+    // Set a timeout to close the menu after 1000ms
+    const timeout = setTimeout(() => {
+      setIsMenuExpanded(false)
+    }, 1000)
+    setMenuCloseTimeout(timeout)
+  }
+
+  const handleCartPreviewMouseEnter = () => {
+    // Clear any existing timeout
+    if (cartPreviewCloseTimeout) {
+      clearTimeout(cartPreviewCloseTimeout)
+      setCartPreviewCloseTimeout(null)
+    }
+    setShowCartPreview(true)
+  }
+
+  const handleCartPreviewMouseLeave = () => {
+    // Set a timeout to close the cart preview after 1000ms
+    const timeout = setTimeout(() => {
+      setShowCartPreview(false)
+    }, 1000)
+    setCartPreviewCloseTimeout(timeout)
+  }
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -106,14 +155,18 @@ const Navigation = () => {
             </Link>
 
             {/* Expandable Navigation Links and Burger */}
-            <div className="flex items-center group">
+            <div 
+              className="flex items-center group relative"
+              onMouseEnter={handleMenuMouseEnter}
+              onMouseLeave={handleMenuMouseLeave}
+            >
               {/* Expandable Navigation Links */}
-              <div className="flex items-center space-x-6 overflow-hidden transition-all duration-300 group-hover:max-w-none max-w-0 w-0 group-hover:w-auto">
+              <div className={`flex items-center space-x-6 overflow-hidden transition-all duration-500 ${isMenuExpanded ? 'max-w-none w-auto' : 'max-w-0 w-0'}`}>
                 {navItems.map((item, index) => (
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`font-medium text-dark hover:text-orange transition-colors duration-200 relative group/item whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${index === 0 ? 'pl-4' : ''} ${index === 5 ? 'pr-2' : ''}`}
+                    className={`font-medium text-dark hover:text-orange transition-colors duration-200 relative group/item whitespace-nowrap transition-opacity duration-500 ${index === 0 ? 'pl-4' : ''} ${index === 5 ? 'pr-6' : ''} ${isMenuExpanded ? 'opacity-100' : 'opacity-0'}`}
                   >
                     {item.name}
                     <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange transition-all duration-200 group-hover/item:w-full"></span>
@@ -121,11 +174,14 @@ const Navigation = () => {
                 ))}
               </div>
               
+              {/* Hover Bridge - prevents menu from closing when moving mouse */}
+              <div className={`absolute top-full left-0 right-0 h-4 bg-transparent ${isMenuExpanded ? 'block' : 'hidden'}`}></div>
+              
               {/* Burger Menu Trigger */}
               <div className="relative">
                 <button className="font-medium text-dark hover:text-orange transition-colors duration-200 flex items-center space-x-1">
                   <Menu className="w-5 h-5" />
-                  <ChevronDown className="w-4 h-4 transition-transform duration-200 group-hover:rotate-180" />
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isMenuExpanded ? 'rotate-180' : ''}`} />
                 </button>
               </div>
             </div>
@@ -133,8 +189,8 @@ const Navigation = () => {
             {/* Cart Indicator with Preview */}
             <div 
               className="relative ml-2"
-              onMouseEnter={() => setShowCartPreview(true)}
-              onMouseLeave={() => setShowCartPreview(false)}
+              onMouseEnter={handleCartPreviewMouseEnter}
+              onMouseLeave={handleCartPreviewMouseLeave}
             >
               <Link
                 href="/order"
@@ -150,44 +206,52 @@ const Navigation = () => {
 
               {/* Cart Preview Dropdown */}
               {showCartPreview && cartItems.length > 0 && (
-                <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
-                  <div className="p-4">
-                    <h3 className="text-sm font-semibold text-gray-800 mb-3">Your Cart ({cartCount} items)</h3>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {cartItems.slice(0, 3).map((item, index) => (
-                        <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg">
-                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-bold text-orange">{item.quantity}</span>
+                <>
+                  {/* Hover Bridge - prevents cart preview from closing when moving mouse */}
+                  <div className="absolute top-full right-0 w-80 h-2 bg-transparent"></div>
+                  <div 
+                    className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+                    onMouseEnter={handleCartPreviewMouseEnter}
+                    onMouseLeave={handleCartPreviewMouseLeave}
+                  >
+                    <div className="p-4">
+                      <h3 className="text-sm font-semibold text-gray-800 mb-3">Your Cart ({cartCount} items)</h3>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {cartItems.slice(0, 3).map((item, index) => (
+                          <div key={index} className="flex items-center space-x-3 p-2 bg-gray-50 rounded-lg">
+                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+                              <span className="text-xs font-bold text-orange">{item.quantity}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-800 truncate">{item.flavorName}</p>
+                              <p className="text-xs text-gray-500">{item.sizeName}</p>
+                            </div>
+                            <span className="text-sm font-bold text-orange">£{item.price.toFixed(2)}</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-800 truncate">{item.flavorName}</p>
-                            <p className="text-xs text-gray-500">{item.sizeName}</p>
+                        ))}
+                        {cartItems.length > 3 && (
+                          <div className="text-xs text-gray-500 text-center py-1">
+                            +{cartItems.length - 3} more items
                           </div>
-                          <span className="text-sm font-bold text-orange">£{item.price.toFixed(2)}</span>
-                        </div>
-                      ))}
-                      {cartItems.length > 3 && (
-                        <div className="text-xs text-gray-500 text-center py-1">
-                          +{cartItems.length - 3} more items
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-semibold text-gray-800">Total:</span>
-                        <span className="text-sm font-bold text-orange">
-                          £{cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
-                        </span>
+                        )}
                       </div>
-                      <Link
-                        href="/order"
-                        className="w-full bg-orange text-white text-sm font-semibold py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors duration-200 text-center block"
-                      >
-                        View Cart
-                      </Link>
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm font-semibold text-gray-800">Total:</span>
+                          <span className="text-sm font-bold text-orange">
+                            £{cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
+                          </span>
+                        </div>
+                        <Link
+                          href="/order"
+                          className="w-full bg-orange text-white text-sm font-semibold py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors duration-200 text-center block"
+                        >
+                          View Cart
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
           </div>

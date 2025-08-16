@@ -53,7 +53,7 @@ export default function StandaloneCakeManager() {
   const loadCakes = async () => {
     try {
       setLoading(true)
-      const data = await CakeService.getStandaloneCakes()
+      const data = await CakeService.getStandaloneCakesForAdmin()
       setCakes(data)
     } catch (err) {
       setError('Failed to load standalone cakes')
@@ -337,7 +337,7 @@ export default function StandaloneCakeManager() {
           <DialogTrigger asChild>
             <Button className="bg-orange hover:bg-orange-900 text-white">
               <Plus className="w-4 h-4 mr-2" />
-              Add Standalone Cake
+              Add Cake
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md bg-white border border-gray-200 shadow-lg">
@@ -466,7 +466,7 @@ export default function StandaloneCakeManager() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {cakes.map((cake) => (
-          <div key={cake.id} className="bg-white rounded-lg shadow-md p-4">
+          <div key={cake.id} className={`bg-white rounded-lg border border-gray-200 p-4 ${!cake.active ? 'opacity-60' : ''}`}>
             <div className="flex items-start space-x-3">
               {/* Image on the left */}
               <div className="w-20 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
@@ -487,7 +487,9 @@ export default function StandaloneCakeManager() {
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-800 truncate">{cake.name}</h3>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className="font-semibold text-gray-800 truncate">{cake.name}</h3>
+                    </div>
                     <p className="text-sm text-gray-600">{cake.size_name} - £{cake.price}</p>
                     {cake.description && (
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">{cake.description}</p>
@@ -504,11 +506,8 @@ export default function StandaloneCakeManager() {
                           console.error('Failed to update cake availability:', error)
                         }
                       }}
-                      className="mr-2 [&>span]:!bg-white"
-                      style={{
-                        '--tw-bg-opacity': '1',
-                        backgroundColor: cake.active ? 'var(--primary-color)' : '#d1d5db'
-                      } as React.CSSProperties}
+                      style={{ backgroundColor: cake.active ? 'var(--primary-color)' : '#d1d5db' }}
+                      className="[&>span]:!bg-white"
                     />
                     <Button
                       size="sm"

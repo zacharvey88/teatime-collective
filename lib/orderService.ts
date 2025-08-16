@@ -1,17 +1,12 @@
 import { supabase } from './supabaseClient'
+import { formatDateTime } from './utils'
 
-export interface OrderRequest {
+export interface Customer {
   id: string
-  customer_name: string
-  customer_email: string
-  customer_phone: string
-  collection_date: string
-  estimated_total: number
-  status: 'new_request' | 'reviewed' | 'approved' | 'rejected' | 'completed' | 'archived'
-  notes: string
-  allergies: string
-  writing_on_cake: string
-  special_requests: string
+  name: string
+  email: string
+  phone: string
+  address: string
   created_at: string
   updated_at: string
 }
@@ -19,227 +14,309 @@ export interface OrderRequest {
 export interface OrderItem {
   id: string
   order_id: string
-  cake_flavor_id?: string
-  cake_size_id?: string
-  item_name: string
+  product_type: 'cake' | 'cookie' | 'other'
+  product_name: string
   quantity: number
-  estimated_unit_price: number
-  estimated_total_price: number
+  unit_price: number
+  total_price: number
+  special_instructions?: string
   created_at: string
 }
 
-export interface CreateOrderRequestData {
-  customer_name: string
-  customer_email: string
-  customer_phone: string
-  request_date: string
-  notes: string
-  allergies: string
-  writing_on_cake: string
-  special_requests: string
-  items: Array<{
-    cake_flavor_id?: string
-    cake_size_id?: string
-    item_name: string
-    quantity: number
-    estimated_unit_price: number
-    estimated_total_price: number
-  }>
+export interface Order {
+  id: string
+  customer_id: string
+  customer: Customer
+  order_date: string
+  delivery_date: string
+  delivery_time: string
+  delivery_address: string
+  special_instructions?: string
+  total_amount: number
+  status: 'pending' | 'confirmed' | 'in_progress' | 'ready' | 'delivered' | 'cancelled'
+  payment_status: 'pending' | 'paid' | 'refunded'
+  payment_method?: string
+  created_at: string
+  updated_at: string
+  items: OrderItem[]
+}
+
+export interface CreateOrderData {
+  customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>
+  delivery_date: string
+  delivery_time: string
+  delivery_address: string
+  special_instructions?: string
+  items: Omit<OrderItem, 'id' | 'order_id' | 'created_at'>[]
 }
 
 export class OrderService {
-  // Create a new order request with items
-  static async createOrderRequest(orderData: CreateOrderRequestData): Promise<OrderRequest> {
-    try {
-      // Calculate total estimated value
-      const estimatedTotal = orderData.items.reduce(
-        (sum, item) => sum + item.estimated_total_price,
-        0
-      )
+  // Get all orders with customer and item details
+  static async getAllOrders(): Promise<Order[]> {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        customer:customers(*),
+        items:order_items(*)
+      `)
+      .order('created_at', { ascending: false })
 
-      // First, get or create the customer
-      let customerId: string
-      
-      // Check if customer exists
-      const { data: existingCustomer, error: customerCheckError } = await supabase
+    if (error) throw error
+    return data || []
+  }
+
+  // Get order by ID with full details
+  static async getOrderById(id: string): Promise<Order | null> {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        customer:customers(*),
+        items:order_items(*)
+      `)
+      .eq('id', id)
+      .single()
+
+    if (error) return null
+    return data
+  }
+
+  // Create a new order with customer and items
+  static async createOrder(orderData: CreateOrderData): Promise<Order> {
+    try {
+      // Start a transaction
+      const { data: customer, error: customerError } = await supabase
         .from('customers')
         .select('id')
-        .eq('email', orderData.customer_email)
-        .maybeSingle()
+        .eq('email', orderData.customer.email)
+        .single()
 
-      if (customerCheckError) {
-        console.error('Error checking customer:', customerCheckError)
-        throw new Error('Failed to check customer')
-      }
+      let customerId: string
 
-      if (existingCustomer) {
-        // Customer exists, use their ID
-        customerId = existingCustomer.id
-        
-        // Update customer info
-        await supabase
+      if (customerError && customerError.code === 'PGRST116') {
+        // Customer doesn't exist, create new one
+        const newCustomer = await supabase
           .from('customers')
-          .update({
-            name: orderData.customer_name,
-            phone: orderData.customer_phone,
-            last_request_date: new Date().toISOString()
-          })
-          .eq('id', customerId)
-      } else {
-        // Create new customer
-        const { data: newCustomer, error: createCustomerError } = await supabase
-          .from('customers')
-          .insert({
-            email: orderData.customer_email,
-            name: orderData.customer_name,
-            phone: orderData.customer_phone,
-            first_request_date: new Date().toISOString(),
-            last_request_date: new Date().toISOString(),
-            total_requests: 1,
-            total_estimated_value: estimatedTotal
-          })
+          .insert(orderData.customer)
           .select('id')
           .single()
 
-        if (createCustomerError) {
-          console.error('Error creating customer:', createCustomerError)
-          throw new Error('Failed to create customer')
-        }
+        if (newCustomer.error) throw newCustomer.error
+        customerId = newCustomer.data.id
+      } else if (customerError) {
+        throw customerError
+      } else {
+        // Customer exists, update their information
+        const { error: updateError } = await supabase
+          .from('customers')
+          .update({
+            name: orderData.customer.name,
+            phone: orderData.customer.phone,
+            address: orderData.customer.address,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', customer.id)
 
-        customerId = newCustomer.id
+        if (updateError) throw updateError
+        customerId = customer.id
       }
 
-      // Create the order request
-      const { data: orderRequest, error: orderError } = await supabase
+      // Create the order
+      const orderRequest = await supabase
         .from('orders')
         .insert({
           customer_id: customerId,
-          customer_name: orderData.customer_name,
-          customer_email: orderData.customer_email,
-          customer_phone: orderData.customer_phone,
-          collection_date: orderData.request_date,
-          estimated_total: estimatedTotal,
-          notes: orderData.notes,
-          allergies: orderData.allergies,
-          writing_on_cake: orderData.writing_on_cake,
-          special_requests: orderData.special_requests,
-          status: 'new_request'
+          order_date: new Date().toISOString(),
+          delivery_date: orderData.delivery_date,
+          delivery_time: orderData.delivery_time,
+          delivery_address: orderData.delivery_address,
+          special_instructions: orderData.special_instructions,
+          total_amount: orderData.items.reduce((sum, item) => sum + item.total_price, 0),
+          status: 'pending',
+          payment_status: 'pending'
         })
-        .select('id, customer_id, customer_name, customer_email, customer_phone, collection_date, estimated_total, notes, allergies, writing_on_cake, special_requests, status, created_at, updated_at')
+        .select('id')
         .single()
 
-      if (orderError) {
-        console.error('Error creating order request:', orderError)
-        throw new Error('Failed to create order request')
-      }
+      if (orderRequest.error) throw orderRequest.error
 
-      // Create the order items
-      const orderItems = orderData.items.map(item => ({
-        order_id: orderRequest.id,
-        cake_flavor_id: item.cake_flavor_id,
-        cake_size_id: item.cake_size_id,
-        item_name: item.item_name,
-        quantity: item.quantity,
-        estimated_unit_price: item.estimated_unit_price,
-        estimated_total_price: item.estimated_total_price
-      }))
-
+      // Create order items
       const { error: itemsError } = await supabase
         .from('order_items')
-        .insert(orderItems)
+        .insert(
+          orderData.items.map(item => ({
+            ...item,
+            order_id: orderRequest.data.id
+          }))
+        )
 
       if (itemsError) {
-        console.error('Error creating order items:', itemsError)
-              // If items fail, we should probably delete the order request
-      await supabase
-        .from('orders')
-        .delete()
-        .eq('id', orderRequest.id)
-        throw new Error('Failed to create order items')
+        // If items creation fails, delete the order
+        await supabase
+          .from('orders')
+          .delete()
+          .eq('id', orderRequest.data.id)
+        throw itemsError
       }
 
-      return orderRequest
+      // Return the complete order
+      return await this.getOrderById(orderRequest.data.id) as Order
     } catch (error) {
-      console.error('Error in createOrderRequest:', error)
+      console.error('Error creating order:', error)
       throw error
     }
   }
 
-  // Get all order requests (for admin)
-  static async getOrderRequests(includeArchived: boolean = false): Promise<OrderRequest[]> {
-    let query = supabase
+  // Update order status
+  static async updateOrderStatus(orderId: string, status: Order['status']): Promise<void> {
+    const { error } = await supabase
       .from('orders')
-      .select('*')
+      .update({ 
+        status, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', orderId)
+
+    if (error) throw error
+  }
+
+  // Update payment status
+  static async updatePaymentStatus(orderId: string, paymentStatus: Order['payment_status']): Promise<void> {
+    const { error } = await supabase
+      .from('orders')
+      .update({ 
+        payment_status: paymentStatus, 
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', orderId)
+
+    if (error) throw error
+  }
+
+  // Get orders by status
+  static async getOrdersByStatus(status: Order['status']): Promise<Order[]> {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        customer:customers(*),
+        items:order_items(*)
+      `)
+      .eq('status', status)
       .order('created_at', { ascending: false })
 
-    if (!includeArchived) {
-      query = query.neq('status', 'archived')
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      console.error('Error fetching order requests:', error)
-      throw new Error('Failed to fetch order requests')
-    }
-
+    if (error) throw error
     return data || []
   }
 
-  // Get order request by ID with items
-  static async getOrderRequestById(id: string): Promise<OrderRequest & { items: OrderItem[] }> {
-    const { data: orderRequest, error: orderError } = await supabase
+  // Get orders by date range
+  static async getOrdersByDateRange(startDate: string, endDate: string): Promise<Order[]> {
+    const { data, error } = await supabase
       .from('orders')
-      .select('id, customer_id, customer_name, customer_email, customer_phone, collection_date, estimated_total, notes, allergies, writing_on_cake, special_requests, status, created_at, updated_at')
-      .eq('id', id)
-      .single()
+      .select(`
+        *,
+        customer:customers(*),
+        items:order_items(*)
+      `)
+      .gte('delivery_date', startDate)
+      .lte('delivery_date', endDate)
+      .order('delivery_date', { ascending: true })
 
-    if (orderError) {
-      console.error('Error fetching order request:', orderError)
-      throw new Error('Failed to fetch order request')
-    }
+    if (error) throw error
+    return data || []
+  }
 
-    const { data: items, error: itemsError } = await supabase
+  // Get orders for a specific customer
+  static async getOrdersByCustomer(customerId: string): Promise<Order[]> {
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        customer:customers(*),
+        items:order_items(*)
+      `)
+      .eq('customer_id', customerId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data || []
+  }
+
+  // Delete an order (and its items)
+  static async deleteOrder(orderId: string): Promise<void> {
+    // Delete order items first
+    const { error: itemsError } = await supabase
       .from('order_items')
-      .select('*')
-      .eq('order_id', id)
+      .delete()
+      .eq('order_id', orderId)
 
-    if (itemsError) {
-      console.error('Error fetching order items:', itemsError)
-      throw new Error('Failed to fetch order items')
-    }
+    if (itemsError) throw itemsError
+
+    // Delete the order
+    const { error: orderError } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', orderId)
+
+    if (orderError) throw orderError
+  }
+
+  // Get order statistics
+  static async getOrderStats(): Promise<{
+    totalOrders: number
+    totalRevenue: number
+    averageOrderValue: number
+    ordersByStatus: Record<Order['status'], number>
+  }> {
+    const { data: orders, error } = await supabase
+      .from('orders')
+      .select('total_amount, status')
+
+    if (error) throw error
+
+    const totalOrders = orders.length
+    const totalRevenue = orders.reduce((sum, order) => sum + order.total_amount, 0)
+    const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
+
+    const ordersByStatus = orders.reduce((acc, order) => {
+      const status = order.status as Order['status']
+      acc[status] = (acc[status] || 0) + 1
+      return acc
+    }, {} as Record<Order['status'], number>)
 
     return {
-      ...orderRequest,
-      items: items || []
+      totalOrders,
+      totalRevenue,
+      averageOrderValue,
+      ordersByStatus
     }
   }
 
-  // Update order request status
-  static async updateOrderStatus(id: string, status: OrderRequest['status']): Promise<void> {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status, updated_at: new Date().toISOString() })
-      .eq('id', id)
-
-    if (error) {
-      console.error('Error updating order status:', error)
-      throw new Error('Failed to update order status')
-    }
-  }
-
-  // Send email notification
-  static async sendOrderNotification(orderRequest: OrderRequest): Promise<void> {
-    try {
-      const baseUrl = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_SITE_URL || 'https://teatime-collective-six.vercel.app'
-      await fetch(`${baseUrl}/api/send-order-notification`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: orderRequest.id })
-      })
-    } catch (error) {
-      console.error('Error sending order notification:', error)
-      // Don't throw error - notification failure shouldn't break order submission
+  // Format order for display
+  static formatOrderForDisplay(order: Order): {
+    id: string
+    customerName: string
+    customerEmail: string
+    orderDate: string
+    deliveryDate: string
+    deliveryTime: string
+    totalAmount: string
+    status: string
+    paymentStatus: string
+    itemCount: number
+  } {
+    return {
+      id: order.id,
+      customerName: order.customer.name,
+      customerEmail: order.customer.email,
+      orderDate: formatDateTime(order.order_date),
+      deliveryDate: formatDateTime(order.delivery_date),
+      deliveryTime: order.delivery_time,
+      totalAmount: `£${order.total_amount.toFixed(2)}`,
+      status: order.status.replace('_', ' ').toUpperCase(),
+      paymentStatus: order.payment_status.toUpperCase(),
+      itemCount: order.items.length
     }
   }
 } 

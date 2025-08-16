@@ -15,15 +15,7 @@ const Hero = () => {
       </div> */}
 
       <div className="section-container text-center z-10">
-        <div className="inline-flex items-center bg-light-cream px-6 py-3 rounded-full mb-8 animate-fade-in">
-          <span className="text-sm font-medium mr-2">Google:</span>
-          <div className="flex items-center space-x-1 mr-2">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star key={star} className="w-4 h-4 fill-orange text-orange" />
-            ))}
-          </div>
-          <span className="text-sm font-bold">(4.8)</span>
-        </div>
+
 
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-2 animate-slide-up text-balance font-lobster text-orange">
           {settings?.home_title || 'Delicious Vegan Cakes'}
@@ -35,7 +27,7 @@ const Hero = () => {
 
         <div className="mb-12 mt-12 md:mb-16 animate-slide-up delay-300">
           <Link href="/cakes" className="btn-primary">
-            View Cakes
+            Order Cakes Here
           </Link>
         </div>
         <Carousel />

@@ -15,6 +15,7 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { MarketDatesService, MarketDate, CreateMarketDateData } from '@/lib/marketDatesService'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 
 export default function MarketManager() {
   const [marketDates, setMarketDates] = useState<MarketDate[]>([])
@@ -29,8 +30,18 @@ export default function MarketManager() {
     url: '',
     active: true
   })
+  const [repeatOptions, setRepeatOptions] = useState({
+    enabled: false,
+    frequency: 'weekly', // weekly, biweekly, monthly, bimonthly, custom
+    customMonths: 1,
+    count: 12 // number of repetitions
+  })
   const [error, setError] = useState('')
+  const [dialogError, setDialogError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [deleteItem, setDeleteItem] = useState<MarketDate | null>(null)
+  const [isAddFormVisible, setIsAddFormVisible] = useState(false)
 
   useEffect(() => {
     loadMarketDates()
@@ -48,29 +59,114 @@ export default function MarketManager() {
     }
   }
 
+  // Helper function to calculate repeated dates
+  const calculateRepeatedDates = (baseDate: string, frequency: string, customMonths: number, count: number): string[] => {
+    const dates: string[] = []
+    const base = new Date(baseDate)
+    
+    for (let i = 1; i < count; i++) {
+      const newDate = new Date(base)
+      
+      switch (frequency) {
+        case 'weekly':
+          newDate.setDate(base.getDate() + (i * 7))
+          break
+        case 'biweekly':
+          newDate.setDate(base.getDate() + (i * 14))
+          break
+        case 'monthly':
+          newDate.setMonth(base.getMonth() + i)
+          break
+        case 'bimonthly':
+          newDate.setMonth(base.getMonth() + (i * 2))
+          break
+        case 'custom':
+          newDate.setMonth(base.getMonth() + (i * customMonths))
+          break
+      }
+      
+      dates.push(newDate.toISOString().split('T')[0])
+    }
+    
+    return dates
+  }
+
   const handleAddMarket = async () => {
-    if (!newMarket.name || !newMarket.date || !newMarket.start_time || !newMarket.end_time || !newMarket.location || !newMarket.url) {
-      setError('Please fill in all required fields')
+    // Validate form first
+    const validationError = validateMarketForm()
+    if (validationError) {
+      setDialogError(validationError)
       return
     }
 
     try {
-      const marketData: CreateMarketDateData = {
-        name: newMarket.name,
-        date: newMarket.date,
-        start_time: newMarket.start_time,
-        end_time: newMarket.end_time,
-        location: newMarket.location,
-        url: newMarket.url,
-        active: newMarket.active
-      }
+      setLoading(true)
+      setDialogError('') // Clear any previous errors
+      
+      if (repeatOptions.enabled) {
+        // Create the base market
+        const baseMarketData: CreateMarketDateData = {
+          name: newMarket.name!,
+          date: newMarket.date!,
+          start_time: newMarket.start_time!,
+          end_time: newMarket.end_time!,
+          location: newMarket.location!,
+          url: newMarket.url!,
+          active: newMarket.active
+        }
+        
+        await MarketDatesService.createMarketDate(baseMarketData)
+        
+        // Create repeated markets
+        const repeatedDates = calculateRepeatedDates(
+          newMarket.date!,
+          repeatOptions.frequency,
+          repeatOptions.customMonths,
+          repeatOptions.count
+        )
+        
+        for (const date of repeatedDates) {
+          const repeatedMarketData: CreateMarketDateData = {
+            name: newMarket.name!,
+            date: date,
+            start_time: newMarket.start_time!,
+            end_time: newMarket.end_time!,
+            location: newMarket.location!,
+            url: newMarket.url!,
+            active: newMarket.active
+          }
+          
+          await MarketDatesService.createMarketDate(repeatedMarketData)
+        }
+        
+        // Reset repeat options
+        setRepeatOptions({
+          enabled: false,
+          frequency: 'weekly',
+          customMonths: 1,
+          count: 12
+        })
+      } else {
+        // Create single market
+        const marketData: CreateMarketDateData = {
+          name: newMarket.name!,
+          date: newMarket.date!,
+          start_time: newMarket.start_time!,
+          end_time: newMarket.end_time!,
+          location: newMarket.location!,
+          url: newMarket.url!,
+          active: newMarket.active
+        }
 
-      await MarketDatesService.createMarketDate(marketData)
+        await MarketDatesService.createMarketDate(marketData)
+      }
+      
       await loadMarketDates()
-      setNewMarket({ name: '', date: '', start_time: '', end_time: '', location: '', url: '', active: true })
-      setError('')
+      resetForm()
     } catch (err: any) {
-      setError(err.message || 'Failed to add market date')
+      setDialogError(err.message || 'Failed to add market date(s)')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -79,7 +175,25 @@ export default function MarketManager() {
       await MarketDatesService.deleteMarketDate(id)
       await loadMarketDates()
     } catch (err: any) {
-      setError(err.message || 'Failed to delete market date')
+      setDialogError(err.message || 'Failed to delete market date')
+    }
+  }
+
+  const handleDeleteClick = (market: MarketDate) => {
+    setDeleteItem(market)
+    setIsDeleteDialogOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteItem) return
+    
+    try {
+      await MarketDatesService.deleteMarketDate(deleteItem.id)
+      await loadMarketDates()
+      setIsDeleteDialogOpen(false)
+      setDeleteItem(null)
+    } catch (err: any) {
+      setDialogError(err.message || 'Failed to delete market date')
     }
   }
 
@@ -104,9 +218,9 @@ export default function MarketManager() {
       await loadMarketDates()
       setEditingId(null)
       setEditingMarket({})
-      setError('')
+      setDialogError('')
     } catch (err: any) {
-      setError(err.message || 'Failed to update market date')
+      setDialogError(err.message || 'Failed to update market date')
     }
   }
 
@@ -115,15 +229,56 @@ export default function MarketManager() {
     setEditingMarket({})
   }
 
+  const resetForm = () => {
+    setNewMarket({ name: '', date: '', start_time: '', end_time: '', location: '', url: '', active: true })
+    setRepeatOptions({
+      enabled: false,
+      frequency: 'weekly',
+      customMonths: 1,
+      count: 12
+    })
+    setDialogError('')
+    setIsAddFormVisible(false) // Hide the form after successful submission
+  }
+
+  // Validation functions
+  const validateMarketForm = (): string | null => {
+    // Check required fields
+    if (!newMarket.name || !newMarket.date || !newMarket.start_time || !newMarket.end_time || !newMarket.location || !newMarket.url) {
+      return 'Please fill in all required fields'
+    }
+
+    // Check if date is in the past
+    const selectedDate = new Date(newMarket.date!)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0) // Reset time to start of day for date comparison
+    
+    if (selectedDate < today) {
+      return 'Market date cannot be in the past'
+    }
+
+    // Check if end time is after start time
+    if (newMarket.start_time && newMarket.end_time) {
+      const startTime = new Date(`2000-01-01T${newMarket.start_time}`)
+      const endTime = new Date(`2000-01-01T${newMarket.end_time}`)
+      
+      if (endTime <= startTime) {
+        return 'End time must be after start time'
+      }
+    }
+
+    return null // No validation errors
+  }
+
   const handleToggleActive = async (id: string) => {
     try {
       const market = marketDates.find(m => m.id === id)
       if (market) {
-        await MarketDatesService.toggleActive(id, !market.active)
+        await MarketDatesService.updateMarketDate(id, { active: !market.active })
         await loadMarketDates()
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to toggle market status')
+      setDialogError(err.message || 'Failed to toggle market status')
     }
   }
 
@@ -136,98 +291,182 @@ export default function MarketManager() {
         <p className="text-gray-600">Manage your market appearances and events</p>
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
+
+
+      {/* Add New Market Toggle Button */}
+      {!isAddFormVisible && (
+        <div className="mb-4">
+          <Button 
+            onClick={() => setIsAddFormVisible(true)}
+            className="bg-orange hover:bg-orange-900 text-white flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add New Market
+          </Button>
+        </div>
       )}
 
-      {/* Add New Market */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="w-5 h-5 text-orange" />
-            Add New Market
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray">Market Name</label>
-              <Input
-                value={newMarket.name}
-                onChange={(e) => setNewMarket({ ...newMarket, name: e.target.value })}
-                placeholder="e.g., Manchester Food Market"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray">Date</label>
-              <Input
-                type="date"
-                value={newMarket.date}
-                onChange={(e) => setNewMarket({ ...newMarket, date: e.target.value })}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray">Start Time</label>
-              <Input
-                type="time"
-                value={newMarket.start_time}
-                onChange={(e) => setNewMarket({ ...newMarket, start_time: e.target.value })}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray">End Time</label>
-              <Input
-                type="time"
-                value={newMarket.end_time}
-                onChange={(e) => setNewMarket({ ...newMarket, end_time: e.target.value })}
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray">Location</label>
-              <Input
-                value={newMarket.location}
-                onChange={(e) => setNewMarket({ ...newMarket, location: e.target.value })}
-                placeholder="e.g., Albert Square, Manchester"
-                className="mt-1"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray">URL</label>
-              <Input
-                value={newMarket.url}
-                onChange={(e) => setNewMarket({ ...newMarket, url: e.target.value })}
-                placeholder="e.g., https://www.themakersmarket.co.uk/pages/chorlton-makers-market"
-                className="mt-1"
-              />
-            </div>
+      {/* Add New Market Form */}
+      {isAddFormVisible && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-orange" />
+              Add New Market
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray">Market Name</label>
+                <Input
+                  value={newMarket.name}
+                  onChange={(e) => setNewMarket({ ...newMarket, name: e.target.value })}
+                  placeholder="e.g., Manchester Food Market"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray">Date</label>
+                <Input
+                  type="date"
+                  value={newMarket.date}
+                  onChange={(e) => setNewMarket({ ...newMarket, date: e.target.value })}
+                  className="mt-1"
+                />
+                {newMarket.date && new Date(newMarket.date) < new Date(new Date().setHours(0, 0, 0, 0)) && (
+                  <p className="text-sm text-red-600 mt-1">Market date cannot be in the past</p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray">Start Time</label>
+                <Input
+                  type="time"
+                  value={newMarket.start_time}
+                  onChange={(e) => setNewMarket({ ...newMarket, start_time: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray">End Time</label>
+                <Input
+                  type="time"
+                  value={newMarket.end_time}
+                  onChange={(e) => setNewMarket({ ...newMarket, end_time: e.target.value })}
+                  className="mt-1"
+                />
+                {newMarket.start_time && newMarket.end_time && newMarket.start_time >= newMarket.end_time && (
+                  <p className="text-sm text-red-600 mt-1">End time must be after start time</p>
+                )}
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray">Location</label>
+                <Input
+                  value={newMarket.location}
+                  onChange={(e) => setNewMarket({ ...newMarket, location: e.target.value })}
+                  placeholder="e.g., Albert Square, Manchester"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray">URL</label>
+                <Input
+                  value={newMarket.url}
+                  onChange={(e) => setNewMarket({ ...newMarket, url: e.target.value })}
+                  placeholder="e.g., https://www.themakersmarket.co.uk/pages/chorlton-makers-market"
+                  className="mt-1"
+                />
+              </div>
 
-          </div>
-          <div className="flex items-center gap-4 mt-4">
-            <Button 
-              onClick={handleAddMarket}
-              className="bg-orange hover:bg-orange-900 text-white"
+            </div>
+            
+            {/* Repeat Options */}
+            <div className="mt-6 pt-4 pr-4 pb-4 pl-0 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  type="checkbox"
+                  checked={repeatOptions.enabled}
+                  onChange={(e) => setRepeatOptions({ ...repeatOptions, enabled: e.target.checked })}
+                  className="rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Repeat this market</span>
+              </div>
+              
+              {repeatOptions.enabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Frequency</label>
+                    <select
+                      value={repeatOptions.frequency}
+                      onChange={(e) => setRepeatOptions({ ...repeatOptions, frequency: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="biweekly">Bi-weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="bimonthly">Bi-monthly</option>
+                      <option value="custom">Custom months</option>
+                    </select>
+                  </div>
+                  
+                  {repeatOptions.frequency === 'custom' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Months apart</label>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={repeatOptions.customMonths}
+                        onChange={(e) => setRepeatOptions({ ...repeatOptions, customMonths: parseInt(e.target.value) || 1 })}
+                        className="w-full"
+                      />
+                    </div>
+                  )}
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Number of repetitions</label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="52"
+                      value={repeatOptions.count}
+                      onChange={(e) => setRepeatOptions({ ...repeatOptions, count: parseInt(e.target.value) || 1 })}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                </div>
+              )}
+            </div>
+            
+            {/* Dialog Error Display */}
+            {dialogError && (
+              <Alert className="border-red-200 bg-red-50 mt-4">
+                <AlertDescription className="text-red-800 font-medium">
+                  {dialogError}
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="flex items-center gap-4 mt-4">
+              <Button 
+                onClick={handleAddMarket}
+                className="bg-orange hover:bg-orange-900 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Market
+              </Button>
+                                      <Button 
+              type="button"
+              variant="outline"
+              onClick={() => setIsAddFormVisible(false)}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Market
+              Cancel
             </Button>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={newMarket.active}
-                onChange={(e) => setNewMarket({ ...newMarket, active: e.target.checked })}
-                className="rounded"
-              />
-              <span className="text-sm text-gray-600">Active</span>
-            </label>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Markets List */}
       <div className="space-y-4">
@@ -363,7 +602,7 @@ export default function MarketManager() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteMarket(market.id)}
+                        onClick={() => handleDeleteClick(market)}
                         className="text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -386,6 +625,53 @@ export default function MarketManager() {
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="bg-white border border-gray-200 shadow-lg">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">
+              Confirm Delete
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-gray-700">
+              {deleteItem && (
+                <>
+                  <p className="mb-2">
+                    Are you sure you want to delete this market date?
+                  </p>
+                  <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                    <p className="font-medium text-red-800">
+                      "{deleteItem.name}"
+                    </p>
+                    <p className="text-sm text-red-600 mt-1">
+                      {new Date(deleteItem.date).toLocaleDateString()} at {deleteItem.location}
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsDeleteDialogOpen(false)
+                  setDeleteItem(null)
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                Delete Market
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 

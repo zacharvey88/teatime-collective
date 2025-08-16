@@ -78,6 +78,18 @@ export class CakeService {
     return data || []
   }
 
+  // Get all standalone cakes for admin (includes inactive items)
+  static async getStandaloneCakesForAdmin(): Promise<Cake[]> {
+    const { data, error } = await supabase
+      .from('cakes')
+      .select('*')
+      .eq('cake_type', 'standalone')
+      .order('display_order', { ascending: true })
+    
+    if (error) throw error
+    return data || []
+  }
+
   // Get all cake categories
   static async getCategories(): Promise<CakeCategory[]> {
     const { data, error } = await supabase

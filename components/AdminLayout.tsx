@@ -18,10 +18,12 @@ import {
   Users,
   Home,
   ShoppingCart,
-  Calendar
+  Calendar,
+  Star
 } from 'lucide-react'
 import Image from 'next/image'
 import { useSettings } from '@/lib/settingsContext'
+import { supabase } from '@/lib/supabaseClient'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -34,6 +36,7 @@ const baseNavigationItems = [
   { id: 'orders', label: 'Orders', icon: ShoppingCart },
   { id: 'images', label: 'Images', icon: ImageIcon },
   { id: 'cakes', label: 'Cake Management', icon: CakeSlice },
+  { id: 'reviews', label: 'Reviews', icon: Star },
   { id: 'contact', label: 'Contact Info', icon: Mail },
   { id: 'markets', label: 'Market Dates', icon: MapPin },
   { id: 'holidays', label: 'Holidays', icon: Calendar },
@@ -89,13 +92,10 @@ export default function AdminLayout({ children, activeSection, onSectionChange }
   const handleSignOut = async () => {
     try {
       await AuthService.signOut()
-      
-      // Redirect to main site
-      window.location.href = '/'
+      // Don't redirect here - let AdminProtected handle the logout flow
     } catch (error) {
       console.error('Sign out error:', error)
-      // Even if sign out fails, redirect to main site
-      window.location.href = '/'
+      // Even if sign out fails, let AdminProtected handle it
     }
   }
 

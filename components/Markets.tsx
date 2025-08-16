@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Calendar, MapPin, ExternalLink } from 'lucide-react'
+import { MapPin, Calendar, ExternalLink } from 'lucide-react'
 import { MarketDatesService, MarketDate } from '@/lib/marketDatesService'
 
 const Markets = () => {
@@ -19,7 +19,20 @@ const Markets = () => {
     try {
       setLoading(true)
       const marketDates = await MarketDatesService.getActiveMarketDates()
-      setMarkets(marketDates)
+      console.log('All market dates:', marketDates)
+      console.log('Number of market dates:', marketDates.length)
+      
+      // Ensure we always show an even number of markets for balanced rows
+      let displayCount = marketDates.length
+      if (displayCount % 2 !== 0) {
+        // If odd number, reduce by 1 to make it even
+        displayCount = Math.max(2, displayCount - 1)
+      }
+      
+      // Limit to maximum of 6 markets (3 rows of 2, or 2 rows of 3, or 1 row of 6)
+      displayCount = Math.min(displayCount, 6)
+      
+      setMarkets(marketDates.slice(0, displayCount))
     } catch (err: any) {
       setError(err.message || 'Failed to load market dates')
     } finally {
@@ -38,24 +51,24 @@ const Markets = () => {
         </div>
 
         {/* Market Cards */}
-        <div className="flex flex-wrap justify-center gap-4 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 max-w-7xl mx-auto justify-items-center">
           {loading ? (
-            <div className="flex items-center justify-center py-12 w-full">
+            <div className="flex items-center justify-center py-12 w-full col-span-full">
               <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin"></div>
               <span className="ml-2 text-gray-600">Loading markets...</span>
             </div>
           ) : error ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full col-span-full">
               <p className="text-red-600">{error}</p>
             </div>
           ) : markets.length === 0 ? (
-            <div className="text-center py-12 w-full">
+            <div className="text-center py-12 w-full col-span-full">
               <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-600 mb-2">No upcoming markets</h3>
               <p className="text-gray-500">Check back soon for new market dates!</p>
             </div>
           ) : (
-            markets.slice(0, 6).map((market, index) => {
+            markets.map((market, index) => {
               const formattedDate = new Date(market.date).toLocaleDateString('en-GB', {
                 day: 'numeric',
                 month: 'long',
@@ -79,7 +92,7 @@ const Markets = () => {
               return (
                 <div
                   key={market.id}
-                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer flex flex-col h-full min-w-[200px] max-w-[220px]"
+                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer flex flex-col h-full w-full max-w-[250px]"
                   role="button"
                   tabIndex={0}
                   onClick={() => { if (market.url) window.open(market.url, '_blank', 'noopener') }}

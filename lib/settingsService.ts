@@ -8,6 +8,7 @@ export interface Settings {
   site_description: string
   primary_color: string
   payment_notice?: string
+  cart_notice?: string
   cake_search_enabled?: boolean
   cakes_subheading?: string
   order_subheading?: string
@@ -28,6 +29,7 @@ export interface UpdateSettingsData {
   site_description: string
   primary_color: string
   payment_notice?: string
+  cart_notice?: string
   cake_search_enabled?: boolean
   cakes_subheading?: string
   order_subheading?: string

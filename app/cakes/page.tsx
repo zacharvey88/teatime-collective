@@ -8,6 +8,7 @@ import { CakeService, CakeWithDetails, Cake, CakeDisplayData } from '@/lib/cakeS
 import { Search, X, ChevronDown } from 'lucide-react'
 import { useSettings } from '@/lib/settingsContext'
 import WaveTransition from '@/components/WaveTransition'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 interface CakeCard {
   id: string
@@ -262,7 +263,7 @@ export default function CakesPage() {
       {/* Custom Notification */}
       {showNotification && (
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-2 duration-300">
-          <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 max-w-sm">
+          <div className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2 max-w-md">
             <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center flex-shrink-0">
               <svg className="w-3 h-3 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />

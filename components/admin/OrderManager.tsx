@@ -26,6 +26,7 @@ import {
   Archive
 } from 'lucide-react'
 import { OrderService, OrderRequest } from '@/lib/orderService'
+import LoadingSpinner from '@/components/ui/loading-spinner'
 
 interface OrderWithItems extends OrderRequest {
   items: Array<{
@@ -198,12 +199,7 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
       {isExpanded && (
         <div className="bg-gradient-to-br from-gray-50 to-orange-50">
           {loadingDetails ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center space-x-3">
-                <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-                <span className="text-gray-600 font-medium">Loading order details...</span>
-              </div>
-            </div>
+            <LoadingSpinner message="Loading order details..." />
           ) : orderDetails ? (
             <div className="p-4 sm:p-6 space-y-6">
               {/* Order Items */}
@@ -366,7 +362,7 @@ export default function OrderManager({ initialStatusFilter }: OrderManagerProps)
   const loadOrders = async () => {
     try {
       setLoading(true)
-      const data = await OrderService.getOrderRequests(includeArchived)
+      const data = await OrderService.getAllOrders()
       setOrders(data)
     } catch (err: any) {
       setError(err.message || 'Failed to load orders')
@@ -403,10 +399,7 @@ export default function OrderManager({ initialStatusFilter }: OrderManagerProps)
           <h1 className="text-3xl font-bold text-gray mb-2">Order Management</h1>
           <p className="text-gray-600">View and manage customer order requests</p>
         </div>
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-orange" />
-          <span className="ml-2 text-gray-600">Loading orders...</span>
-        </div>
+        <LoadingSpinner message="Loading orders..." />
       </div>
     )
   }

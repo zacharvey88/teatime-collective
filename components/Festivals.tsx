@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { ChevronLeft, ChevronRight, Music, Users, Calendar, Recycle } from 'lucide-react'
+import LoadingSpinner from './ui/loading-spinner'
 import { FrontendImageService, FrontendImageItem } from '@/lib/frontendImageService'
 import { getYearsOfExperience } from '@/lib/utils'
 
@@ -12,8 +13,10 @@ const Festivals = () => {
   const [loading, setLoading] = useState(true)
   const [isPaused, setIsPaused] = useState(false)
   const [isInView, setIsInView] = useState(false)
+  const [isAnimated, setIsAnimated] = useState(false)
   const autoPlayRef = useRef<NodeJS.Timeout | null>(null)
   const carouselRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const fetchImages = async () => {
@@ -31,9 +34,9 @@ const Festivals = () => {
     fetchImages();
   }, []);
 
-  // Intersection Observer for viewport detection
+  // Intersection Observer for viewport detection and animations
   useEffect(() => {
-    const observer = new IntersectionObserver(
+    const carouselObserver = new IntersectionObserver(
       ([entry]) => {
         setIsInView(entry.isIntersecting);
       },
@@ -43,13 +46,32 @@ const Festivals = () => {
       }
     );
 
+    const animationObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsAnimated(true);
+        }
+      },
+      {
+        threshold: 0.2,
+        rootMargin: '0px 0px -50px 0px'
+      }
+    );
+
     if (carouselRef.current) {
-      observer.observe(carouselRef.current);
+      carouselObserver.observe(carouselRef.current);
+    }
+
+    if (sectionRef.current) {
+      animationObserver.observe(sectionRef.current);
     }
 
     return () => {
       if (carouselRef.current) {
-        observer.unobserve(carouselRef.current);
+        carouselObserver.unobserve(carouselRef.current);
+      }
+      if (sectionRef.current) {
+        animationObserver.unobserve(sectionRef.current);
       }
     };
   }, []);
@@ -92,17 +114,17 @@ const Festivals = () => {
   };
 
   return (
-    <section id="festivals" className="py-12 md:py-20 bg-cream">
+    <section id="festivals" className="py-12 md:py-20 bg-cream" ref={sectionRef}>
       <div className="section-container">
         <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-12">
           {/* Content */}
           <div className="lg:flex-1 lg:max-w-[50%] space-y-6 order-1 lg:order-2">
-            <div className="hidden lg:flex items-center justify-center lg:justify-start space-x-2 text-orange mb-4">
+            <div className={`hidden lg:flex items-center justify-center lg:justify-start space-x-2 text-orange mb-4 transition-all duration-1000 ${isAnimated ? 'animate-fade-in' : 'opacity-0'}`}>
               <Music className="w-6 h-6" />
               <span className="text-sm font-medium uppercase tracking-wider">Festivals and Events</span>
             </div>
 
-            <h2 className="text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster text-center lg:text-left">
+            <h2 className={`text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster text-center lg:text-left transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               Festival Catering
             </h2>
 
@@ -173,7 +195,7 @@ const Festivals = () => {
               </div>
             </div>
 
-            <div className="prose prose-lg text-gray space-y-4">
+            <div className={`prose prose-lg text-gray space-y-4 transition-all duration-1000 delay-200 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               <p>
                 We have {getYearsOfExperience()} years of festival catering experience, ranging from smaller festivals (up to 500) to Glastonbury. We also cater for food fairs, markets, weddings, corporate events.
               </p>
@@ -192,7 +214,7 @@ const Festivals = () => {
             </div>
 
             {/* Stats */}
-            <div className="flex flex-row flex-wrap gap-4 mt-8">
+            <div className={`flex flex-row flex-wrap gap-4 mt-8 transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Calendar className="w-5 h-5 text-orange transition-all duration-300 hover:scale-110" />
@@ -220,7 +242,7 @@ const Festivals = () => {
           </div>
 
           {/* Festival Gallery - Desktop Only */}
-          <div className="hidden lg:block lg:flex-1 w-full">
+          <div className={`hidden lg:block lg:flex-1 w-full transition-all duration-1000 delay-100 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
             <div 
               ref={carouselRef}
               className="relative h-[500px] rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-light-cream"

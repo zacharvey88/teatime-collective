@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { 
   Save, 
   Upload,
@@ -11,7 +12,9 @@ import {
   Palette,
   Mail,
   Info,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  X
 } from 'lucide-react'
 import { SettingsService, Settings, UpdateSettingsData } from '@/lib/settingsService'
 import { useSettings } from '@/lib/settingsContext'
@@ -23,6 +26,9 @@ export default function SettingsManager() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [modalType, setModalType] = useState<'success' | 'error'>('success')
+  const [modalMessage, setModalMessage] = useState('')
   const logoInputRef = useRef<HTMLInputElement>(null)
 
   // Sync local settings with context settings
@@ -36,8 +42,6 @@ export default function SettingsManager() {
     if (!localSettings) return
 
     setSaving(true)
-    setError('')
-    setSuccess('')
 
     try {
       const settingsData: UpdateSettingsData = {
@@ -47,6 +51,7 @@ export default function SettingsManager() {
         site_description: localSettings.site_description,
         primary_color: localSettings.primary_color,
         payment_notice: localSettings.payment_notice,
+        cart_notice: localSettings.cart_notice,
         cake_search_enabled: localSettings.cake_search_enabled,
         cakes_subheading: localSettings.cakes_subheading,
         order_subheading: localSettings.order_subheading,
@@ -60,9 +65,9 @@ export default function SettingsManager() {
 
       await SettingsService.updateSettings(settingsData)
       await refreshSettings() // Refresh the context to apply changes immediately
-      setSuccess('Settings updated successfully!')
+      showModal('success', 'Settings updated successfully!')
     } catch (err: any) {
-      setError(err.message || 'Failed to save settings')
+      showModal('error', err.message || 'Failed to save settings')
     } finally {
       setSaving(false)
     }
@@ -73,17 +78,22 @@ export default function SettingsManager() {
     if (!file || !localSettings) return
 
     try {
-      setError('')
       const url = await SettingsService.uploadLogo(file)
       setLocalSettings(prev => prev ? { ...prev, logo_url: url } : null)
     } catch (err: any) {
-      setError(err.message || 'Failed to upload logo')
+      showModal('error', err.message || 'Failed to upload logo')
     }
   }
 
   const handleInputChange = (field: keyof Settings, value: string | boolean) => {
     if (!localSettings) return
     setLocalSettings(prev => prev ? { ...prev, [field]: value } : null)
+  }
+
+  const showModal = (type: 'success' | 'error', message: string) => {
+    setModalType(type)
+    setModalMessage(message)
+    setIsModalOpen(true)
   }
 
   if (!localSettings) {
@@ -108,17 +118,7 @@ export default function SettingsManager() {
         <p className="text-gray-600">Manage your website settings and branding</p>
       </div>
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
 
-      {success && (
-        <Alert className="border-green-200 bg-green-50">
-          <AlertDescription className="text-green-800 font-medium">{success}</AlertDescription>
-        </Alert>
-      )}
 
               <div className="space-y-8">
           {/* General Settings */}
@@ -360,6 +360,20 @@ export default function SettingsManager() {
                 This notice will appear on the order page above the submit button
               </p>
             </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Cart Notice</label>
+              <textarea
+                value={localSettings.cart_notice || ''}
+                onChange={(e) => handleInputChange('cart_notice', e.target.value)}
+                placeholder="Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order."
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
+                rows={4}
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                This notice will appear below the cart total on the order page
+              </p>
+            </div>
           </div>
 
           {/* Feature Toggles */}
@@ -444,6 +458,41 @@ export default function SettingsManager() {
           )}
         </Button>
       </div>
+
+      {/* Success/Error Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="bg-white border border-gray-200 shadow-lg max-w-md">
+          <DialogHeader>
+            <DialogTitle className={`flex items-center gap-2 ${
+              modalType === 'success' ? 'text-green-600' : 'text-red-600'
+            }`}>
+              {modalType === 'success' ? (
+                <CheckCircle className="w-5 h-5" />
+              ) : (
+                <AlertCircle className="w-5 h-5" />
+              )}
+              {modalType === 'success' ? 'Success' : 'Error'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="text-gray-700">
+              <p className="text-center">{modalMessage}</p>
+            </div>
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setIsModalOpen(false)}
+                className={`${
+                  modalType === 'success' 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-red-600 hover:bg-red-700 text-white'
+                }`}
+              >
+                OK
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 } 
