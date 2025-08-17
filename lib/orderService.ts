@@ -3,10 +3,15 @@ import { formatDateTime } from './utils'
 
 export interface Customer {
   id: string
-  name: string
   email: string
+  name: string
   phone: string
   address: string
+  first_request_date: string
+  last_request_date: string
+  total_requests: number
+  total_estimated_value: number
+  favorite_flavor: string
   created_at: string
   updated_at: string
 }
@@ -14,39 +19,44 @@ export interface Customer {
 export interface OrderItem {
   id: string
   order_id: string
-  product_type: 'cake' | 'cookie' | 'other'
-  product_name: string
+  cake_flavor_id?: string
+  cake_size_id?: string
+  item_name: string
   quantity: number
-  unit_price: number
-  total_price: number
-  special_instructions?: string
+  estimated_unit_price: number
+  estimated_total_price: number
   created_at: string
 }
 
 export interface Order {
   id: string
   customer_id: string
-  customer: Customer
-  order_date: string
-  delivery_date: string
-  delivery_time: string
-  delivery_address: string
-  special_instructions?: string
-  total_amount: number
-  status: 'pending' | 'confirmed' | 'in_progress' | 'ready' | 'delivered' | 'cancelled'
-  payment_status: 'pending' | 'paid' | 'refunded'
-  payment_method?: string
+  customer_name: string
+  customer_email: string
+  customer_phone: string
+  collection_date: string
+  estimated_total: number
+  status: 'new_request' | 'reviewed' | 'approved' | 'rejected' | 'completed' | 'archived'
+  email_sent: boolean
+  notes?: string
   created_at: string
   updated_at: string
+  allergies?: string
+  writing_on_cake?: string
+  special_requests?: string
   items: OrderItem[]
 }
 
 export interface CreateOrderData {
-  customer: Omit<Customer, 'id' | 'created_at' | 'updated_at'>
-  delivery_date: string
-  delivery_time: string
-  delivery_address: string
-  special_instructions?: string
+  customer_name: string
+  customer_email: string
+  customer_phone: string
+  collection_date: string
+  estimated_total: number
+  allergies?: string
+  writing_on_cake?: string
+  special_requests?: string
+  notes?: string
   items: Omit<OrderItem, 'id' | 'order_id' | 'created_at'>[]
 }
 
@@ -89,7 +99,7 @@ export class OrderService {
       const { data: customer, error: customerError } = await supabase
         .from('customers')
         .select('id')
-        .eq('email', orderData.customer.email)
+        .eq('email', orderData.customer_email)
         .single()
 
       let customerId: string
@@ -98,7 +108,12 @@ export class OrderService {
         // Customer doesn't exist, create new one
         const newCustomer = await supabase
           .from('customers')
-          .insert(orderData.customer)
+          .insert({
+            email: orderData.customer_email,
+            name: orderData.customer_name,
+            phone: orderData.customer_phone,
+            address: 'Address not provided' // Placeholder, needs actual address field
+          })
           .select('id')
           .single()
 
@@ -111,9 +126,9 @@ export class OrderService {
         const { error: updateError } = await supabase
           .from('customers')
           .update({
-            name: orderData.customer.name,
-            phone: orderData.customer.phone,
-            address: orderData.customer.address,
+            name: orderData.customer_name,
+            phone: orderData.customer_phone,
+            address: 'Address not provided', // Placeholder, needs actual address field
             updated_at: new Date().toISOString()
           })
           .eq('id', customer.id)
@@ -127,14 +142,18 @@ export class OrderService {
         .from('orders')
         .insert({
           customer_id: customerId,
-          order_date: new Date().toISOString(),
-          delivery_date: orderData.delivery_date,
-          delivery_time: orderData.delivery_time,
-          delivery_address: orderData.delivery_address,
-          special_instructions: orderData.special_instructions,
-          total_amount: orderData.items.reduce((sum, item) => sum + item.total_price, 0),
-          status: 'pending',
-          payment_status: 'pending'
+          customer_name: orderData.customer_name,
+          customer_email: orderData.customer_email,
+          customer_phone: orderData.customer_phone,
+          collection_date: orderData.collection_date,
+          estimated_total: orderData.estimated_total,
+          status: 'new_request',
+          email_sent: false,
+          notes: orderData.notes || '',
+          allergies: orderData.allergies || '',
+          writing_on_cake: orderData.writing_on_cake || '',
+          special_requests: orderData.special_requests || '',
+          created_at: new Date().toISOString()
         })
         .select('id')
         .single()
@@ -144,12 +163,14 @@ export class OrderService {
       // Create order items
       const { error: itemsError } = await supabase
         .from('order_items')
-        .insert(
-          orderData.items.map(item => ({
-            ...item,
-            order_id: orderRequest.data.id
-          }))
-        )
+        .insert(orderData.items.map(item => ({
+          order_id: orderRequest.data.id,
+          item_name: item.item_name,
+          quantity: item.quantity,
+          estimated_unit_price: item.estimated_unit_price,
+          estimated_total_price: item.estimated_total_price,
+          created_at: new Date().toISOString()
+        })))
 
       if (itemsError) {
         // If items creation fails, delete the order
@@ -168,6 +189,37 @@ export class OrderService {
     }
   }
 
+  // Compatibility method for old order request format
+  static async createOrderRequest(oldOrderData: any): Promise<Order> {
+    // Convert old format to new format
+    const newOrderData: CreateOrderData = {
+      customer_name: oldOrderData.customer_name,
+      customer_email: oldOrderData.customer_email,
+      customer_phone: oldOrderData.customer_phone,
+      collection_date: oldOrderData.request_date,
+      estimated_total: oldOrderData.estimated_total,
+      allergies: oldOrderData.allergies || '',
+      writing_on_cake: oldOrderData.writing_on_cake || '',
+      special_requests: oldOrderData.special_requests || '',
+      notes: oldOrderData.notes || '',
+      items: oldOrderData.items.map((item: any) => ({
+        item_name: item.item_name,
+        quantity: item.quantity,
+        estimated_unit_price: item.estimated_unit_price,
+        estimated_total_price: item.estimated_total_price
+      }))
+    }
+
+    return this.createOrder(newOrderData)
+  }
+
+  // Send order notification (placeholder for compatibility)
+  static async sendOrderNotification(order: Order): Promise<void> {
+    // This method is kept for compatibility but doesn't do anything
+    // The actual notification is handled by the API route
+    console.log('Order notification placeholder called for order:', order.id)
+  }
+
   // Update order status
   static async updateOrderStatus(orderId: string, status: Order['status']): Promise<void> {
     const { error } = await supabase
@@ -181,18 +233,7 @@ export class OrderService {
     if (error) throw error
   }
 
-  // Update payment status
-  static async updatePaymentStatus(orderId: string, paymentStatus: Order['payment_status']): Promise<void> {
-    const { error } = await supabase
-      .from('orders')
-      .update({ 
-        payment_status: paymentStatus, 
-        updated_at: new Date().toISOString() 
-      })
-      .eq('id', orderId)
-
-    if (error) throw error
-  }
+  // Update payment status - removed as payment_status field no longer exists in Order interface
 
   // Get orders by status
   static async getOrdersByStatus(status: Order['status']): Promise<Order[]> {
@@ -308,14 +349,14 @@ export class OrderService {
   } {
     return {
       id: order.id,
-      customerName: order.customer.name,
-      customerEmail: order.customer.email,
-      orderDate: formatDateTime(order.order_date),
-      deliveryDate: formatDateTime(order.delivery_date),
-      deliveryTime: order.delivery_time,
-      totalAmount: `£${order.total_amount.toFixed(2)}`,
+      customerName: order.customer_name,
+      customerEmail: order.customer_email,
+      orderDate: formatDateTime(order.created_at),
+      deliveryDate: formatDateTime(order.collection_date),
+      deliveryTime: '12:00', // Default time since old format didn't have it
+      totalAmount: `£${order.estimated_total.toFixed(2)}`,
       status: order.status.replace('_', ' ').toUpperCase(),
-      paymentStatus: order.payment_status.toUpperCase(),
+      paymentStatus: 'PENDING', // No payment_status field in new Order interface
       itemCount: order.items.length
     }
   }

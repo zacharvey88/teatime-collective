@@ -25,29 +25,33 @@ import {
   AlertCircle,
   Archive
 } from 'lucide-react'
-import { OrderService, OrderRequest } from '@/lib/orderService'
+import { OrderService, Order } from '@/lib/orderService'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 
-interface OrderWithItems extends OrderRequest {
+interface OrderWithItems extends Order {
   items: Array<{
     id: string
+    order_id: string
+    cake_flavor_id?: string
+    cake_size_id?: string
     item_name: string
     quantity: number
     estimated_unit_price: number
     estimated_total_price: number
+    created_at: string
   }>
 }
 
 interface OrderItemProps {
-  order: OrderRequest
+  order: Order
   isExpanded: boolean
   onToggle: () => void
-  onUpdateStatus: (orderId: string, status: OrderRequest['status']) => void
+  onUpdateStatus: (orderId: string, status: Order['status']) => void
   updating: boolean
 }
 
 // Helper functions
-const getStatusColor = (status: OrderRequest['status']) => {
+const getStatusColor = (status: Order['status']) => {
   switch (status) {
     case 'new_request':
       return 'bg-blue-100 text-blue-800'
@@ -66,7 +70,7 @@ const getStatusColor = (status: OrderRequest['status']) => {
   }
 }
 
-const getStatusIcon = (status: OrderRequest['status']) => {
+const getStatusIcon = (status: Order['status']) => {
   switch (status) {
     case 'new_request':
       return <Clock className="w-4 h-4" />
@@ -93,7 +97,7 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
     if (!orderDetails && isExpanded) {
       try {
         setLoadingDetails(true)
-        const details = await OrderService.getOrderRequestById(order.id)
+        const details = await OrderService.getOrderById(order.id)
         setOrderDetails(details)
       } catch (error) {
         console.error('Failed to load order details:', error)
@@ -306,15 +310,15 @@ interface OrderManagerProps {
 }
 
 export default function OrderManager({ initialStatusFilter }: OrderManagerProps) {
-  const [orders, setOrders] = useState<OrderRequest[]>([])
-  const [filteredOrders, setFilteredOrders] = useState<OrderRequest[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([])
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState<Set<OrderRequest['status']>>(
-    initialStatusFilter ? new Set([initialStatusFilter as OrderRequest['status']]) : new Set()
+  const [statusFilter, setStatusFilter] = useState<Set<Order['status']>>(
+    initialStatusFilter ? new Set([initialStatusFilter as Order['status']]) : new Set()
   )
   const [statusFilterOpen, setStatusFilterOpen] = useState(false)
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -379,7 +383,7 @@ export default function OrderManager({ initialStatusFilter }: OrderManagerProps)
     }
   }
 
-  const handleUpdateStatus = async (orderId: string, status: OrderRequest['status']) => {
+  const handleUpdateStatus = async (orderId: string, status: Order['status']) => {
     try {
       setUpdating(true)
       await OrderService.updateOrderStatus(orderId, status)

@@ -8,7 +8,7 @@ import { Calendar, AlertTriangle, Type, MessageSquare, Plus, Minus, Trash2, Chec
 import Image from 'next/image'
 import { CakeService, CakeWithDetails } from '@/lib/cakeService'
 import WaveTransition from '@/components/WaveTransition'
-import { OrderService, CreateOrderRequestData } from '@/lib/orderService'
+import { OrderService, CreateOrderData } from '@/lib/orderService'
 import { HolidayService } from '@/lib/holidayService'
 import { useSettings } from '@/lib/settingsContext'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -303,11 +303,12 @@ export default function OrderPage() {
     setSubmitError('')
 
     try {
-      const orderData: CreateOrderRequestData = {
+      const orderData: CreateOrderData = {
         customer_name: formData.name.trim(),
         customer_email: formData.email.trim(),
         customer_phone: formData.phone.trim(),
-        request_date: formData.dateRequired, // Use the selected delivery date
+        collection_date: formData.dateRequired, // Use the selected delivery date
+        estimated_total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
         notes: '', // Admin notes only - not used for customer input
         allergies: formData.allergies.trim(),
         writing_on_cake: formData.writing.trim(),

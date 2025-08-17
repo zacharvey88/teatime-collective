@@ -20,26 +20,28 @@ export default function ResetPassword() {
   const [userEmail, setUserEmail] = useState('')
   const [requestEmail, setRequestEmail] = useState('')
   const [requestingReset, setRequestingReset] = useState(false)
+  const [token, setToken] = useState<string | null>(null)
+  const [refreshToken, setRefreshToken] = useState<string | null>(null)
   
   const searchParams = useSearchParams()
   const router = useRouter()
   
   // Get the access token from URL params (try different parameter names)
   const accessToken = searchParams?.get('access_token') || searchParams?.get('token')
-  const refreshToken = searchParams?.get('refresh_token')
+  const urlRefreshToken = searchParams?.get('refresh_token')
   
   // Check for hash fragment errors and tokens
   const hashParams = typeof window !== 'undefined' ? window.location.hash : ''
   
-  // Debug logging
+  // Initialize tokens from URL params
   useEffect(() => {
-    console.log('Reset password page loaded')
-    console.log('URL:', window.location.href)
-    console.log('Search params:', Object.fromEntries(searchParams?.entries() || []))
-    console.log('Hash params:', hashParams)
-    console.log('Access token:', accessToken)
-    console.log('Refresh token:', refreshToken)
-  }, [searchParams, hashParams, accessToken, refreshToken])
+    if (accessToken) {
+      setToken(accessToken)
+    }
+    if (urlRefreshToken) {
+      setRefreshToken(urlRefreshToken)
+    }
+  }, [accessToken, urlRefreshToken])
   
   useEffect(() => {
     // Extract tokens from URL hash fragment or search params
@@ -60,7 +62,7 @@ export default function ResetPassword() {
     
     // Validate token if we have one
     if (token) {
-      validateToken(token, refreshToken)
+      validateTokenWithTokens(token, refreshToken)
     }
   }, [])
   

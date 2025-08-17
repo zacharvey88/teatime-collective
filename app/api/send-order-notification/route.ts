@@ -14,26 +14,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the order details
-    const orderRequest = await OrderService.getOrderRequestById(orderId)
+    const order = await OrderService.getOrderById(orderId)
     
+    if (!order) {
+      return NextResponse.json(
+        { error: 'Order not found' },
+        { status: 404 }
+      )
+    }
+
     // Prepare email data
     const emailData: OrderEmailData = {
-      orderId: orderRequest.id,
-      customerName: orderRequest.customer_name,
-      customerEmail: orderRequest.customer_email,
-      customerPhone: orderRequest.customer_phone,
-      deliveryDate: orderRequest.collection_date,
-      allergies: orderRequest.allergies || '',
-      writingOnCake: orderRequest.writing_on_cake || '',
-      specialRequests: orderRequest.special_requests || '',
-      items: orderRequest.items.map(item => ({
+      orderId: order.id,
+      customerName: order.customer_name,
+      customerEmail: order.customer_email,
+      customerPhone: order.customer_phone,
+      deliveryDate: order.collection_date,
+      allergies: order.allergies || '',
+      writingOnCake: order.writing_on_cake || '',
+      specialRequests: order.special_requests || '',
+      items: order.items.map(item => ({
         name: item.item_name,
-        size: 'Standard', // This could be extracted from item_name or stored separately
+        size: 'Standard', // This could be extracted from product_name or stored separately
         quantity: item.quantity,
         price: item.estimated_unit_price
       })),
-      totalPrice: orderRequest.estimated_total,
-      orderDate: new Date(orderRequest.created_at).toLocaleDateString('en-GB')
+      totalPrice: order.estimated_total,
+      orderDate: new Date(order.created_at).toLocaleDateString('en-GB')
     }
 
     // Send emails
