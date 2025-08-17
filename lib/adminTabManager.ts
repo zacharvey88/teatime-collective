@@ -3,12 +3,24 @@
 class AdminTabManager {
   private static instance: AdminTabManager
   private tabId: string
+  private timestamp: number
   private isAdminTab: boolean = false
 
   constructor() {
     this.tabId = this.generateTabId()
     this.timestamp = Date.now()
     this.registerTab()
+  }
+
+  private generateTabId(): string {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+  }
+
+  static getInstance(): AdminTabManager {
+    if (!AdminTabManager.instance) {
+      AdminTabManager.instance = new AdminTabManager()
+    }
+    return AdminTabManager.instance
   }
 
   private registerTab() {

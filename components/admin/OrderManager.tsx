@@ -484,13 +484,13 @@ export default function OrderManager({ initialStatusFilter }: OrderManagerProps)
                           >
                             <input
                               type="checkbox"
-                              checked={statusFilter.has(status.value as OrderRequest['status'])}
+                              checked={statusFilter.has(status.value as Order['status'])}
                               onChange={(e) => {
                                 const newFilter = new Set(statusFilter)
                                 if (e.target.checked) {
-                                  newFilter.add(status.value as OrderRequest['status'])
+                                  newFilter.add(status.value as Order['status'])
                                 } else {
-                                  newFilter.delete(status.value as OrderRequest['status'])
+                                  newFilter.delete(status.value as Order['status'])
                                 }
                                 setStatusFilter(newFilter)
                               }}
@@ -567,14 +567,14 @@ export default function OrderManager({ initialStatusFilter }: OrderManagerProps)
                         >
                           <input
                             type="checkbox"
-                            checked={statusFilter.has(status.value as OrderRequest['status'])}
-                            onChange={(e) => {
-                              const newFilter = new Set(statusFilter)
-                              if (e.target.checked) {
-                                newFilter.add(status.value as OrderRequest['status'])
-                              } else {
-                                newFilter.delete(status.value as OrderRequest['status'])
-                              }
+                                                          checked={statusFilter.has(status.value as Order['status'])}
+                              onChange={(e) => {
+                                const newFilter = new Set(statusFilter)
+                                if (e.target.checked) {
+                                  newFilter.add(status.value as Order['status'])
+                                } else {
+                                  newFilter.delete(status.value as Order['status'])
+                                }
                               setStatusFilter(newFilter)
                             }}
                             className="mr-2"

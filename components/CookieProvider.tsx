@@ -18,17 +18,13 @@ export default function CookieProvider({ children }: CookieProviderProps) {
   }, [])
 
   const handleAcceptAll = () => {
-    setCookieConsent('all')
-    setShowBanner(false)
-    // Store consent in localStorage
-    localStorage.setItem('cookie-consent', 'all')
+    CookieManager.acceptAll()
+    setHasConsented(true)
   }
 
   const handleDeclineNonEssential = () => {
-    setCookieConsent('essential')
-    setShowBanner(false)
-    // Store consent in localStorage
-    localStorage.setItem('cookie-consent', 'essential')
+    CookieManager.declineNonEssential()
+    setHasConsented(true)
   }
 
   return (

@@ -165,6 +165,8 @@ export class OrderService {
         .from('order_items')
         .insert(orderData.items.map(item => ({
           order_id: orderRequest.data.id,
+          cake_flavor_id: item.cake_flavor_id,
+          cake_size_id: item.cake_size_id,
           item_name: item.item_name,
           quantity: item.quantity,
           estimated_unit_price: item.estimated_unit_price,
@@ -203,6 +205,8 @@ export class OrderService {
       special_requests: oldOrderData.special_requests || '',
       notes: oldOrderData.notes || '',
       items: oldOrderData.items.map((item: any) => ({
+        cake_flavor_id: item.cake_flavor_id,
+        cake_size_id: item.cake_size_id,
         item_name: item.item_name,
         quantity: item.quantity,
         estimated_unit_price: item.estimated_unit_price,
