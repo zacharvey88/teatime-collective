@@ -14,7 +14,7 @@ import {
   Clock,
   Star
 } from 'lucide-react'
-import { OrderAnalyticsService, OrderRequestStats, CustomerInsights, FlavorAnalytics, RecentActivity } from '@/lib/orderAnalyticsService'
+import { OrderAnalyticsService, OrderStats, CustomerInsights, CakeAnalytics, RecentActivity } from '@/lib/orderAnalyticsService'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 
 interface DashboardOverviewProps {
@@ -22,9 +22,9 @@ interface DashboardOverviewProps {
 }
 
 export default function DashboardOverview({ onSectionChange }: DashboardOverviewProps) {
-  const [orderRequestStats, setOrderRequestStats] = useState<OrderRequestStats | null>(null)
+  const [orderStats, setOrderStats] = useState<OrderStats | null>(null)
   const [customerInsights, setCustomerInsights] = useState<CustomerInsights | null>(null)
-  const [flavorAnalytics, setFlavorAnalytics] = useState<FlavorAnalytics | null>(null)
+  const [cakeAnalytics, setCakeAnalytics] = useState<CakeAnalytics | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -43,9 +43,9 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
         OrderAnalyticsService.getRecentActivity()
       ])
       
-      setOrderRequestStats(stats)
+      setOrderStats(stats)
       setCustomerInsights(insights)
-      setFlavorAnalytics(flavors)
+      setCakeAnalytics(flavors)
       setRecentActivity(activity)
     } catch (err: any) {
       setError(err.message || 'Failed to load dashboard data')
@@ -76,7 +76,7 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
                 <ShoppingCart className="h-4 w-4 text-orange" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{orderRequestStats?.totalRequests || 0}</div>
+                <div className="text-2xl font-bold">{orderStats?.totalOrders || 0}</div>
                 <p className="text-xs text-gray-600">All time</p>
               </CardContent>
             </Card>
@@ -87,7 +87,7 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
                 <PoundSterling className="h-4 w-4 text-orange" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">£{orderRequestStats?.totalEstimatedValue.toFixed(0) || 0}</div>
+                <div className="text-2xl font-bold">£{orderStats?.totalEstimatedValue.toFixed(0) || 0}</div>
                 <p className="text-xs text-gray-600">All time</p>
               </CardContent>
             </Card>
@@ -101,7 +101,7 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
                 <Clock className="h-4 w-4 text-orange" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{orderRequestStats?.newRequests || 0}</div>
+                <div className="text-2xl font-bold">{orderStats?.newOrders || 0}</div>
                 <p className="text-xs text-gray-600">Need attention</p>
               </CardContent>
             </Card>
@@ -112,7 +112,7 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
                 <TrendingUp className="h-4 w-4 text-orange" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{orderRequestStats?.recentRequests || 0}</div>
+                <div className="text-2xl font-bold">{orderStats?.recentOrders || 0}</div>
                 <p className="text-xs text-gray-600">New requests</p>
               </CardContent>
             </Card>
@@ -210,9 +210,9 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {flavorAnalytics?.topFlavors && flavorAnalytics.topFlavors.length > 0 ? (
+                {cakeAnalytics?.topFlavors && cakeAnalytics.topFlavors.length > 0 ? (
                   <div className="space-y-3">
-                    {flavorAnalytics.topFlavors.slice(0, 5).map((flavor, index) => (
+                    {cakeAnalytics.topFlavors.slice(0, 5).map((flavor, index) => (
                       <div key={index} className="flex justify-between items-center">
                         <div className="flex items-center gap-2">
                           <div className="w-3 h-3 rounded-full bg-orange"></div>
