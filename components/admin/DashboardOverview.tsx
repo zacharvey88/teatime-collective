@@ -37,7 +37,7 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
     try {
       setLoading(true)
       const [stats, insights, flavors, activity] = await Promise.all([
-        OrderAnalyticsService.getOrderRequestStats(),
+        OrderAnalyticsService.getOrderStats(),
         OrderAnalyticsService.getCustomerInsights(),
         OrderAnalyticsService.getFlavorAnalytics(),
         OrderAnalyticsService.getRecentActivity()
@@ -57,7 +57,7 @@ export default function DashboardOverview({ onSectionChange }: DashboardOverview
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray mb-2">Dashboard</h1>
-        <p className="text-gray-600">Welcome to your admin dashboard. Manage your website content and settings.</p>
+        <p className="text-gray-600">Welcome to your admin dashboard where you can view analytics of your orders and customers.</p>
       </div>
 
       {loading ? (

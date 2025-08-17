@@ -1,11 +1,11 @@
 import { supabase } from './supabaseClient'
 
-export interface OrderRequestStats {
-  totalRequests: number
+export interface OrderStats {
+  totalOrders: number
   totalEstimatedValue: number
-  averageRequestValue: number
-  recentRequests: number
-  newRequests: number
+  averageOrderValue: number
+  recentOrders: number
+  newOrders: number
 }
 
 export interface CustomerInsights {
@@ -15,12 +15,12 @@ export interface CustomerInsights {
   topCustomers: Array<{
     name: string
     email: string
-    totalRequests: number
+    totalOrders: number
     totalEstimatedValue: number
   }>
 }
 
-export interface FlavorAnalytics {
+export interface CakeAnalytics {
   topFlavors: Array<{
     name: string
     orderCount: number
@@ -42,8 +42,8 @@ export interface RecentActivity {
 }
 
 export class OrderAnalyticsService {
-  // Get overall order request statistics
-  static async getOrderRequestStats(): Promise<OrderRequestStats> {
+  // Get overall order statistics
+  static async getOrderStats(): Promise<OrderStats> {
     const now = new Date()
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
@@ -52,38 +52,38 @@ export class OrderAnalyticsService {
       .from('orders')
       .select('estimated_total')
 
-    if (totalError) throw new Error('Failed to fetch order request stats')
+    if (totalError) throw new Error('Failed to fetch order stats')
 
-    const totalRequests = totalData?.length || 0
-    const totalEstimatedValue = totalData?.reduce((sum, request) => sum + parseFloat(request.estimated_total), 0) || 0
-    const averageRequestValue = totalRequests > 0 ? totalEstimatedValue / totalRequests : 0
+    const totalOrders = totalData?.length || 0
+    const totalEstimatedValue = totalData?.reduce((sum, order) => sum + parseFloat(order.estimated_total), 0) || 0
+    const averageOrderValue = totalOrders > 0 ? totalEstimatedValue / totalOrders : 0
 
-    // Get recent requests (last 7 days)
+    // Get recent orders (last 7 days)
     const { data: recentData, error: recentError } = await supabase
       .from('orders')
       .select('id')
       .gte('collection_date', weekAgo.toISOString())
 
-    if (recentError) throw new Error('Failed to fetch recent requests')
+    if (recentError) throw new Error('Failed to fetch recent orders')
 
-    const recentRequests = recentData?.length || 0
+    const recentOrders = recentData?.length || 0
 
-    // Get new requests
+    // Get new orders
     const { data: newData, error: newError } = await supabase
       .from('orders')
       .select('id')
       .eq('status', 'new_request')
 
-    if (newError) throw new Error('Failed to fetch new requests')
+    if (newError) throw new Error('Failed to fetch new orders')
 
-    const newRequests = newData?.length || 0
+    const newOrders = newData?.length || 0
 
     return {
-      totalRequests,
+      totalOrders,
       totalEstimatedValue,
-      averageRequestValue,
-      recentRequests,
-      newRequests
+      averageOrderValue,
+      recentOrders,
+      newOrders
     }
   }
 
@@ -93,21 +93,21 @@ export class OrderAnalyticsService {
     const { data: customers, error: customersError } = await supabase
       .from('customers')
       .select('*')
-      .order('total_estimated_value', { ascending: false })
+      .order('total_value', { ascending: false })
 
     if (customersError) throw new Error('Failed to fetch customers')
 
     const totalCustomers = customers?.length || 0
-    const repeatCustomers = customers?.filter(c => c.total_requests > 1).length || 0
+    const repeatCustomers = customers?.filter(c => c.total_orders > 1).length || 0
     const averageCustomerValue = totalCustomers > 0 
-      ? customers?.reduce((sum, c) => sum + parseFloat(c.total_estimated_value), 0) / totalCustomers || 0
+      ? customers?.reduce((sum, c) => sum + parseFloat(c.total_value), 0) / totalCustomers || 0
       : 0
 
     const topCustomers = customers?.slice(0, 5).map(c => ({
       name: c.name,
       email: c.email,
-      totalRequests: c.total_requests,
-      totalEstimatedValue: parseFloat(c.total_estimated_value)
+              totalOrders: c.total_orders,
+      totalEstimatedValue: parseFloat(c.total_value)
     })) || []
 
     return {
@@ -118,17 +118,16 @@ export class OrderAnalyticsService {
     }
   }
 
-  // Get flavor analytics
-  static async getFlavorAnalytics(): Promise<FlavorAnalytics> {
+  // Get cake analytics (both categorized and standalone)
+  static async getFlavorAnalytics(): Promise<CakeAnalytics> {
     try {
-      // First, try to get request items with flavor data using a simpler approach
-    const { data: flavorData, error: flavorError } = await supabase
-      .from('order_items')
-        .select('item_name, estimated_total_price, cake_flavor_id')
-      .not('cake_flavor_id', 'is', null)
+      // Get all order items to analyze cake popularity
+      const { data: orderItems, error: orderItemsError } = await supabase
+        .from('order_items')
+        .select('item_name, estimated_total_price, cake_id')
 
-      if (flavorError) {
-        console.warn('Flavor analytics error:', flavorError)
+      if (orderItemsError) {
+        console.warn('Cake analytics error:', orderItemsError)
         // Return empty data if there's an error or no data
         return {
           topFlavors: [],
@@ -136,47 +135,48 @@ export class OrderAnalyticsService {
         }
       }
 
-      // If no flavor data, return empty arrays
-      if (!flavorData || flavorData.length === 0) {
+      // If no order data, return empty arrays
+      if (!orderItems || orderItems.length === 0) {
         return {
           topFlavors: [],
           popularFlavors: []
         }
       }
 
-      // Group by flavor - now we need to get flavor names separately
-    const flavorStats = new Map()
+      // Group by cake name - we'll look up all cake names from the cakes table
+      const cakeStats = new Map()
       
-      // Get unique flavor IDs to fetch their names
-      const flavorIds = Array.from(new Set(flavorData.map((item: any) => item.cake_flavor_id).filter(Boolean)))
+      // Get unique cake IDs to fetch their names from the cakes table
+      const cakeIds = Array.from(new Set(orderItems.map((item: any) => item.cake_id).filter(Boolean)))
       
-      // Fetch flavor names if we have flavor IDs
-      let flavorNames: { [key: string]: string } = {}
-      if (flavorIds.length > 0) {
-        const { data: flavors, error: flavorsError } = await supabase
-          .from('cake_flavors')
+      // Fetch cake names if we have cake IDs
+      let cakeNames: { [key: string]: string } = {}
+      if (cakeIds.length > 0) {
+        const { data: cakes, error: cakesError } = await supabase
+          .from('cakes')
           .select('id, name')
-          .in('id', flavorIds)
+          .in('id', cakeIds)
         
-        if (!flavorsError && flavors) {
-          flavors.forEach((flavor: any) => {
-            flavorNames[flavor.id] = flavor.name
+        if (!cakesError && cakes) {
+          cakes.forEach((cake: any) => {
+            cakeNames[cake.id] = cake.name
           })
         }
       }
       
-      flavorData.forEach((item: any) => {
-        const flavorName = flavorNames[item.cake_flavor_id] || item.item_name || 'Unknown Flavor'
-      if (!flavorStats.has(flavorName)) {
-        flavorStats.set(flavorName, { orderCount: 0, revenue: 0 })
-      }
-      const stats = flavorStats.get(flavorName)
-      stats.orderCount++
+      orderItems.forEach((item: any) => {
+        // Use cake name from the cakes table, fallback to item_name if no cake_id
+        const cakeName = item.cake_id ? cakeNames[item.cake_id] || 'Unknown Cake' : item.item_name || 'Unknown Cake'
+        if (!cakeStats.has(cakeName)) {
+          cakeStats.set(cakeName, { orderCount: 0, revenue: 0 })
+        }
+        const stats = cakeStats.get(cakeName)
+        stats.orderCount++
         stats.revenue += parseFloat(item.estimated_total_price || 0)
-    })
+      })
 
-    const topFlavors = Array.from(flavorStats.entries())
-      .map(([name, stats]) => ({
+    const topFlavors = Array.from(cakeStats.entries())
+      .map(([name, stats]: [string, any]) => ({
         name,
         orderCount: stats.orderCount,
         revenue: stats.revenue
@@ -187,8 +187,8 @@ export class OrderAnalyticsService {
     // Get popular flavors by unique customers
     const { data: customerFlavorData, error: customerFlavorError } = await supabase
       .from('customers')
-      .select('favorite_flavor')
-      .not('favorite_flavor', 'is', null)
+      .select('favourite_cake')
+      .not('favourite_cake', 'is', null)
 
       if (customerFlavorError) {
         console.warn('Customer flavor analytics error:', customerFlavorError)
@@ -196,7 +196,7 @@ export class OrderAnalyticsService {
 
     const flavorCustomerCount = new Map()
     customerFlavorData?.forEach(customer => {
-      const flavor = customer.favorite_flavor
+      const flavor = customer.favourite_cake
         if (flavor) {
       flavorCustomerCount.set(flavor, (flavorCustomerCount.get(flavor) || 0) + 1)
         }

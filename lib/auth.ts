@@ -50,25 +50,26 @@ export class AuthService {
         return false
       }
 
-      console.log('isAdmin: Checking admin status for user:', user.email)
-
-      // Check admin status in database using email (consistent with getCurrentAdmin)
-      const { data, error } = await supabase
+      // Check admin status in database using email with timeout
+      const adminCheckPromise = supabase
         .from('admin_users')
         .select('*')
         .eq('email', user.email)
         .eq('is_active', true)
         .single()
 
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Admin check timed out after 2 seconds')), 2000)
+      })
+
+      const { data, error } = await Promise.race([adminCheckPromise, timeoutPromise])
+
       if (error) {
-        console.log('isAdmin: Database error:', error)
         return false
       }
 
-      console.log('isAdmin: Admin user found:', data)
       return !!data
     } catch (error) {
-      console.log('isAdmin: Exception:', error)
       return false
     }
   }
@@ -128,16 +129,13 @@ export class AuthService {
   // Check if user is authenticated
   static async isAuthenticated(): Promise<boolean> {
     try {
-      console.log('isAuthenticated: Starting authentication check...')
-      
       // Simple session check with timeout
       const sessionPromise = supabase.auth.getSession()
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Authentication check timed out after 5 seconds')), 5000)
+        setTimeout(() => reject(new Error('Authentication check timed out after 2 seconds')), 2000)
       })
       
       const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
-      console.log('isAuthenticated: Session result:', !!session)
       return !!session
     } catch (error) {
       // If we get a timeout, try a different approach
@@ -146,7 +144,7 @@ export class AuthService {
           // Try to get user directly with a shorter timeout
           const userPromise = supabase.auth.getUser()
           const userTimeoutPromise = new Promise<never>((_, reject) => {
-            setTimeout(() => reject(new Error('User check timed out after 3 seconds')), 3000)
+            setTimeout(() => reject(new Error('User check timed out after 1.5 seconds')), 1500)
           })
           
           const { data: { user } } = await Promise.race([userPromise, userTimeoutPromise])

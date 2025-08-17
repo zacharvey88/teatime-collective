@@ -6,12 +6,11 @@ export interface Customer {
   email: string
   name: string
   phone: string
-  address: string
-  first_request_date: string
-  last_request_date: string
-  total_requests: number
-  total_estimated_value: number
-  favorite_flavor: string
+  first_order_date: string
+  last_order_date: string
+  total_orders: number
+  total_value: number
+  favourite_cake: string
   created_at: string
   updated_at: string
 }
@@ -19,7 +18,7 @@ export interface Customer {
 export interface OrderItem {
   id: string
   order_id: string
-  cake_flavor_id?: string
+  cake_id?: string
   cake_size_id?: string
   item_name: string
   quantity: number
@@ -62,15 +61,21 @@ export interface CreateOrderData {
 
 export class OrderService {
   // Get all orders with customer and item details
-  static async getAllOrders(): Promise<Order[]> {
-    const { data, error } = await supabase
+  static async getAllOrders(includeArchived: boolean = false): Promise<Order[]> {
+    let query = supabase
       .from('orders')
       .select(`
         *,
         customer:customers(*),
         items:order_items(*)
       `)
-      .order('created_at', { ascending: false })
+    
+    // Filter out archived orders unless explicitly requested
+    if (!includeArchived) {
+      query = query.neq('status', 'archived')
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false })
 
     if (error) throw error
     return data || []
@@ -112,7 +117,7 @@ export class OrderService {
             email: orderData.customer_email,
             name: orderData.customer_name,
             phone: orderData.customer_phone,
-            address: 'Address not provided' // Placeholder, needs actual address field
+    
           })
           .select('id')
           .single()
@@ -128,7 +133,7 @@ export class OrderService {
           .update({
             name: orderData.customer_name,
             phone: orderData.customer_phone,
-            address: 'Address not provided', // Placeholder, needs actual address field
+    
             updated_at: new Date().toISOString()
           })
           .eq('id', customer.id)
@@ -165,7 +170,7 @@ export class OrderService {
         .from('order_items')
         .insert(orderData.items.map(item => ({
           order_id: orderRequest.data.id,
-          cake_flavor_id: item.cake_flavor_id,
+          cake_id: item.cake_id,
           cake_size_id: item.cake_size_id,
           item_name: item.item_name,
           quantity: item.quantity,
@@ -205,7 +210,7 @@ export class OrderService {
       special_requests: oldOrderData.special_requests || '',
       notes: oldOrderData.notes || '',
       items: oldOrderData.items.map((item: any) => ({
-        cake_flavor_id: item.cake_flavor_id,
+        cake_id: item.cake_id,
         cake_size_id: item.cake_size_id,
         item_name: item.item_name,
         quantity: item.quantity,
@@ -240,8 +245,8 @@ export class OrderService {
   // Update payment status - removed as payment_status field no longer exists in Order interface
 
   // Get orders by status
-  static async getOrdersByStatus(status: Order['status']): Promise<Order[]> {
-    const { data, error } = await supabase
+  static async getOrdersByStatus(status: Order['status'], includeArchived: boolean = false): Promise<Order[]> {
+    let query = supabase
       .from('orders')
       .select(`
         *,
@@ -249,7 +254,13 @@ export class OrderService {
         items:order_items(*)
       `)
       .eq('status', status)
-      .order('created_at', { ascending: false })
+    
+    // Filter out archived orders unless explicitly requested
+    if (!includeArchived) {
+      query = query.neq('status', 'archived')
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false })
 
     if (error) throw error
     return data || []
@@ -264,9 +275,9 @@ export class OrderService {
         customer:customers(*),
         items:order_items(*)
       `)
-      .gte('delivery_date', startDate)
-      .lte('delivery_date', endDate)
-      .order('delivery_date', { ascending: true })
+      .gte('collection_date', startDate)
+      .lte('collection_date', endDate)
+      .order('collection_date', { ascending: true })
 
     if (error) throw error
     return data || []
@@ -344,8 +355,8 @@ export class OrderService {
     customerName: string
     customerEmail: string
     orderDate: string
-    deliveryDate: string
-    deliveryTime: string
+      collectionDate: string
+  collectionTime: string
     totalAmount: string
     status: string
     paymentStatus: string
@@ -356,8 +367,8 @@ export class OrderService {
       customerName: order.customer_name,
       customerEmail: order.customer_email,
       orderDate: formatDateTime(order.created_at),
-      deliveryDate: formatDateTime(order.collection_date),
-      deliveryTime: '12:00', // Default time since old format didn't have it
+              collectionDate: formatDateTime(order.collection_date),
+        collectionTime: '12:00', // Default time since old format didn't have it
       totalAmount: `£${order.estimated_total.toFixed(2)}`,
       status: order.status.replace('_', ' ').toUpperCase(),
       paymentStatus: 'PENDING', // No payment_status field in new Order interface

@@ -307,14 +307,14 @@ export default function OrderPage() {
         customer_name: formData.name.trim(),
         customer_email: formData.email.trim(),
         customer_phone: formData.phone.trim(),
-        collection_date: formData.dateRequired, // Use the selected delivery date
+        collection_date: formData.dateRequired, // Use the selected collection date
         estimated_total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
         notes: '', // Admin notes only - not used for customer input
         allergies: formData.allergies.trim(),
         writing_on_cake: formData.writing.trim(),
         special_requests: formData.otherInfo.trim(),
         items: cart.map(item => ({
-          cake_flavor_id: item.flavorId,
+          cake_id: item.flavorId,
           cake_size_id: item.sizeId,
           item_name: `${item.flavorName} (${item.sizeName})`,
           quantity: item.quantity,
@@ -346,20 +346,7 @@ export default function OrderPage() {
       <Navigation />
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4">
-          {/* Success Message */}
-          {submitSuccess && (
-            <div className="mb-8 p-6 bg-green-50 border border-green-200 rounded-lg">
-              <div className="flex items-center">
-                <CheckCircle className="w-6 h-6 text-green-600 mr-3" />
-                <div>
-                  <h3 className="text-lg font-semibold text-green-800">Order Submitted Successfully!</h3>
-                  <p className="text-green-700 mt-1">
-                    Thank you for your order. We'll review your request and get back to you as soon as possible.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+
 
           {/* Error Message */}
           {submitError && (
@@ -748,6 +735,29 @@ export default function OrderPage() {
       </main>
       <WaveTransition direction="down" color="#FFF5E0" />
       <Footer />
+
+      {/* Success Modal */}
+      {submitSuccess && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <div className="text-center">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Order Submitted Successfully!</h3>
+              <p className="text-gray-600 mb-8">
+                Thank you for your order. We'll review your request and get back to you as soon as possible.
+              </p>
+              <button
+                onClick={() => setSubmitSuccess(false)}
+                className="w-full bg-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-900 transition-all duration-200"
+              >
+                Continue Shopping
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

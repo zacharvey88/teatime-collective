@@ -17,7 +17,9 @@ export default function AdminProtected({ children }: AdminProtectedProps) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const isCheckingAuth = useRef(false)
 
-  // Listen for auth state changes
+
+
+    // Listen for auth state changes
   useEffect(() => {
     const { data: { subscription } } = AuthService.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_OUT') {
@@ -35,7 +37,19 @@ export default function AdminProtected({ children }: AdminProtectedProps) {
       }
     })
 
-    return () => subscription.unsubscribe()
+    // Also trigger an initial auth check
+    checkAuth()
+    
+    // Fallback timeout to prevent infinite loading
+    const fallbackTimeout = setTimeout(() => {
+      setIsLoading(false)
+      setAuthError('Authentication check timed out. Please refresh the page.')
+    }, 10000) // 10 second fallback
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(fallbackTimeout)
+    }
   }, [isAuthenticated])
 
   const checkAuth = useCallback(async () => {
@@ -84,17 +98,6 @@ export default function AdminProtected({ children }: AdminProtectedProps) {
     checkAuth()
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-light-cream">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading admin panel...</p>
-        </div>
-      </div>
-    )
-  }
-
   if (isLoggingOut) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-light-cream">
@@ -102,6 +105,17 @@ export default function AdminProtected({ children }: AdminProtectedProps) {
           <div className="w-16 h-16 border-4 border-orange border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Signing Out...</h2>
           <p className="text-gray-600">Please wait while we securely log you out.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-light-cream">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin panel...</p>
         </div>
       </div>
     )

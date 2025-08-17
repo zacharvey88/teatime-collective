@@ -4,7 +4,6 @@ export interface CakeCategory {
   id: string
   name: string
   description: string | null
-  display_order: number
   active: boolean
   created_at: string
   updated_at: string
@@ -16,7 +15,6 @@ export interface CakeSize {
   name: string
   description: string | null
   price: number
-  display_order: number
   active: boolean
   created_at: string
   updated_at: string
@@ -29,7 +27,6 @@ export interface CakeFlavor {
   description?: string | null
   image_url: string | null
   price_override: number | null // Allows flavor-specific pricing
-  display_order: number
   active: boolean
   created_at: string
   updated_at: string
@@ -46,8 +43,7 @@ export interface Cake {
   size_description: string | null
   category_id: string | null
   flavor_id: string | null
-  cake_type: 'standalone' | 'category_flavor'
-  display_order: number
+  cake_type: 'standalone' | 'categorised'
   active: boolean
   created_at: string
   updated_at: string
@@ -72,7 +68,7 @@ export class CakeService {
       .select('*')
       .eq('cake_type', 'standalone')
       .eq('active', true)
-      .order('display_order', { ascending: true })
+      .order('name', { ascending: true })
     
     if (error) throw error
     return data || []
@@ -84,7 +80,7 @@ export class CakeService {
       .from('cakes')
       .select('*')
       .eq('cake_type', 'standalone')
-      .order('display_order', { ascending: true })
+      .order('name', { ascending: true })
     
     if (error) throw error
     return data || []
@@ -96,7 +92,7 @@ export class CakeService {
       .from('cake_categories')
       .select('*')
       .eq('active', true)
-      .order('display_order', { ascending: true })
+      .order('name', { ascending: true })
     
     if (error) throw error
     return data || []
@@ -108,7 +104,7 @@ export class CakeService {
       .from('cake_sizes')
       .select('*')
       .eq('active', true)
-      .order('display_order', { ascending: true })
+      .order('name', { ascending: true })
     
     if (error) throw error
     return data || []
@@ -119,9 +115,9 @@ export class CakeService {
     const { data, error } = await supabase
       .from('cakes')
       .select('*')
-      .eq('cake_type', 'category_flavor')
+      .eq('cake_type', 'categorised')
       .eq('active', true)
-      .order('display_order', { ascending: true })
+      .order('name', { ascending: true })
     
     if (error) throw error
     return data || []
@@ -133,7 +129,7 @@ export class CakeService {
       .from('cake_categories')
       .select('*')
       .eq('active', true)
-      .order('display_order', { ascending: true })
+      .order('name', { ascending: true })
     
     if (categoriesError) throw categoriesError
 
@@ -146,7 +142,7 @@ export class CakeService {
         .select('*')
         .eq('category_id', category.id)
         .eq('active', true)
-        .order('display_order', { ascending: true })
+        .order('name', { ascending: true })
       
       if (sizesError) throw sizesError
 
@@ -155,9 +151,9 @@ export class CakeService {
         .from('cakes')
         .select('*')
         .eq('category_id', category.id)
-        .eq('cake_type', 'category_flavor')
+        .eq('cake_type', 'categorised')
         .eq('active', true)
-        .order('display_order', { ascending: true })
+        .order('name', { ascending: true })
       
       if (flavorsError) throw flavorsError
 
@@ -177,7 +173,7 @@ export class CakeService {
     const { data: categories, error: categoriesError } = await supabase
       .from('cake_categories')
       .select('*')
-      .order('display_order', { ascending: true })
+      .order('name', { ascending: true })
     
     if (categoriesError) throw categoriesError
 
@@ -189,7 +185,7 @@ export class CakeService {
         .from('cake_sizes')
         .select('*')
         .eq('category_id', category.id)
-        .order('display_order', { ascending: true })
+        .order('name', { ascending: true })
       
       if (sizesError) throw sizesError
 
@@ -198,8 +194,8 @@ export class CakeService {
         .from('cakes')
         .select('*')
         .eq('category_id', category.id)
-        .eq('cake_type', 'category_flavor')
-        .order('display_order', { ascending: true })
+        .eq('cake_type', 'categorised')
+        .order('name', { ascending: true })
       
       if (flavorsError) throw flavorsError
 
@@ -334,8 +330,7 @@ export class CakeService {
       image_url: flavor.image_url,
       category_id: flavor.category_id,
       price_override: flavor.price_override,
-      cake_type: 'category_flavor' as const,
-      display_order: flavor.display_order,
+      cake_type: 'categorised' as const,
       active: flavor.active
     }
     
@@ -356,7 +351,6 @@ export class CakeService {
       image_url: updates.image_url,
       category_id: updates.category_id,
       price_override: updates.price_override,
-      display_order: updates.display_order,
       active: updates.active,
       updated_at: new Date().toISOString()
     }
@@ -365,7 +359,7 @@ export class CakeService {
       .from('cakes')
       .update(cakeUpdates)
       .eq('id', id)
-      .eq('cake_type', 'category_flavor')
+      .eq('cake_type', 'categorised')
       .select()
       .single()
     
@@ -378,7 +372,7 @@ export class CakeService {
       .from('cakes')
       .delete()
       .eq('id', id)
-      .eq('cake_type', 'category_flavor')
+      .eq('cake_type', 'categorised')
     
     if (error) throw error
   }
@@ -400,7 +394,7 @@ export class CakeService {
       .from('cakes')
       .select('*')
       .eq('id', id)
-      .eq('cake_type', 'category_flavor')
+      .eq('cake_type', 'categorised')
       .single()
     
     if (error) return null

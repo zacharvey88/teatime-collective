@@ -61,7 +61,7 @@ export default function PrivacyPage() {
                   </p>
                   <ul className="list-disc list-inside text-gray-600 ml-4 mt-2 space-y-1">
                     <li>Name and contact details (email, phone number)</li>
-                    <li>Delivery address and preferences</li>
+                    <li>Collection preferences</li>
                     <li>Order history and preferences</li>
                     <li>Communication records</li>
                   </ul>

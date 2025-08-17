@@ -213,7 +213,6 @@ export default function CakeManager() {
       const category = await CakeService.createCategory({
         name: newCategory.name.trim(),
         description: newCategory.description.trim() || null,
-        display_order: cakes.length + 1,
         active: true
       })
 
@@ -238,7 +237,6 @@ export default function CakeManager() {
         name: newSize.name.trim(),
         description: newSize.description.trim() || null,
         price: parseFloat(newSize.price),
-        display_order: 1,
         active: true
       })
 
@@ -264,7 +262,6 @@ export default function CakeManager() {
         description: null,
         image_url: null,
         price_override: newFlavor.priceOverride ? parseFloat(newFlavor.priceOverride) : null,
-        display_order: 1,
         active: true
       })
 
@@ -328,7 +325,6 @@ export default function CakeManager() {
         await CakeService.createCategory({
           name: newCategory.name.trim(),
           description: newCategory.description.trim() || null,
-          display_order: cakes.length + 1,
           active: true
         })
         setNewCategory({ name: '', description: '' })
@@ -342,7 +338,6 @@ export default function CakeManager() {
           name: newSize.name.trim(),
           description: newSize.description.trim() || null,
           price: parseFloat(newSize.price),
-          display_order: 1,
           active: true
         })
         setNewSize({ categoryId: '', name: '', description: '', price: '' })
@@ -385,7 +380,6 @@ export default function CakeManager() {
           description: newFlavor.description.trim() || null,
           image_url: finalImageUrl,
           price_override: newFlavor.priceOverride ? parseFloat(newFlavor.priceOverride) : null,
-          display_order: 1,
           active: true
         })
         setNewFlavor({ categoryId: '', name: '', description: '', priceOverride: '', imageUrl: '' })

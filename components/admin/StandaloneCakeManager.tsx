@@ -183,7 +183,6 @@ export default function StandaloneCakeManager() {
         category_id: null, // Standalone cakes don't have categories
         flavor_id: null, // Standalone cakes don't have flavor_id
         cake_type: 'standalone' as const,
-        display_order: cakes.length + 1,
         active: true
       }
 

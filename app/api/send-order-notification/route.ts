@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       customerName: order.customer_name,
       customerEmail: order.customer_email,
       customerPhone: order.customer_phone,
-      deliveryDate: order.collection_date,
+              collectionDate: order.collection_date,
       allergies: order.allergies || '',
       writingOnCake: order.writing_on_cake || '',
       specialRequests: order.special_requests || '',

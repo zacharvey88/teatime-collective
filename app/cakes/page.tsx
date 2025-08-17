@@ -351,10 +351,7 @@ export default function CakesPage() {
                   {/* Cake Name */}
                   <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">{cakeCard.name}</h3>
                   
-                  {/* Description */}
-                  {cakeCard.description && (
-                    <p className="text-gray-600 text-sm text-center mb-4">{cakeCard.description}</p>
-                  )}
+
 
                   {/* Size Selection */}
                   <div className="flex-1 mb-6">

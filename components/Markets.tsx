@@ -49,7 +49,15 @@ const Markets = () => {
         </div>
 
         {/* Market Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-6 max-w-7xl mx-auto justify-items-center">
+        <div className="flex justify-center">
+          <div className={`grid gap-6 justify-items-center ${
+            markets.length === 1 ? 'grid-cols-1' :
+            markets.length === 2 ? 'grid-cols-2' :
+            markets.length === 3 ? 'grid-cols-3' :
+            markets.length === 4 ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' :
+            markets.length === 5 ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5' :
+            'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+          }`}>
           {loading ? (
             <div className="flex items-center justify-center py-12 w-full col-span-full">
               <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin"></div>
@@ -131,6 +139,7 @@ const Markets = () => {
               )
             })
           )}
+          </div>
         </div>
       </div>
     </section>

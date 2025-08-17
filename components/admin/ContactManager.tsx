@@ -101,10 +101,10 @@ export default function ContactManager() {
       ) : (
         <>
           <div className="space-y-8">
-            {/* Top Row - Contact Details and Address */}
+            {/* Top Row - Contact Details, Address, and Social Media */}
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Contact Details */}
-              <div className="space-y-4 lg:w-96">
+              <div className="space-y-4 lg:w-80">
                 <div>
                   <label className="text-sm font-bold text-gray">Email Address</label>
                   <Input
@@ -129,7 +129,7 @@ export default function ContactManager() {
               </div>
 
               {/* Address */}
-              <div className="space-y-4 lg:w-96">
+              <div className="space-y-4 lg:w-80">
                 <div>
                   <label className="text-sm font-bold text-gray">Address Line 1</label>
                   <Input
@@ -160,11 +160,9 @@ export default function ContactManager() {
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Social Media */}
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Social Media */}
+              <div className="space-y-4 lg:w-80">
                 <div>
                   <label className="text-sm font-bold text-gray">Instagram URL</label>
                   <Input

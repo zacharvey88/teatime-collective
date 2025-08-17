@@ -220,9 +220,8 @@ CREATE TABLE IF NOT EXISTS order_requests (
   customer_email TEXT NOT NULL,
   customer_phone TEXT,
   request_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  preferred_delivery_date DATE,
-  preferred_delivery_time TIME,
-  delivery_address TEXT,
+  preferred_collection_date DATE,
+  preferred_collection_time TIME,
   estimated_total DECIMAL(10,2) NOT NULL,
   status TEXT DEFAULT 'new_request' CHECK (status IN ('new_request', 'reviewed', 'approved', 'rejected', 'completed')),
   email_sent BOOLEAN DEFAULT false,
@@ -232,11 +231,11 @@ CREATE TABLE IF NOT EXISTS order_requests (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create request_items table (safe - won't overwrite)
-CREATE TABLE IF NOT EXISTS request_items (
+-- Create order_items table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS order_items (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   request_id UUID REFERENCES order_requests(id) ON DELETE CASCADE,
-  cake_flavor_id UUID REFERENCES cake_flavors(id) ON DELETE SET NULL,
+  cake_id UUID REFERENCES cakes(id) ON DELETE SET NULL,
   cake_size_id UUID REFERENCES cake_sizes(id) ON DELETE SET NULL,
   item_name TEXT NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1,
@@ -265,11 +264,11 @@ CREATE TABLE IF NOT EXISTS customers (
   email TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   phone TEXT,
-  address TEXT,
-  first_request_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  last_request_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  total_requests INTEGER DEFAULT 0,
-  total_estimated_value DECIMAL(10,2) DEFAULT 0,
+
+  first_order_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  last_order_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  total_orders INTEGER DEFAULT 0,
+  total_value DECIMAL(10,2) DEFAULT 0,
   favorite_flavor TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -284,7 +283,6 @@ CREATE TABLE IF NOT EXISTS cake_categories (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
-  display_order INTEGER NOT NULL DEFAULT 0,
   active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -297,24 +295,27 @@ CREATE TABLE IF NOT EXISTS cake_sizes (
   name TEXT NOT NULL,
   description TEXT,
   price DECIMAL(10,2) NOT NULL,
-  display_order INTEGER NOT NULL DEFAULT 0,
   active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create cake_flavors table (safe - won't overwrite)
-CREATE TABLE IF NOT EXISTS cake_flavors (
+-- Create cakes table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS cakes (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  category_id UUID REFERENCES cake_categories(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   description TEXT,
   image_url TEXT,
-  display_order INTEGER NOT NULL DEFAULT 0,
+  category_id UUID REFERENCES cake_categories(id) ON DELETE SET NULL,
+  flavor_id UUID REFERENCES cake_sizes(id) ON DELETE SET NULL,
+  cake_type TEXT NOT NULL CHECK (cake_type IN ('standalone', 'categorised')),
+  price_override DECIMAL(10,2),
   active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+
 
 -- Enable RLS on admin_users table
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
@@ -322,7 +323,7 @@ ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 -- Enable RLS on cake tables
 ALTER TABLE cake_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cake_sizes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cake_flavors ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cakes ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing admin policies if they exist
 DROP POLICY IF EXISTS "Admins can view admin users" ON admin_users;
@@ -333,8 +334,7 @@ DROP POLICY IF EXISTS "Admins can manage cake categories" ON cake_categories;
 DROP POLICY IF EXISTS "Everyone can view cake categories" ON cake_categories;
 DROP POLICY IF EXISTS "Admins can manage cake sizes" ON cake_sizes;
 DROP POLICY IF EXISTS "Everyone can view cake sizes" ON cake_sizes;
-DROP POLICY IF EXISTS "Admins can manage cake flavors" ON cake_flavors;
-DROP POLICY IF EXISTS "Everyone can view cake flavors" ON cake_flavors;
+
 
 -- Create RLS policies for cake tables
 CREATE POLICY "Admins can manage cake categories" ON cake_categories
@@ -349,58 +349,49 @@ CREATE POLICY "Admins can manage cake sizes" ON cake_sizes
 CREATE POLICY "Everyone can view cake sizes" ON cake_sizes
   FOR SELECT USING (true);
 
-CREATE POLICY "Admins can manage cake flavors" ON cake_flavors
+CREATE POLICY "Admins can manage cakes" ON cakes
   FOR ALL USING (is_admin_user());
 
-CREATE POLICY "Everyone can view cake flavors" ON cake_flavors
+CREATE POLICY "Everyone can view cakes" ON cakes
   FOR SELECT USING (true);
 
+
+
 -- Insert default cake categories
-INSERT INTO cake_categories (name, description, display_order) VALUES
-  ('Regular Cakes', 'Traditional sponge cakes with buttercream or ganache', 1),
-  ('Frilly Cakes', 'Decorated cakes with piped buttercream designs', 2),
-  ('Tray Bakes', 'Large rectangular cakes perfect for sharing', 3),
-  ('Cheesecakes', 'Creamy cheesecakes with various toppings', 4)
+INSERT INTO cake_categories (name, description) VALUES
+  ('Regular Cakes', 'Traditional sponge cakes with buttercream or ganache'),
+  ('Frilly Cakes', 'Decorated cakes with piped buttercream designs'),
+  ('Tray Bakes', 'Large rectangular cakes perfect for sharing'),
+  ('Cheesecakes', 'Creamy cheesecakes with various toppings')
 ON CONFLICT (name) DO NOTHING;
 
 -- Insert default cake sizes for Regular Cakes
-INSERT INTO cake_sizes (category_id, name, description, price, display_order) VALUES
-  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), '6 inch', '6-8 Large slices', 50.00, 1),
-  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), '9 inch', '12-14 Large slices', 60.00, 2),
-  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), '12.5 inch', '20 Large slices', 85.00, 3)
+INSERT INTO cake_sizes (category_id, name, description, price) VALUES
+  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), '6 inch', '6-8 Large slices', 50.00),
+  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), '9 inch', '12-14 Large slices', 60.00),
+  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), '12.5 inch', '20 Large slices', 85.00)
 ON CONFLICT DO NOTHING;
 
 -- Insert default cake sizes for Frilly Cakes
-INSERT INTO cake_sizes (category_id, name, description, price, display_order) VALUES
-  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), '6 inch', '8 Large slices', 70.00, 1),
-  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), '9 inch', '12 Large slices', 80.00, 2),
-  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), '12.5 inch', '20 Large slices', 110.00, 3)
+INSERT INTO cake_sizes (category_id, name, description, price) VALUES
+  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), '6 inch', '8 Large slices', 70.00),
+  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), '9 inch', '12 Large slices', 80.00),
+  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), '12.5 inch', '20 Large slices', 110.00)
 ON CONFLICT DO NOTHING;
 
 -- Insert default cake sizes for Tray Bakes
-INSERT INTO cake_sizes (category_id, name, description, price, display_order) VALUES
-  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Small Tray', 'Serves 12-15 people', 45.00, 1),
-  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Large Tray', 'Serves 20-25 people', 65.00, 2)
+INSERT INTO cake_sizes (category_id, name, description, price) VALUES
+  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Small Tray', 'Serves 12-15 people', 45.00),
+  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Large Tray', 'Serves 20-25 people', 65.00)
 ON CONFLICT DO NOTHING;
 
 -- Insert default cake sizes for Cheesecakes
-INSERT INTO cake_sizes (category_id, name, description, price, display_order) VALUES
-  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), '6 inch', '6-8 slices', 35.00, 1),
-  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), '9 inch', '10-12 slices', 45.00, 2)
+INSERT INTO cake_sizes (category_id, name, description, price) VALUES
+  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), '6 inch', '6-8 slices', 35.00),
+  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), '9 inch', '10-12 slices', 45.00)
 ON CONFLICT DO NOTHING;
 
--- Insert some default flavors
-INSERT INTO cake_flavors (category_id, name, description, display_order) VALUES
-  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), 'Chocolate', 'Rich chocolate sponge with chocolate buttercream', 1),
-  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), 'Vanilla', 'Light vanilla sponge with vanilla buttercream', 2),
-  ((SELECT id FROM cake_categories WHERE name = 'Regular Cakes'), 'Lemon', 'Zesty lemon sponge with lemon buttercream', 3),
-  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), 'Chocolate Frilly', 'Chocolate cake with piped chocolate buttercream', 1),
-  ((SELECT id FROM cake_categories WHERE name = 'Frilly Cakes'), 'Vanilla Frilly', 'Vanilla cake with piped vanilla buttercream', 2),
-  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Chocolate Brownie', 'Rich chocolate brownie tray bake', 1),
-  ((SELECT id FROM cake_categories WHERE name = 'Tray Bakes'), 'Lemon Drizzle', 'Zesty lemon drizzle tray bake', 2),
-  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), 'Classic Vanilla', 'Smooth vanilla cheesecake', 1),
-  ((SELECT id FROM cake_categories WHERE name = 'Cheesecakes'), 'Chocolate', 'Rich chocolate cheesecake', 2)
-ON CONFLICT DO NOTHING;
+
 
 -- ========================================
 -- 5. IMAGE TABLES SETUP
@@ -520,45 +511,43 @@ CREATE OR REPLACE FUNCTION update_customer_stats()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Insert or update customer record
-  INSERT INTO customers (email, name, phone, address, first_request_date, last_request_date, total_requests, total_estimated_value)
+  INSERT INTO customers (email, name, phone, first_order_date, last_order_date, total_orders, total_value)
   VALUES (
     NEW.customer_email,
     NEW.customer_name,
     NEW.customer_phone,
-    NEW.delivery_address,
-    NEW.request_date,
-    NEW.request_date,
+    NEW.collection_date,
+    NEW.collection_date,
     1,
     NEW.estimated_total
   )
   ON CONFLICT (email) DO UPDATE SET
     name = EXCLUDED.name,
     phone = COALESCE(EXCLUDED.phone, customers.phone),
-    address = COALESCE(EXCLUDED.address, customers.address),
-    last_request_date = EXCLUDED.last_request_date,
-    total_requests = customers.total_requests + 1,
-    total_estimated_value = customers.total_estimated_value + EXCLUDED.total_estimated_value,
+    last_order_date = EXCLUDED.last_order_date,
+    total_orders = customers.total_orders + 1,
+    total_value = customers.total_value + EXCLUDED.total_estimated_total,
     updated_at = NOW();
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION update_favorite_flavor()
+CREATE OR REPLACE FUNCTION update_favorite_cake()
 RETURNS TRIGGER AS $$
 BEGIN
-  -- Update customer's favorite flavor based on most requested
+  -- Update customer's favorite cake based on most ordered
   UPDATE customers
-  SET favorite_flavor = (
-    SELECT cf.name
+  SET favourite_cake = (
+    SELECT c.name
     FROM request_items ri
-    JOIN cake_flavors cf ON ri.cake_flavor_id = cf.id
+    JOIN cakes c ON ri.cake_id = c.id
     WHERE ri.request_id IN (
       SELECT id FROM order_requests WHERE customer_email = (
         SELECT customer_email FROM order_requests WHERE id = NEW.request_id
       )
     )
-    GROUP BY cf.name
+    GROUP BY c.name
     ORDER BY COUNT(*) DESC
     LIMIT 1
   )
@@ -581,7 +570,7 @@ CREATE TRIGGER on_order_request_created
 
 CREATE TRIGGER on_request_item_created
   AFTER INSERT ON request_items
-  FOR EACH ROW EXECUTE FUNCTION update_favorite_flavor();
+  FOR EACH ROW EXECUTE FUNCTION update_favorite_cake();
 
 -- ========================================
 -- 4. SAMPLE DATA (Optional)

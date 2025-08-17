@@ -14,7 +14,7 @@ export interface OrderEmailData {
   customerName: string
   customerEmail: string
   customerPhone: string
-  deliveryDate: string
+  collectionDate: string
   allergies: string
   writingOnCake: string
   specialRequests: string
@@ -126,7 +126,7 @@ export class EmailService {
               <h3>Order Details</h3>
               <p><strong>Order ID:</strong> <span class="highlight">#${data.orderId}</span></p>
               <p><strong>Order Date:</strong> ${data.orderDate}</p>
-              <p><strong>Collection Date:</strong> ${data.deliveryDate}</p>
+              <p><strong>Collection Date:</strong> ${data.collectionDate}</p>
               ${data.allergies ? `<p><strong>Allergies:</strong> ${data.allergies}</p>` : ''}
               ${data.writingOnCake ? `<p><strong>Writing on Cake:</strong> ${data.writingOnCake}</p>` : ''}
               ${data.specialRequests ? `<p><strong>Special Requests:</strong> ${data.specialRequests}</p>` : ''}
@@ -194,7 +194,7 @@ Thank you for your order with Teatime Collective! We're excited to create your d
 ORDER DETAILS:
 Order ID: #${data.orderId}
 Order Date: ${data.orderDate}
-Collection Date: ${data.deliveryDate}
+Collection Date: ${data.collectionDate}
 ${data.allergies ? `Allergies: ${data.allergies}` : ''}
 ${data.writingOnCake ? `Writing on Cake: ${data.writingOnCake}` : ''}
 ${data.specialRequests ? `Special Requests: ${data.specialRequests}` : ''}
@@ -262,7 +262,7 @@ Contact: ${contactEmail}
               <p><strong>Name:</strong> ${data.customerName}</p>
               <p><strong>Email:</strong> <a href="mailto:${data.customerEmail}">${data.customerEmail}</a></p>
               <p><strong>Phone:</strong> <a href="tel:${data.customerPhone}">${data.customerPhone}</a></p>
-              <p><strong>Collection Date:</strong> ${data.deliveryDate}</p>
+              <p><strong>Collection Date:</strong> ${data.collectionDate}</p>
               ${data.allergies ? `<p><strong>Allergies:</strong> ${data.allergies}</p>` : ''}
               ${data.writingOnCake ? `<p><strong>Writing on Cake:</strong> ${data.writingOnCake}</p>` : ''}
               ${data.specialRequests ? `<p><strong>Special Requests:</strong> ${data.specialRequests}</p>` : ''}
@@ -309,7 +309,7 @@ CUSTOMER INFORMATION:
 Name: ${data.customerName}
 Email: ${data.customerEmail}
 Phone: ${data.customerPhone}
-Collection Date: ${data.deliveryDate}
+Collection Date: ${data.collectionDate}
 ${data.allergies ? `Allergies: ${data.allergies}` : ''}
 ${data.writingOnCake ? `Writing on Cake: ${data.writingOnCake}` : ''}
 ${data.specialRequests ? `Special Requests: ${data.specialRequests}` : ''}

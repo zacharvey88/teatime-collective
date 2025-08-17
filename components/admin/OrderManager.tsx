@@ -32,7 +32,7 @@ interface OrderWithItems extends Order {
   items: Array<{
     id: string
     order_id: string
-    cake_flavor_id?: string
+    cake_id?: string
     cake_size_id?: string
     item_name: string
     quantity: number
@@ -242,29 +242,51 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
               </div>
 
               {/* Additional Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Notes */}
-                                   {orderDetails.notes && (
-                     <div className="bg-white rounded-lg p-4 shadow-md">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Allergies */}
+                {orderDetails.allergies && (
+                  <div className="bg-white rounded-lg p-4 shadow-md">
                     <h4 className="font-bold text-gray-800 mb-3 flex items-center space-x-2">
-                      <FileText className="w-5 h-5 text-blue-500" />
-                      <span>Customer Notes</span>
+                      <AlertCircle className="w-5 h-5 text-red-500" />
+                      <span>Allergies</span>
                     </h4>
-                                         <p className="text-gray-700 bg-blue-50 p-3 rounded-lg shadow-sm">{orderDetails.notes}</p>
+                    <p className="text-gray-700 bg-red-50 p-3 rounded-lg shadow-sm break-words">{orderDetails.allergies}</p>
                   </div>
                 )}
 
-                                   {/* Special Requests */}
-                   {orderDetails.special_requests && (
-                     <div className="bg-white rounded-lg p-4 shadow-md">
+                {/* Writing on Cake */}
+                {orderDetails.writing_on_cake && (
+                  <div className="bg-white rounded-lg p-4 shadow-md">
+                    <h4 className="font-bold text-gray-800 mb-3 flex items-center space-x-2">
+                      <FileText className="w-5 h-5 text-green-500" />
+                      <span>Writing on Cake</span>
+                    </h4>
+                    <p className="text-gray-700 bg-green-50 p-3 rounded-lg shadow-sm break-words">{orderDetails.writing_on_cake}</p>
+                  </div>
+                )}
+
+                {/* Special Requests */}
+                {orderDetails.special_requests && (
+                  <div className="bg-white rounded-lg p-4 shadow-md">
                     <h4 className="font-bold text-gray-800 mb-3 flex items-center space-x-2">
                       <Star className="w-5 h-5 text-purple-500" />
                       <span>Special Requests</span>
                     </h4>
-                                         <p className="text-gray-700 bg-purple-50 p-3 rounded-lg shadow-sm">{orderDetails.special_requests}</p>
+                    <p className="text-gray-700 bg-purple-50 p-3 rounded-lg shadow-sm break-words">{orderDetails.special_requests}</p>
                   </div>
                 )}
               </div>
+
+              {/* Notes - Separate row since it might be longer */}
+              {orderDetails.notes && (
+                <div className="bg-white rounded-lg p-4 shadow-md">
+                  <h4 className="font-bold text-gray-800 mb-3 flex items-center space-x-2">
+                    <FileText className="w-5 h-5 text-blue-500" />
+                    <span>Customer Notes</span>
+                  </h4>
+                  <p className="text-gray-700 bg-blue-50 p-3 rounded-lg shadow-sm">{orderDetails.notes}</p>
+                </div>
+              )}
 
                              {/* Status Update */}
                <div className="bg-white rounded-lg p-4 shadow-md">
@@ -366,7 +388,7 @@ export default function OrderManager({ initialStatusFilter }: OrderManagerProps)
   const loadOrders = async () => {
     try {
       setLoading(true)
-      const data = await OrderService.getAllOrders()
+      const data = await OrderService.getAllOrders(includeArchived)
       setOrders(data)
     } catch (err: any) {
       setError(err.message || 'Failed to load orders')
