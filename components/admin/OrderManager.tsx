@@ -283,10 +283,10 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
                           ? 'bg-orange-500 hover:bg-orange-600 text-white' 
                           : 'hover:bg-orange-50 hover:border-orange-300'
                       }`}
-                      onClick={() => onUpdateStatus(orderDetails.id, status as OrderRequest['status'])}
+                      onClick={() => onUpdateStatus(orderDetails.id, status as Order['status'])}
                       disabled={updating}
                     >
-                      {getStatusIcon(status as OrderRequest['status'])}
+                      {getStatusIcon(status as Order['status'])}
                       <span className="ml-2 capitalize">{status.replace('_', ' ')}</span>
                     </Button>
                   ))}
