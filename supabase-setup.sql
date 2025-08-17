@@ -23,6 +23,26 @@ DROP POLICY IF EXISTS "Users can update their own images" ON storage.objects;
 DROP POLICY IF EXISTS "Users can delete their own images" ON storage.objects;
 DROP POLICY IF EXISTS "Admins can manage all images" ON storage.objects;
 
+-- Create admin_users policies
+CREATE POLICY "Admins can view admin users" ON admin_users
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM admin_users au 
+      WHERE au.email = auth.jwt() ->> 'email' 
+      AND au.is_active = true
+    )
+  );
+
+CREATE POLICY "Admins can manage admin users" ON admin_users
+  FOR ALL USING (
+    EXISTS (
+      SELECT 1 FROM admin_users au 
+      WHERE au.email = auth.jwt() ->> 'email' 
+      AND au.is_active = true 
+      AND au.role IN ('superadmin', 'admin')
+    )
+  );
+
 -- Create storage policies for the images bucket
 CREATE POLICY "Public read access to images" ON storage.objects
   FOR SELECT USING (bucket_id = 'images');
@@ -226,6 +246,19 @@ CREATE TABLE IF NOT EXISTS request_items (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create admin_users table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS admin_users (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  user_id UUID,
+  email TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'admin' CHECK (role IN ('superadmin', 'admin', 'editor', 'viewer')),
+  permissions JSONB DEFAULT '{}',
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create customers table (safe - won't overwrite)
 CREATE TABLE IF NOT EXISTS customers (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -283,10 +316,17 @@ CREATE TABLE IF NOT EXISTS cake_flavors (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Enable RLS on admin_users table
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+
 -- Enable RLS on cake tables
 ALTER TABLE cake_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cake_sizes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cake_flavors ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing admin policies if they exist
+DROP POLICY IF EXISTS "Admins can view admin users" ON admin_users;
+DROP POLICY IF EXISTS "Admins can manage admin users" ON admin_users;
 
 -- Drop existing cake policies if they exist
 DROP POLICY IF EXISTS "Admins can manage cake categories" ON cake_categories;
@@ -547,32 +587,7 @@ CREATE TRIGGER on_request_item_created
 -- 4. SAMPLE DATA (Optional)
 -- ========================================
 
--- Insert sample order requests (only if table is empty)
-INSERT INTO order_requests (customer_name, customer_email, customer_phone, preferred_delivery_date, preferred_delivery_time, delivery_address, estimated_total, status, notes)
-SELECT 
-  'Sarah Johnson',
-  'sarah.johnson@email.com',
-  '+44 07765 123 456',
-  '2025-02-15',
-  '14:00',
-  '123 High Street, Manchester, M1 1AA',
-  85.00,
-  'completed',
-  'Chocolate cake for birthday party'
-WHERE NOT EXISTS (SELECT 1 FROM order_requests);
-
-INSERT INTO order_requests (customer_name, customer_email, customer_phone, preferred_delivery_date, preferred_delivery_time, delivery_address, estimated_total, status, notes)
-SELECT 
-  'Michael Brown',
-  'michael.brown@email.com',
-  '+44 07765 234 567',
-  '2025-02-20',
-  '16:00',
-  '456 Park Avenue, Manchester, M2 2BB',
-  110.00,
-  'approved',
-  'Wedding cake consultation needed'
-WHERE NOT EXISTS (SELECT 1 FROM order_requests LIMIT 1 OFFSET 1);
+-- Sample data removed - tables will be empty by default
 
 -- Create market_dates table (safe - won't overwrite)
 CREATE TABLE IF NOT EXISTS market_dates (
@@ -612,28 +627,17 @@ CREATE POLICY "Admins can manage market dates" ON market_dates
     auth.jwt() ->> 'email' = 'zac.harvey@gmail.com'
   );
 
--- Insert sample market dates (only if table is empty)
-INSERT INTO market_dates (name, date, start_time, end_time, location, url, active)
-SELECT 
-  'Chorlton Makers Market',
-  '2025-01-25',
-  '10:00',
-  '16:00',
-  'Chorlton',
-  'https://www.themakersmarket.co.uk/pages/chorlton-makers-market',
-  true
-WHERE NOT EXISTS (SELECT 1 FROM market_dates);
+-- Sample market dates removed - table will be empty by default
 
-INSERT INTO market_dates (name, date, start_time, end_time, location, url, active)
+-- Insert default admin user (only if table is empty)
+INSERT INTO admin_users (email, name, role, permissions, is_active)
 SELECT 
-  'Northern Quarter Market',
-  '2025-01-26',
-  '11:00',
-  '17:00',
-  'Northern Quarter',
-  'https://www.themakersmarket.co.uk/pages/northern-quarter-makers-market',
+  'zac.harvey@gmail.com',
+  'Zac Harvey',
+  'superadmin',
+  '{"manage_cakes": true, "manage_orders": true, "manage_reviews": true, "manage_markets": true, "manage_settings": true, "manage_admins": true}',
   true
-WHERE NOT EXISTS (SELECT 1 FROM market_dates LIMIT 1 OFFSET 1);
+WHERE NOT EXISTS (SELECT 1 FROM admin_users);
 
 -- Success message
 SELECT 'Teatime Collective Supabase setup completed successfully!' as status; 

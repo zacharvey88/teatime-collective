@@ -46,22 +46,29 @@ export class AuthService {
     try {
       const user = await this.getCurrentUser()
       if (!user) {
+        console.log('isAdmin: No user found')
         return false
       }
 
-      // Check admin status in database
+      console.log('isAdmin: Checking admin status for user:', user.email)
+
+      // Check admin status in database using email (consistent with getCurrentAdmin)
       const { data, error } = await supabase
         .from('admin_users')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('email', user.email)
+        .eq('is_active', true)
         .single()
 
       if (error) {
+        console.log('isAdmin: Database error:', error)
         return false
       }
 
+      console.log('isAdmin: Admin user found:', data)
       return !!data
     } catch (error) {
+      console.log('isAdmin: Exception:', error)
       return false
     }
   }
@@ -121,7 +128,7 @@ export class AuthService {
   // Check if user is authenticated
   static async isAuthenticated(): Promise<boolean> {
     try {
-      console.log('🔍 AuthService.isAuthenticated: Starting...')
+      console.log('isAuthenticated: Starting authentication check...')
       
       // Simple session check with timeout
       const sessionPromise = supabase.auth.getSession()
@@ -130,6 +137,7 @@ export class AuthService {
       })
       
       const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise])
+      console.log('isAuthenticated: Session result:', !!session)
       return !!session
     } catch (error) {
       // If we get a timeout, try a different approach
