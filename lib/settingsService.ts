@@ -14,10 +14,14 @@ export interface Settings {
   order_subheading?: string
   show_order_form_notice?: boolean
   show_cart_notice?: boolean
+  custom_order_notice?: string
   home_title?: string
   home_subheading?: string
   cakes_heading?: string
   order_heading?: string
+  empty_cart_message?: string
+  order_button_empty_text?: string
+  order_button_active_text?: string
   created_at?: string
   updated_at?: string
 }
@@ -35,10 +39,14 @@ export interface UpdateSettingsData {
   order_subheading?: string
   show_order_form_notice?: boolean
   show_cart_notice?: boolean
+  custom_order_notice?: string
   home_title?: string
   home_subheading?: string
   cakes_heading?: string
   order_heading?: string
+  empty_cart_message?: string
+  order_button_empty_text?: string
+  order_button_active_text?: string
 }
 
 export class SettingsService {

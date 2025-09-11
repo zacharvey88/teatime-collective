@@ -114,7 +114,7 @@ const Festivals = () => {
   };
 
   return (
-    <section id="festivals" className="py-12 md:py-20 bg-cream" ref={sectionRef}>
+    <section id="festivals" className="py-12 md:py-20 bg-light-cream" ref={sectionRef}>
       <div className="section-container">
         <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-12">
           {/* Content */}

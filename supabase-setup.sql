@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS settings (
   order_subheading TEXT,
   show_order_form_notice BOOLEAN DEFAULT true,
   show_cart_notice BOOLEAN DEFAULT true,
+  custom_order_notice TEXT,
   home_title TEXT,
   home_subheading TEXT,
   cakes_heading TEXT,
@@ -134,6 +135,11 @@ BEGIN
   -- Add show_cart_notice column if it doesn't exist
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'show_cart_notice') THEN
     ALTER TABLE settings ADD COLUMN show_cart_notice BOOLEAN DEFAULT true;
+  END IF;
+  
+  -- Add custom_order_notice column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'settings' AND column_name = 'custom_order_notice') THEN
+    ALTER TABLE settings ADD COLUMN custom_order_notice TEXT;
   END IF;
   
   -- Add home_title column if it doesn't exist
@@ -213,37 +219,54 @@ CREATE POLICY "Public can read settings" ON settings
 -- 3. ORDER REQUESTS SETUP
 -- ========================================
 
--- Create order_requests table (safe - won't overwrite)
-CREATE TABLE IF NOT EXISTS order_requests (
+-- Create orders table (safe - won't overwrite)
+CREATE TABLE IF NOT EXISTS orders (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  customer_id UUID REFERENCES customers(id) ON DELETE SET NULL,
   customer_name TEXT NOT NULL,
   customer_email TEXT NOT NULL,
   customer_phone TEXT,
-  request_date TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  preferred_collection_date DATE,
-  preferred_collection_time TIME,
+  collection_date DATE NOT NULL,
+  collection_time TIME,
   estimated_total DECIMAL(10,2) NOT NULL,
-  status TEXT DEFAULT 'new_request' CHECK (status IN ('new_request', 'reviewed', 'approved', 'rejected', 'completed')),
+  status TEXT DEFAULT 'new_request' CHECK (status IN ('new_request', 'reviewed', 'approved', 'rejected', 'completed', 'archived')),
   email_sent BOOLEAN DEFAULT false,
   notes TEXT,
-  special_requirements TEXT,
+  allergies TEXT,
+  special_requests TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+
+
 -- Create order_items table (safe - won't overwrite)
 CREATE TABLE IF NOT EXISTS order_items (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  request_id UUID REFERENCES order_requests(id) ON DELETE CASCADE,
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
   cake_id UUID REFERENCES cakes(id) ON DELETE SET NULL,
   cake_size_id UUID REFERENCES cake_sizes(id) ON DELETE SET NULL,
   item_name TEXT NOT NULL,
   quantity INTEGER NOT NULL DEFAULT 1,
   estimated_unit_price DECIMAL(10,2) NOT NULL,
   estimated_total_price DECIMAL(10,2) NOT NULL,
-  special_instructions TEXT,
+  writing_on_cake TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Add custom cake support to order_items table
+DO $$ 
+BEGIN
+  -- Add custom_cake_description column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'order_items' AND column_name = 'custom_cake_description') THEN
+    ALTER TABLE order_items ADD COLUMN custom_cake_description TEXT;
+  END IF;
+  
+  -- Add is_custom_cake column if it doesn't exist
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'order_items' AND column_name = 'is_custom_cake') THEN
+    ALTER TABLE order_items ADD COLUMN is_custom_cake BOOLEAN DEFAULT false;
+  END IF;
+END $$;
 
 -- Create admin_users table (safe - won't overwrite)
 CREATE TABLE IF NOT EXISTS admin_users (
@@ -354,7 +377,6 @@ CREATE POLICY "Admins can manage cakes" ON cakes
 
 CREATE POLICY "Everyone can view cakes" ON cakes
   FOR SELECT USING (true);
-
 
 
 -- Insert default cake categories
@@ -526,57 +548,24 @@ BEGIN
     phone = COALESCE(EXCLUDED.phone, customers.phone),
     last_order_date = EXCLUDED.last_order_date,
     total_orders = customers.total_orders + 1,
-    total_value = customers.total_value + EXCLUDED.total_estimated_total,
+    total_value = customers.total_value + EXCLUDED.estimated_total,
     updated_at = NOW();
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION update_favorite_cake()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Update customer's favorite cake based on most ordered
-  UPDATE customers
-  SET favourite_cake = (
-    SELECT c.name
-    FROM request_items ri
-    JOIN cakes c ON ri.cake_id = c.id
-    WHERE ri.request_id IN (
-      SELECT id FROM order_requests WHERE customer_email = (
-        SELECT customer_email FROM order_requests WHERE id = NEW.request_id
-      )
-    )
-    GROUP BY c.name
-    ORDER BY COUNT(*) DESC
-    LIMIT 1
-  )
-  WHERE email = (
-    SELECT customer_email FROM order_requests WHERE id = NEW.request_id
-  );
-  
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+
 
 -- Drop existing triggers if they exist
 DROP TRIGGER IF EXISTS on_order_request_created ON order_requests;
 DROP TRIGGER IF EXISTS on_request_item_created ON request_items;
 
 -- Create triggers
-CREATE TRIGGER on_order_request_created
-  AFTER INSERT ON order_requests
+CREATE TRIGGER on_order_created
+  AFTER INSERT ON orders
   FOR EACH ROW EXECUTE FUNCTION update_customer_stats();
 
-CREATE TRIGGER on_request_item_created
-  AFTER INSERT ON request_items
-  FOR EACH ROW EXECUTE FUNCTION update_favorite_cake();
-
--- ========================================
--- 4. SAMPLE DATA (Optional)
--- ========================================
-
--- Sample data removed - tables will be empty by default
 
 -- Create market_dates table (safe - won't overwrite)
 CREATE TABLE IF NOT EXISTS market_dates (

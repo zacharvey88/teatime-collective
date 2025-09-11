@@ -83,12 +83,12 @@ const Testimonials = () => {
 
 
   return (
-    <section className="py-12 md:py-20 pb-16 md:pb-24 bg-cream" ref={sectionRef}>
+    <section className="py-8 md:py-12 bg-cream" ref={sectionRef}>
       <div className="section-container">
         <div className="max-w-4xl mx-auto text-center">
 
           {loading ? (
-            <div className="py-16">
+            <div className={`h-[300px] md:h-[350px] flex items-center justify-center`}>
               <div className="animate-pulse">
                 <div className="w-16 h-16 bg-gray-200 rounded-full mx-auto mb-6"></div>
                 <div className="h-8 bg-gray-200 rounded mx-auto mb-4 max-w-2xl"></div>
@@ -97,17 +97,17 @@ const Testimonials = () => {
             </div>
           ) : reviews.length > 0 ? (
             <div className="relative">
-              <div className={`min-h-[200px] flex items-center justify-center transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
-                <div className="w-full">
-                                      <div className="flex justify-center mb-8">
-                      {renderStars(reviews[currentReviewIndex].rating)}
-                    </div>
+              <div className={`h-[300px] md:h-[350px] flex items-center justify-center transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+                <div className="w-full max-w-3xl mx-auto px-4">
+                  <div className="flex justify-center mb-6">
+                    {renderStars(reviews[currentReviewIndex].rating)}
+                  </div>
                   
-                                      <blockquote className="text-lg md:text-xl lg:text-2xl text-gray leading-relaxed mb-6 text-balance">
-                      {reviews[currentReviewIndex].review_text}
-                    </blockquote>
+                  <blockquote className="text-lg md:text-xl lg:text-2xl text-gray leading-relaxed mb-6 text-balance line-clamp-4 md:line-clamp-5">
+                    {reviews[currentReviewIndex].review_text}
+                  </blockquote>
                   
-                  <cite className="text-xl text-light-gray font-medium">
+                  <cite className="text-lg md:text-xl text-light-gray font-medium">
                     - {reviews[currentReviewIndex].customer_name}
                   </cite>
                 </div>
@@ -119,13 +119,17 @@ const Testimonials = () => {
             </div>
           ) : (
             <div className="relative">
-              <blockquote className={`text-2xl md:text-3xl lg:text-4xl font-medium text-gray leading-relaxed mb-8 text-balance transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
-                "Huge thank you to all of our customers, also my family, friends and staff for all of your support."
-              </blockquote>
-              
-              <cite className={`text-lg text-light-gray font-medium transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
-                — Kathryn, Founder of Teatime Collective
-              </cite>
+              <div className={`h-[300px] md:h-[350px] flex items-center justify-center transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+                <div className="w-full max-w-3xl mx-auto px-4">
+                  <blockquote className={`text-2xl md:text-3xl lg:text-4xl font-medium text-gray leading-relaxed mb-8 text-balance transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+                    "Huge thank you to all of our customers, also my family, friends and staff for all of your support."
+                  </blockquote>
+                  
+                  <cite className={`text-lg text-light-gray font-medium transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+                    — Kathryn, Founder of Teatime Collective
+                  </cite>
+                </div>
+              </div>
             </div>
           )}
 

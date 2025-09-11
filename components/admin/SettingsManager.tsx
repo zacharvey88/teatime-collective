@@ -57,10 +57,14 @@ export default function SettingsManager() {
         order_subheading: localSettings.order_subheading,
         show_order_form_notice: localSettings.show_order_form_notice,
         show_cart_notice: localSettings.show_cart_notice,
+        custom_order_notice: localSettings.custom_order_notice,
         home_title: localSettings.home_title,
         home_subheading: localSettings.home_subheading,
         cakes_heading: localSettings.cakes_heading,
-        order_heading: localSettings.order_heading
+        order_heading: localSettings.order_heading,
+        empty_cart_message: localSettings.empty_cart_message,
+        order_button_empty_text: localSettings.order_button_empty_text,
+        order_button_active_text: localSettings.order_button_active_text
       }
 
       await SettingsService.updateSettings(settingsData)
@@ -374,6 +378,64 @@ export default function SettingsManager() {
                 This notice will appear below the cart total on the order page
               </p>
             </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Custom Order Notice</label>
+              <textarea
+                value={localSettings.custom_order_notice || ''}
+                onChange={(e) => handleInputChange('custom_order_notice', e.target.value)}
+                placeholder="Custom orders require special pricing based on complexity, ingredients, and design requirements. We'll provide a detailed quote after reviewing your specifications."
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
+                rows={4}
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                This notice will appear when custom cakes are in the cart
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Empty Cart Message</label>
+              <textarea
+                value={localSettings.empty_cart_message || ''}
+                onChange={(e) => handleInputChange('empty_cart_message', e.target.value)}
+                placeholder="Oh no! There's no cakes in your cart."
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
+                rows={3}
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                This message will appear when the cart is empty
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Order Button - Empty Cart</label>
+              <input
+                type="text"
+                value={localSettings.order_button_empty_text || ''}
+                onChange={(e) => handleInputChange('order_button_empty_text', e.target.value)}
+                placeholder="Add cakes to cart first"
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Text shown on the order button when cart is empty
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Order Button - Active Cart</label>
+              <input
+                type="text"
+                value={localSettings.order_button_active_text || ''}
+                onChange={(e) => handleInputChange('order_button_active_text', e.target.value)}
+                placeholder="Let there be cake!"
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Text shown on the order button when cart has items
+              </p>
+            </div>
+
+
           </div>
 
           {/* Feature Toggles */}

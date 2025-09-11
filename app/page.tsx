@@ -40,11 +40,12 @@ export default function Home() {
         <Hero />
         <Markets />
         <WaveTransition direction="down" color="#FFF5E0" />
-        <OurStory />
-        <BackgroundFade fromColor="#FFF5E0" toColor="#FFFBF0" />
+        {/* <BackgroundFade fromColor="#FFF5E0" toColor="#FFFBF0" /> */}
         <Festivals />
-        <BackgroundFade fromColor="#FFFBF0" toColor="#FFF5E0" />
+        <BackgroundFade fromColor="#FFF5E0" toColor="#FFFBF0" />
         <Weddings />
+        <BackgroundFade fromColor="#FFFBF0" toColor="#FFF5E0" />
+        <OurStory />
         <BackgroundFade fromColor="#FFF5E0" toColor="#FFFBF0" />
         <Testimonials />
         <WaveTransition direction="down" color="#FFF5E0" />

@@ -29,15 +29,16 @@ export async function POST(request: NextRequest) {
       customerName: order.customer_name,
       customerEmail: order.customer_email,
       customerPhone: order.customer_phone,
-              collectionDate: order.collection_date,
+      collectionDate: order.collection_date,
       allergies: order.allergies || '',
-      writingOnCake: order.writing_on_cake || '',
       specialRequests: order.special_requests || '',
       items: order.items.map(item => ({
         name: item.item_name,
         size: 'Standard', // This could be extracted from product_name or stored separately
+        details: item.item_details || null,
         quantity: item.quantity,
-        price: item.estimated_unit_price
+        price: item.estimated_unit_price,
+        writingOnCake: item.writing_on_cake || ''
       })),
       totalPrice: order.estimated_total,
       orderDate: new Date(order.created_at).toLocaleDateString('en-GB')

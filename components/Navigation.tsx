@@ -83,12 +83,12 @@ const Navigation = () => {
   }, [menuCloseTimeout, cartPreviewCloseTimeout])
 
   const navItems = [
-    { name: 'Cakes', href: '/cakes' },
-    { name: 'Order', href: '/order' },
-    { name: 'Our Story', href: '/#story' },
+    { name: 'Order Cakes', href: '/cakes' },
     { name: 'Markets', href: '/#markets' },
     { name: 'Festivals', href: '/#festivals' },
-    { name: 'Weddings', href: '/#weddings' }
+    { name: 'Weddings', href: '/#weddings' },
+    { name: 'Our Story', href: '/#story' },
+    { name: 'Contact', href: '/contact' }
   ]
 
   const handleMenuMouseEnter = () => {
@@ -166,7 +166,7 @@ const Navigation = () => {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`font-medium text-dark hover:text-orange transition-colors duration-200 relative group/item whitespace-nowrap transition-opacity duration-500 ${index === 0 ? 'pl-4' : ''} ${index === 5 ? 'pr-6' : ''} ${isMenuExpanded ? 'opacity-100' : 'opacity-0'}`}
+                    className={`font-medium text-dark hover:text-orange transition-colors duration-200 relative group/item whitespace-nowrap transition-opacity duration-500 ${index === 0 ? 'pl-4' : ''} ${index === navItems.length - 1 ? 'pr-6' : ''} ${isMenuExpanded ? 'opacity-100' : 'opacity-0'}`}
                   >
                     {item.name}
                     <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-orange transition-all duration-200 group-hover/item:w-full"></span>
@@ -224,9 +224,13 @@ const Navigation = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-800 truncate">{item.flavorName}</p>
-                              <p className="text-xs text-gray-500">{item.sizeName}</p>
+                              <p className="text-xs text-gray-500">
+                                {item.categoryName} {item.sizeName}
+                              </p>
                             </div>
-                            <span className="text-sm font-bold text-orange">£{item.price.toFixed(2)}</span>
+                            <span className="text-sm font-bold text-orange">
+                              {item.categoryId === 'custom' ? 'Not Available' : `£${item.price.toFixed(2)}`}
+                            </span>
                           </div>
                         ))}
                         {cartItems.length > 3 && (
@@ -239,9 +243,14 @@ const Navigation = () => {
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-sm font-semibold text-gray-800">Total:</span>
                           <span className="text-sm font-bold text-orange">
-                            £{cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
+                            {cartItems.some(item => item.categoryId === 'custom') ? (
+                              'Not Available'
+                            ) : (
+                              `£${cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}`
+                            )}
                           </span>
                         </div>
+
                         <Link
                           href="/order"
                           className="w-full bg-orange text-white text-sm font-semibold py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors duration-200 text-center block"

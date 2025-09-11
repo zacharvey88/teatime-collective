@@ -18,12 +18,16 @@ export interface Customer {
 export interface OrderItem {
   id: string
   order_id: string
-  cake_id?: string
-  cake_size_id?: string
+  cake_id?: string | null
+  cake_size_id?: string | null
   item_name: string
   quantity: number
   estimated_unit_price: number
   estimated_total_price: number
+  writing_on_cake?: string
+  custom_cake_description?: string | null
+  custom_cake_size?: string | null
+  is_custom_cake?: boolean
   created_at: string
 }
 
@@ -41,7 +45,6 @@ export interface Order {
   created_at: string
   updated_at: string
   allergies?: string
-  writing_on_cake?: string
   special_requests?: string
   items: OrderItem[]
 }
@@ -53,10 +56,19 @@ export interface CreateOrderData {
   collection_date: string
   estimated_total: number
   allergies?: string
-  writing_on_cake?: string
   special_requests?: string
   notes?: string
-  items: Omit<OrderItem, 'id' | 'order_id' | 'created_at'>[]
+  items: Array<{
+    cake_id?: string | null
+    cake_size_id?: string | null
+    item_name: string
+    quantity: number
+    estimated_unit_price: number
+    estimated_total_price: number
+    writing_on_cake?: string
+    custom_cake_description?: string | null
+    is_custom_cake?: boolean
+  }>
 }
 
 export class OrderService {
@@ -156,7 +168,6 @@ export class OrderService {
           email_sent: false,
           notes: orderData.notes || '',
           allergies: orderData.allergies || '',
-          writing_on_cake: orderData.writing_on_cake || '',
           special_requests: orderData.special_requests || '',
           created_at: new Date().toISOString()
         })
@@ -176,6 +187,9 @@ export class OrderService {
           quantity: item.quantity,
           estimated_unit_price: item.estimated_unit_price,
           estimated_total_price: item.estimated_total_price,
+          writing_on_cake: item.writing_on_cake || '',
+          custom_cake_description: item.custom_cake_description || null,
+          is_custom_cake: item.is_custom_cake || false,
           created_at: new Date().toISOString()
         })))
 
@@ -206,7 +220,6 @@ export class OrderService {
       collection_date: oldOrderData.request_date,
       estimated_total: oldOrderData.estimated_total,
       allergies: oldOrderData.allergies || '',
-      writing_on_cake: oldOrderData.writing_on_cake || '',
       special_requests: oldOrderData.special_requests || '',
       notes: oldOrderData.notes || '',
       items: oldOrderData.items.map((item: any) => ({
@@ -215,7 +228,10 @@ export class OrderService {
         item_name: item.item_name,
         quantity: item.quantity,
         estimated_unit_price: item.estimated_unit_price,
-        estimated_total_price: item.estimated_total_price
+        estimated_total_price: item.estimated_total_price,
+        writing_on_cake: item.writing_on_cake || '',
+        custom_cake_description: item.custom_cake_description || null,
+        is_custom_cake: item.is_custom_cake || false
       }))
     }
 

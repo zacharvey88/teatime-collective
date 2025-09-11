@@ -16,13 +16,14 @@ export interface OrderEmailData {
   customerPhone: string
   collectionDate: string
   allergies: string
-  writingOnCake: string
   specialRequests: string
   items: Array<{
     name: string
     size: string
+    details?: string
     quantity: number
     price: number
+    writingOnCake?: string
   }>
   totalPrice: number
   orderDate: string
@@ -80,7 +81,11 @@ export class EmailService {
   private static async generateCustomerEmailHTML(data: OrderEmailData): Promise<string> {
     const itemsHTML = data.items.map(item => `
       <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.name} (${item.size})</td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee;">
+          <div style="font-weight: 500;">${item.name}</div>
+          ${item.details ? `<div style="font-size: 12px; color: #666; margin-top: 2px;">${item.details}</div>` : ''}
+          ${item.writingOnCake ? `<div style="font-size: 12px; color: #666; margin-top: 2px;"><strong>Writing:</strong> ${item.writingOnCake}</div>` : ''}
+        </td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">£${item.price.toFixed(2)}</td>
       </tr>
@@ -128,7 +133,6 @@ export class EmailService {
               <p><strong>Order Date:</strong> ${data.orderDate}</p>
               <p><strong>Collection Date:</strong> ${data.collectionDate}</p>
               ${data.allergies ? `<p><strong>Allergies:</strong> ${data.allergies}</p>` : ''}
-              ${data.writingOnCake ? `<p><strong>Writing on Cake:</strong> ${data.writingOnCake}</p>` : ''}
               ${data.specialRequests ? `<p><strong>Special Requests:</strong> ${data.specialRequests}</p>` : ''}
             </div>
             
@@ -158,15 +162,28 @@ export class EmailService {
               <li>We'll let you know when your cakes are ready for collection</li>
             </ul>
             
+            <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 20px; margin: 20px 0;">
+              <h4 style="color: #856404; margin-top: 0;">📧 Important Information</h4>
+              <p style="margin-bottom: 15px; color: #856404;">
+                <strong>Once you've submitted an order you will receive a confirmation email once I have read the message and booked you in, I will then confirm collection/delivery details and payment. If you haven't had a reply, check your junk mail!</strong>
+              </p>
+              
+              <h4 style="color: #856404; margin-top: 20px; margin-bottom: 10px;">📍 Collection Address</h4>
+              <p style="margin-bottom: 0; color: #856404;">
+                <strong>St. Wilfrids Enterprise Centre, Royce Road, Hulme, M15 5BJ.</strong><br>
+                <em>Make sure you stay on Royce Road as the satnav will take you to Birchvale Close.</em>
+              </p>
+            </div>
+            
             <p>If you have any questions, please don't hesitate to contact us.</p>
             
             <p>Best regards,<br>
-            The Teatime Collective Team</p>
+            Teatime Collective</p>
           </div>
           
           <div class="footer">
-            <p>Teatime Collective | Vegan Cakes & Bakes</p>
-            <p>Contact: ${contactEmail}</p>
+            <p>Teatime Collective | Vegan Cakes</p>
+            <p>Contact: orders@teatimecollective.co.uk</p>
           </div>
         </div>
       </body>
@@ -177,7 +194,7 @@ export class EmailService {
   // Generate text email for customer
   private static async generateCustomerEmailText(data: OrderEmailData): Promise<string> {
     const itemsText = data.items.map(item => 
-      `- ${item.name} (${item.size}) x${item.quantity} - £${item.price.toFixed(2)}`
+      `- ${item.name}${item.details ? `\n  ${item.details}` : ''} x${item.quantity} - £${item.price.toFixed(2)}`
     ).join('\n')
 
     // Get the order email from settings
@@ -196,7 +213,6 @@ Order ID: #${data.orderId}
 Order Date: ${data.orderDate}
 Collection Date: ${data.collectionDate}
 ${data.allergies ? `Allergies: ${data.allergies}` : ''}
-${data.writingOnCake ? `Writing on Cake: ${data.writingOnCake}` : ''}
 ${data.specialRequests ? `Special Requests: ${data.specialRequests}` : ''}
 
 YOUR ORDER:
@@ -210,13 +226,20 @@ What happens next?
 - We'll start creating your delicious cakes!
 - We'll let you know when your cakes are ready for collection
 
+IMPORTANT INFORMATION:
+Once you've submitted an order you will receive a confirmation email once I have read the message and booked you in, I will then confirm collection/delivery details and payment. If you haven't had a reply, check your junk mail!
+
+COLLECTION ADDRESS:
+St. Wilfrids Enterprise Centre, Royce Road, Hulme, M15 5BJ.
+Make sure you stay on Royce Road as the satnav will take you to Birchvale Close.
+
 If you have any questions, please don't hesitate to contact us.
 
 Best regards,
-The Teatime Collective Team
+Teatime Collective
 
-Teatime Collective | Vegan Cakes & Bakes
-Contact: ${contactEmail}
+Teatime Collective | Vegan Cakes
+Contact: orders@teatimecollective.co.uk
     `.trim()
   }
 
@@ -224,7 +247,11 @@ Contact: ${contactEmail}
   private static generateOwnerEmailHTML(data: OrderEmailData): string {
     const itemsHTML = data.items.map(item => `
       <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #eee;">${item.name} (${item.size})</td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee;">
+          <div style="font-weight: 500;">${item.name}</div>
+          ${item.details ? `<div style="font-size: 12px; color: #666; margin-top: 2px;">${item.details}</div>` : ''}
+          ${item.writingOnCake ? `<div style="font-size: 12px; color: #666; margin-top: 2px;"><strong>Writing:</strong> ${item.writingOnCake}</div>` : ''}
+        </td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">£${item.price.toFixed(2)}</td>
       </tr>
@@ -264,7 +291,6 @@ Contact: ${contactEmail}
               <p><strong>Phone:</strong> <a href="tel:${data.customerPhone}">${data.customerPhone}</a></p>
               <p><strong>Collection Date:</strong> ${data.collectionDate}</p>
               ${data.allergies ? `<p><strong>Allergies:</strong> ${data.allergies}</p>` : ''}
-              ${data.writingOnCake ? `<p><strong>Writing on Cake:</strong> ${data.writingOnCake}</p>` : ''}
               ${data.specialRequests ? `<p><strong>Special Requests:</strong> ${data.specialRequests}</p>` : ''}
             </div>
             
@@ -299,7 +325,7 @@ Contact: ${contactEmail}
   // Generate text email for owner
   private static generateOwnerEmailText(data: OrderEmailData): string {
     const itemsText = data.items.map(item => 
-      `- ${item.name} (${item.size}) x${item.quantity} - £${item.price.toFixed(2)}`
+      `- ${item.name}${item.details ? `\n  ${item.details}` : ''} x${item.quantity} - £${item.price.toFixed(2)}${item.writingOnCake ? `\n  Writing: ${item.writingOnCake}` : ''}`
     ).join('\n')
 
     return `
@@ -311,7 +337,6 @@ Email: ${data.customerEmail}
 Phone: ${data.customerPhone}
 Collection Date: ${data.collectionDate}
 ${data.allergies ? `Allergies: ${data.allergies}` : ''}
-${data.writingOnCake ? `Writing on Cake: ${data.writingOnCake}` : ''}
 ${data.specialRequests ? `Special Requests: ${data.specialRequests}` : ''}
 
 ORDER ITEMS:

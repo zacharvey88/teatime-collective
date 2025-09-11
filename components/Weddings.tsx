@@ -113,7 +113,7 @@ const Weddings = () => {
   };
 
   return (
-    <section id="weddings" className="py-12 md:py-20 bg-light-cream" ref={sectionRef}>
+    <section id="weddings" className="py-12 md:py-20 bg-cream" ref={sectionRef}>
       <div className="section-container">
         <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start gap-12">
           {/* Content */}
@@ -189,12 +189,12 @@ const Weddings = () => {
 
             <div className={`prose prose-lg text-gray space-y-4 transition-all duration-1000 delay-200 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               <p>
-                Yes, we cater for weddings and other special occasions too! And that doesn't have to mean just one magnificent tiered cake; we also do cake buffets! So for the cherry on top of your day, get in touch for a quote or to discuss any ideas.
+                Yes, we cater for weddings and other special occasions too! And that doesn't have to mean just one magnificent tiered cake; we also do cake buffets! So for the cherry on top of your day, get in touch for a quote or to discuss your special day and let's create something magical together.
               </p>
 
-              <p>
+              {/* <p>
                 Please note that I no longer sell Fondant Iced Cakes. I am able to create tiered masterpieces similar to the cakes shown below, or frosted cakes such as this one!
-              </p>
+              </p> */}
             </div>
 
             {/* Wedding Services */}
@@ -223,6 +223,15 @@ const Weddings = () => {
                 <p className="text-sm text-gray">Personalized to your theme</p>
               </div>
             </div>
+
+            <a
+            href="/contact"
+            className="inline-flex items-center space-x-2 bg-orange text-white px-6 py-3 rounded-lg font-medium text-base hover:bg-orange-900 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-md hover:shadow-lg"
+          >
+            <Mail className="w-4 h-4" />
+            <span>Get in Touch</span>
+          </a>
+
           </div>
 
           {/* Wedding Gallery - Desktop Only */}
@@ -286,6 +295,7 @@ const Weddings = () => {
           </div>
         </div>
       </div>
+    
     </section>
   )
 }

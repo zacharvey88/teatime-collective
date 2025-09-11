@@ -42,7 +42,6 @@ export interface Cake {
   size_name: string | null
   size_description: string | null
   category_id: string | null
-  flavor_id: string | null
   cake_type: 'standalone' | 'categorised'
   active: boolean
   created_at: string
@@ -133,9 +132,20 @@ export class CakeService {
     
     if (categoriesError) throw categoriesError
 
+    // Custom sorting: put Cheesecakes at the end
+    const sortedCategories = (categories || []).sort((a, b) => {
+      // Check for various possible cheesecake names
+      const aIsCheesecake = a.name.toLowerCase().includes('cheesecake')
+      const bIsCheesecake = b.name.toLowerCase().includes('cheesecake')
+      
+      if (aIsCheesecake && !bIsCheesecake) return 1
+      if (!aIsCheesecake && bIsCheesecake) return -1
+      return a.name.localeCompare(b.name)
+    })
+
     const result: CakeWithDetails[] = []
 
-    for (const category of categories || []) {
+    for (const category of sortedCategories) {
       // Get sizes for this category (from cake_sizes table)
       const { data: sizes, error: sizesError } = await supabase
         .from('cake_sizes')
@@ -177,9 +187,25 @@ export class CakeService {
     
     if (categoriesError) throw categoriesError
 
+    // Debug logging to see the order
+    console.log('Categories before sorting:', categories?.map(c => c.name))
+
+    // Custom sorting: put Cheesecakes at the end
+    const sortedCategories = (categories || []).sort((a, b) => {
+      // Check for various possible cheesecake names
+      const aIsCheesecake = a.name.toLowerCase().includes('cheesecake')
+      const bIsCheesecake = b.name.toLowerCase().includes('cheesecake')
+      
+      if (aIsCheesecake && !bIsCheesecake) return 1
+      if (!aIsCheesecake && bIsCheesecake) return -1
+      return a.name.localeCompare(b.name)
+    })
+    
+    console.log('Categories after sorting:', sortedCategories.map(c => c.name))
+
     const result: CakeWithDetails[] = []
 
-    for (const category of categories || []) {
+    for (const category of sortedCategories) {
       // Get sizes for this category (from cake_sizes table)
       const { data: sizes, error: sizesError } = await supabase
         .from('cake_sizes')

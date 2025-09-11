@@ -25,6 +25,7 @@ interface CartItem {
   price: number
   quantity: number
   imageUrl: string | null
+  writing_on_cake?: string
 }
 
 interface CakeOption {
@@ -53,6 +54,13 @@ export default function OrderPage() {
   const [selectedSize, setSelectedSize] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [cart, setCart] = useState<CartItem[]>([])
+  const [expandedWritingFields, setExpandedWritingFields] = useState<Record<string, boolean>>({})
+  const [expandedEditFields, setExpandedEditFields] = useState<Record<string, boolean>>({})
+  const [orderType, setOrderType] = useState<'regular' | 'custom'>('regular')
+  const [customCakeDescription, setCustomCakeDescription] = useState('')
+  const [customCakeSize, setCustomCakeSize] = useState('')
+  const [customCakeSizeOther, setCustomCakeSizeOther] = useState('')
+  const [customCakeQuantity, setCustomCakeQuantity] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [submitSuccess, setSubmitSuccess] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -63,7 +71,6 @@ export default function OrderPage() {
     phone: '',
     dateRequired: '',
     allergies: '',
-    writing: '',
     otherInfo: ''
   })
   const [blockedDates, setBlockedDates] = useState<string[]>([])
@@ -119,6 +126,13 @@ export default function OrderPage() {
     }
     if (selectedQuantity) {
       setQuantity(parseInt(selectedQuantity))
+    }
+
+    // Check URL query parameters for order type
+    const urlParams = new URLSearchParams(window.location.search)
+    const orderTypeParam = urlParams.get('type')
+    if (orderTypeParam === 'custom') {
+      setOrderType('custom')
     }
   }, [])
 
@@ -255,6 +269,43 @@ export default function OrderPage() {
     setQuantity(1)
   }
 
+  const handleAddCustomCakeToCart = () => {
+    if (!customCakeDescription.trim() || !customCakeSize) return
+    if (customCakeSize === 'other' && !customCakeSizeOther.trim()) return
+
+    // Estimate price based on size
+    const sizePrices = {
+      '6': 30,
+      '9': 42.50,
+      '12.5': 62.50
+    }
+
+    // Determine the size name to display
+    let sizeName = customCakeSize
+    if (customCakeSize === 'other') {
+      sizeName = customCakeSizeOther.trim()
+    }
+
+    const newItem: CartItem = {
+      id: `custom-${Date.now()}`,
+      categoryId: 'custom',
+      categoryName: 'Custom Cake',
+      flavorId: 'custom',
+      flavorName: customCakeDescription.trim(),
+      sizeId: customCakeSize,
+      sizeName: sizeName,
+      price: sizePrices[customCakeSize as keyof typeof sizePrices] || 50,
+      quantity: customCakeQuantity,
+      imageUrl: null
+    }
+
+    setCart(prev => [...prev, newItem])
+    setCustomCakeDescription('')
+    setCustomCakeSize('')
+    setCustomCakeSizeOther('')
+    setCustomCakeQuantity(1)
+  }
+
   const updateCartItemQuantity = (itemId: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       setCart(cart.filter(item => item.id !== itemId))
@@ -265,6 +316,49 @@ export default function OrderPage() {
           : item
       ))
     }
+  }
+
+  const updateCartItemWriting = (itemId: string, writing: string) => {
+    setCart(cart.map(item => 
+      item.id === itemId 
+        ? { ...item, writing_on_cake: writing }
+        : item
+    ))
+  }
+
+  const toggleWritingField = (itemId: string) => {
+    setExpandedWritingFields(prev => ({ ...prev, [itemId]: !prev[itemId] }))
+  }
+
+  const toggleEditField = (itemId: string) => {
+    setExpandedEditFields(prev => ({ ...prev, [itemId]: !prev[itemId] }))
+  }
+
+  const updateCustomCakeDetails = (itemId: string, description: string, size: string, customSize?: string) => {
+    // Estimate price based on size
+    const sizePrices = {
+      '6': 30,
+      '9': 42.50,
+      '12.5': 62.50
+    }
+
+    // Determine the size name to display
+    let sizeName = size
+    if (size === 'other' && customSize) {
+      sizeName = customSize.trim()
+    }
+
+    setCart(cart.map(item => 
+      item.id === itemId 
+        ? { 
+            ...item, 
+            flavorName: description,
+            sizeId: size,
+            sizeName: sizeName,
+            price: sizePrices[size as keyof typeof sizePrices] || 50
+          }
+        : item
+    ))
   }
 
   const removeFromCart = (itemId: string) => {
@@ -278,6 +372,10 @@ export default function OrderPage() {
 
   const getTotalPrice = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0)
+  }
+
+  const hasCustomCakes = () => {
+    return cart.some(item => item.categoryId === 'custom')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -307,19 +405,36 @@ export default function OrderPage() {
         customer_name: formData.name.trim(),
         customer_email: formData.email.trim(),
         customer_phone: formData.phone.trim(),
-        collection_date: formData.dateRequired, // Use the selected collection date
-        estimated_total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        collection_date: formData.dateRequired,
+        estimated_total: hasCustomCakes() ? 0 : cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
         notes: '', // Admin notes only - not used for customer input
         allergies: formData.allergies.trim(),
-        writing_on_cake: formData.writing.trim(),
-        special_requests: formData.otherInfo.trim(),
+        special_requests: (() => {
+          const customCakeDetails = cart
+            .filter(item => item.categoryId === 'custom')
+            .map(item => `Custom Cake (${item.sizeName}): ${item.flavorName}`)
+            .join('\n')
+          
+          const baseRequests = formData.otherInfo.trim()
+          return customCakeDetails 
+            ? (baseRequests ? `${baseRequests}\n\n${customCakeDetails}` : customCakeDetails)
+            : baseRequests
+        })(),
         items: cart.map(item => ({
-          cake_id: item.flavorId,
-          cake_size_id: item.sizeId,
-          item_name: `${item.flavorName} (${item.sizeName})`,
+          cake_id: item.categoryId === 'custom' ? null : item.flavorId,
+          cake_size_id: item.categoryId === 'custom' ? null : item.sizeId,
+          item_name: item.categoryId === 'custom' 
+            ? `Custom Cake: ${item.flavorName}` 
+            : `${item.flavorName}`,
+          item_details: item.categoryId === 'custom' 
+            ? null 
+            : `${item.categoryName} ${item.sizeName}`,
           quantity: item.quantity,
-          estimated_unit_price: item.price,
-          estimated_total_price: item.price * item.quantity
+          estimated_unit_price: item.categoryId === 'custom' ? 0 : item.price,
+          estimated_total_price: item.categoryId === 'custom' ? 0 : item.price * item.quantity,
+          writing_on_cake: item.writing_on_cake || '',
+          custom_cake_description: item.categoryId === 'custom' ? item.flavorName : null,
+          is_custom_cake: item.categoryId === 'custom'
         }))
       }
 
@@ -327,7 +442,7 @@ export default function OrderPage() {
       await OrderService.sendOrderNotification(orderRequest)
 
       setSubmitSuccess(true)
-      setFormData({ name: '', email: '', phone: '', dateRequired: '', allergies: '', writing: '', otherInfo: '' })
+      setFormData({ name: '', email: '', phone: '', dateRequired: '', allergies: '', otherInfo: '' })
       setCart([])
       window.scrollTo({ top: 0, behavior: 'smooth' })
 
@@ -371,6 +486,34 @@ export default function OrderPage() {
             </p>
           </div>
 
+          {/* Order Type Toggle */}
+          <div className="flex justify-center mb-8">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg p-2">
+              <div className="flex space-x-1">
+                <button
+                  onClick={() => setOrderType('regular')}
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                    orderType === 'regular'
+                      ? 'bg-orange text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                  }`}
+                >
+                  Regular Cakes
+                </button>
+                <button
+                  onClick={() => setOrderType('custom')}
+                  className={`px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                    orderType === 'custom'
+                      ? 'bg-orange text-white shadow-md'
+                      : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                  }`}
+                >
+                  Custom Cake
+                </button>
+              </div>
+            </div>
+          </div>
+
           {/* Two Column Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
             {/* Left Column - Combined Cake Selection and Cart */}
@@ -383,48 +526,133 @@ export default function OrderPage() {
                 </div>
               ) : (
                 <>
-                  {/* Cake Selection */}
-                  <div className="space-y-4 mb-8">
-                    <div className="relative">
-                      <select
-                        value={selectedCake}
-                        onChange={(e) => {
-                          setSelectedCake(e.target.value)
-                          setSelectedSize('')
-                        }}
-                        className="w-full px-4 py-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent appearance-none"
-                      >
-                        <option value="">Choose a cake...</option>
-                        {cakeOptions.map((cake) => (
-                          <option key={cake.id} value={cake.id}>
-                            {cake.flavorName} {cake.categoryName && `(${cake.categoryName})`}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
-                    </div>
-
-                    {/* Size Selection - Only show if multiple sizes */}
-                    {selectedCakeData && selectedCakeData.sizes.length > 1 && (
+                  {/* Cake Selection - Regular Mode */}
+                  {orderType === 'regular' && (
+                    <div className="space-y-4 mb-8">
                       <div className="relative">
                         <select
-                          value={selectedSize}
-                          onChange={(e) => setSelectedSize(e.target.value)}
+                          value={selectedCake}
+                          onChange={(e) => {
+                            setSelectedCake(e.target.value)
+                            setSelectedSize('')
+                          }}
                           className="w-full px-4 py-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent appearance-none"
                         >
-                          <option value="">Choose a size...</option>
-                          {selectedCakeData.sizes.map((size) => (
-                            <option key={size.id} value={size.id}>
-                              {size.name} - £{size.price.toFixed(2)}
+                          <option value="">Choose a cake...</option>
+                          {cakeOptions.map((cake) => (
+                            <option key={cake.id} value={cake.id}>
+                              {cake.flavorName} {cake.categoryName && `(${cake.categoryName})`}
                             </option>
                           ))}
                         </select>
                         <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
                       </div>
-                    )}
 
-                    {/* Quantity and Add to Cart */}
-                    {(selectedSize || (selectedCakeData && selectedCakeData.sizes.length === 1)) && (
+                      {/* Size Selection - Only show if multiple sizes */}
+                      {selectedCakeData && selectedCakeData.sizes.length > 1 && (
+                        <div className="relative">
+                          <select
+                            value={selectedSize}
+                            onChange={(e) => setSelectedSize(e.target.value)}
+                            className="w-full px-4 py-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent appearance-none"
+                          >
+                            <option value="">Choose a size...</option>
+                            {selectedCakeData.sizes.map((size) => (
+                              <option key={size.id} value={size.id}>
+                                {size.name} - £{size.price.toFixed(2)}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                        </div>
+                      )}
+
+                      {/* Quantity and Add to Cart */}
+                      {(selectedSize || (selectedCakeData && selectedCakeData.sizes.length === 1)) && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray mb-2">
+                            Quantity
+                          </label>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <button
+                                type="button"
+                                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                                className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50"
+                              >
+                                <Minus className="w-4 h-4" />
+                              </button>
+                              <span className="text-lg font-medium w-12 text-center">{quantity}</span>
+                              <button
+                                type="button"
+                                onClick={() => setQuantity(quantity + 1)}
+                                className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <button
+                              onClick={handleAddToCart}
+                              className="bg-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-900 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2"
+                            >
+                              Add to Cart
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Custom Cake Form */}
+                  {orderType === 'custom' && (
+                    <div className="space-y-4 mb-8">
+                      <div>
+                        <label className="block text-sm font-medium text-gray mb-2">
+                          Describe Your Custom Cake
+                        </label>
+                        <textarea
+                          value={customCakeDescription}
+                          onChange={(e) => setCustomCakeDescription(e.target.value)}
+                          placeholder="Tell us about your custom cake idea... (e.g., 'A chocolate cake with vanilla buttercream, decorated with fresh flowers and a gold leaf border')"
+                          rows={4}
+                          className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray mb-2">
+                          Preferred Size
+                        </label>
+                        <select
+                          value={customCakeSize}
+                          onChange={(e) => setCustomCakeSize(e.target.value)}
+                          className="w-full px-4 py-3 pr-8 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent appearance-none"
+                        >
+                          <option value="">Select size...</option>
+                          <option value="6">6" (6-8 servings)</option>
+                          <option value="9">9" (10-12 servings)</option>
+                          <option value="12.5">12.5" (15-20 servings)</option>
+                          <option value="other">Other (specify size)</option>
+                        </select>
+                        
+                        {/* Custom size input for "other" option */}
+                        {customCakeSize === 'other' && (
+                          <div className="mt-3">
+                            <label className="block text-sm font-medium text-gray mb-2">
+                              Specify Custom Size
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g., 8&quot;, 10&quot;, 14&quot;, etc."
+                              value={customCakeSizeOther || ''}
+                              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomCakeSizeOther(e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
+                              required
+                            />
+                          </div>
+                        )}
+                      </div>
+
                       <div>
                         <label className="block text-sm font-medium text-gray mb-2">
                           Quantity
@@ -433,30 +661,31 @@ export default function OrderPage() {
                           <div className="flex items-center">
                             <button
                               type="button"
-                              onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                              onClick={() => setCustomCakeQuantity(Math.max(1, customCakeQuantity - 1))}
                               className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
-                            <span className="text-lg font-medium w-12 text-center">{quantity}</span>
+                            <span className="text-lg font-medium w-12 text-center">{customCakeQuantity}</span>
                             <button
                               type="button"
-                              onClick={() => setQuantity(quantity + 1)}
+                              onClick={() => setCustomCakeQuantity(customCakeQuantity + 1)}
                               className="w-10 h-10 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
                           </div>
                           <button
-                            onClick={handleAddToCart}
-                            className="bg-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-900 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2"
+                            onClick={handleAddCustomCakeToCart}
+                            disabled={!customCakeDescription.trim() || !customCakeSize || (customCakeSize === 'other' && !customCakeSizeOther.trim())}
+                            className="bg-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-900 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                           >
-                            Add to Cart
+                            Add Custom Cake
                           </button>
                         </div>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Cart */}
                   <div className="border-t pt-6">
@@ -476,66 +705,167 @@ export default function OrderPage() {
                           />
                         </div>
                         {settings?.show_cart_notice !== false && (
-                          <p className="text-gray-600">Oh no! There's no cakes in your cart.</p>
+                          <p className="text-gray-600">{settings?.empty_cart_message || "Oh no! There's no cakes in your cart."}</p>
                         )}
                       </div>
                     ) : (
                       <>
                         <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                           {cart.map((item) => (
-                            <div key={item.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-                              {/* Image */}
-                              <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                {item.imageUrl ? (
-                                  <Image
-                                    src={item.imageUrl}
-                                    alt={item.flavorName}
-                                    width={48}
-                                    height={48}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : (
-                                  <Image
-                                    src="/images/logo-cake.png"
-                                    alt="Cake placeholder"
-                                    width={32}
-                                    height={32}
-                                    className="opacity-60"
-                                  />
-                                )}
-                              </div>
+                            <div key={item.id} className="flex flex-col p-3 bg-gray-50 rounded-lg">
+                              {/* Main Row */}
+                              <div className="flex items-center space-x-3">
+                                {/* Image */}
+                                <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                  {item.imageUrl ? (
+                                    <Image
+                                      src={item.imageUrl}
+                                      alt={item.flavorName}
+                                      width={48}
+                                      height={48}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <Image
+                                      src="/images/logo-cake.png"
+                                      alt="Cake placeholder"
+                                      width={32}
+                                      height={32}
+                                      className="opacity-60"
+                                    />
+                                  )}
+                                </div>
 
-                              {/* Details */}
-                              <div className="flex-1 min-w-0">
-                                <h4 className="font-medium text-gray-800 text-sm truncate">{item.flavorName}</h4>
-                                <p className="text-xs text-gray-600">{item.sizeName}</p>
-                                <p className="text-xs text-orange font-medium">£{item.price.toFixed(2)} each</p>
-                              </div>
+                                {/* Details */}
+                                <div className="flex-1 min-w-0">
+                                  <h4 className="font-medium text-gray-800 text-sm truncate">
+                                    {item.categoryId === 'custom' 
+                                      ? 'Custom Cake' 
+                                      : item.flavorName
+                                    }
+                                  </h4>
 
-                              {/* Quantity Controls */}
-                              <div className="flex items-center space-x-1">
-                                <button
-                                  onClick={() => updateCartItemQuantity(item.id, item.quantity - 1)}
-                                  className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-50 text-xs"
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </button>
-                                <span className="w-6 text-center text-sm">{item.quantity}</span>
-                                <button
-                                  onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)}
-                                  className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-50 text-xs"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </button>
+                                  {item.categoryId !== 'custom' ? (
+                                    <p className="text-xs text-gray-600">
+                                      {item.categoryName} {item.sizeName} - £{item.price.toFixed(2)} each
+                                    </p>
+                                  ) : (
+                                    <p className="text-xs text-orange font-medium">Price to be confirmed</p>
+                                  )}
+                                  
+                                  {/* Writing on Cake Toggle Button - Regular cakes only */}
+                                  {item.categoryId !== 'custom' && (
+                                    <button
+                                      onClick={() => toggleWritingField(item.id)}
+                                      className="text-xs text-orange-600 hover:text-orange-700 underline decoration-dotted underline-offset-2 transition-colors duration-200 mt-1"
+                                    >
+                                      {item.writing_on_cake ? 'Edit cake text' : 'Add text to cake'}
+                                    </button>
+                                  )}
+                                  
+                                  {/* Edit Cake Button - Custom cakes only */}
+                                  {item.categoryId === 'custom' && (
+                                    <button
+                                      onClick={() => toggleEditField(item.id)}
+                                      className="text-xs text-orange-600 hover:text-orange-700 underline decoration-dotted underline-offset-2 transition-colors duration-200 mt-1"
+                                    >
+                                      Edit cake
+                                    </button>
+                                  )}
+                                </div>
+
+                                {/* Quantity Controls */}
+                                <div className="flex flex-col items-end space-y-2">
+                                  <div className="flex items-center space-x-1">
+                                    <button
+                                      onClick={() => updateCartItemQuantity(item.id, item.quantity - 1)}
+                                      className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-50 text-xs"
+                                    >
+                                      <Minus className="w-3 h-3" />
+                                    </button>
+                                    <span className="w-6 text-center text-sm">{item.quantity}</span>
+                                    <button
+                                      onClick={() => updateCartItemQuantity(item.id, item.quantity + 1)}
+                                      className="w-6 h-6 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-50 text-xs"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={() => removeFromCart(item.id)}
+                                      className="text-red-600 hover:text-red-700 p-1 ml-2"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
                               
-                              {/* Remove Button */}
-                              <button
-                                onClick={() => removeFromCart(item.id)}
-                                className="text-red-600 hover:text-red-700 p-1"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                              {/* Writing on Cake Field - Full width when expanded */}
+                              {expandedWritingFields[item.id] && (
+                                <div className="mt-3 w-full">
+                                  <input
+                                    type="text"
+                                    placeholder="Writing on cake (optional)"
+                                    value={item.writing_on_cake || ''}
+                                    onChange={(e) => updateCartItemWriting(item.id, e.target.value)}
+                                    className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-orange focus:border-transparent"
+                                  />
+                                </div>
+                              )}
+                              
+                              {/* Edit Custom Cake Fields - Full width when expanded */}
+                              {expandedEditFields[item.id] && item.categoryId === 'custom' && (
+                                <div className="mt-3 w-full space-y-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                      Cake Description
+                                    </label>
+                                    <textarea
+                                      placeholder="Describe your custom cake..."
+                                      value={item.flavorName}
+                                      onChange={(e) => updateCustomCakeDetails(item.id, e.target.value, item.sizeId)}
+                                      rows={3}
+                                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-orange focus:border-transparent resize-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                                      Size
+                                    </label>
+                                    <select
+                                      value={item.sizeId}
+                                      onChange={(e) => updateCustomCakeDetails(item.id, item.flavorName, e.target.value)}
+                                      className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-orange focus:border-transparent"
+                                    >
+                                      <option value="6">6" (6-8 servings)</option>
+                                      <option value="9">9" (10-12 servings)</option>
+                                      <option value="12.5">12.5" (15-20 servings)</option>
+                                      <option value="other">Other (specify size)</option>
+                                    </select>
+                                    
+                                    {/* Custom size input for "other" option in edit mode */}
+                                    {item.sizeId === 'other' && (
+                                      <div className="mt-2">
+                                        <input
+                                          type="text"
+                                          placeholder="Specify custom size..."
+                                          value={item.sizeName === 'other' ? '' : item.sizeName}
+                                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateCustomCakeDetails(item.id, item.flavorName, 'other', e.target.value)}
+                                          className="w-full px-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-orange focus:border-transparent"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex justify-end">
+                                    <button
+                                      onClick={() => toggleEditField(item.id)}
+                                      className="text-xs text-gray-600 hover:text-gray-800 underline decoration-dotted underline-offset-2 transition-colors duration-200"
+                                    >
+                                      Done editing
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -544,8 +874,13 @@ export default function OrderPage() {
                         <div className="border-t pt-4">
                           <div className="flex justify-between items-center text-lg font-bold">
                             <span>Total:</span>
-                            <span className="text-orange">£{getTotalPrice().toFixed(2)}</span>
+                            {hasCustomCakes() ? (
+                              <span className="text-orange text-xl">Not Available</span>
+                            ) : (
+                              <span className="text-orange">£{getTotalPrice().toFixed(2)}</span>
+                            )}
                           </div>
+
                           {settings?.show_cart_notice !== false && (
                             <div className="mt-2 p-4 bg-orange-50 border border-orange-200 rounded-lg">
                               <div className="flex items-center space-x-3">
@@ -554,12 +889,15 @@ export default function OrderPage() {
                                 </div>
                                 <div className="flex-1">
                                   <p className="text-sm text-orange text-left">
-                                    {settings?.cart_notice || "Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order."}
+                                    {hasCustomCakes() && settings?.custom_order_notice 
+                                      ? settings.custom_order_notice 
+                                      : (settings?.cart_notice || "Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order.")
+                                    }
                                   </p>
                                 </div>
-                                </div>
                               </div>
-                            )}
+                            </div>
+                          )}
 
                         </div>
                       </>
@@ -655,23 +993,7 @@ export default function OrderPage() {
                   </div>
                 </div>
 
-                <div>
-                  <label htmlFor="writing" className="block text-sm font-medium text-gray mb-2">
-                    Any Writing On The Cake
-                  </label>
-                  <div className="relative">
-                    <Type className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <input
-                      type="text"
-                      id="writing"
-                      name="writing"
-                      value={formData.writing}
-                      onChange={handleChange}
-                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
-                      placeholder="e.g., Happy Birthday Sarah!"
-                    />
-                  </div>
-                </div>
+
 
                 <div>
                   <label htmlFor="otherInfo" className="block text-sm font-medium text-gray mb-2">
@@ -722,9 +1044,9 @@ export default function OrderPage() {
                         Submitting Order...
                       </>
                     ) : cart.length === 0 ? (
-                      'Add cakes to cart first'
+                      settings?.order_button_empty_text || 'Add cakes to cart first'
                     ) : (
-                      'Let there be cake!'
+                      settings?.order_button_active_text || 'Let there be cake!'
                     )}
                   </button>
                 </div>
@@ -745,9 +1067,22 @@ export default function OrderPage() {
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-4">Order Submitted Successfully!</h3>
-              <p className="text-gray-600 mb-8">
+              <p className="text-gray-600 mb-4">
                 Thank you for your order. We'll review your request and get back to you as soon as possible.
               </p>
+              
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                <h4 className="text-sm font-semibold text-orange-800 mb-2">📍 Collection Information</h4>
+                <p className="text-sm text-orange-700 mb-2">
+                  Once ready, your order will need to be collected from:
+                </p>
+                <p className="text-sm font-medium text-orange-800">
+                  St. Wilfrids Enterprise Centre, Royce Road, Hulme, M15 5BJ
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  <em>Make sure you stay on Royce Road as the satnav will take you to Birchvale Close.</em>
+                </p>
+              </div>
               <button
                 onClick={() => setSubmitSuccess(false)}
                 className="w-full bg-orange text-white py-3 px-6 rounded-lg font-semibold hover:bg-orange-900 transition-all duration-200"

@@ -23,6 +23,17 @@ interface CakeCard {
     price: number
     description: string | null
   }>
+  // For consolidated cakes with multiple category options
+  categoryOptions?: Array<{
+    categoryName: string
+    sizes: Array<{
+      id: string
+      name: string
+      price: number
+      description: string | null
+    }>
+  }>
+  isConsolidated?: boolean
 }
 
 export default function CakesPage() {
@@ -32,6 +43,8 @@ export default function CakesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({})
+  const [activeTabs, setActiveTabs] = useState<Record<string, number>>({})
+  const [showFrillyPricing, setShowFrillyPricing] = useState<Record<string, boolean>>({})
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredCakeCards, setFilteredCakeCards] = useState<CakeCard[]>([])
   const [showNotification, setShowNotification] = useState(false)
@@ -124,13 +137,56 @@ export default function CakesPage() {
             description: flavor.description || null,
             imageUrl: flavor.image_url,
             categoryName: category.category.name,
-            sizes: sizes
+            sizes: sizes.sort((a, b) => a.price - b.price) // Sort sizes by price (cheapest first)
           })
         })
       })
       
+      // Consolidate duplicate flavors from different categories
+      const consolidatedCards: CakeCard[] = []
+      const flavorGroups = new Map<string, CakeCard[]>()
+      
+      // Group cakes by name
+      cards.forEach(card => {
+        const key = card.name.toLowerCase().trim()
+        if (!flavorGroups.has(key)) {
+          flavorGroups.set(key, [])
+        }
+        flavorGroups.get(key)!.push(card)
+      })
+      
+      // Process each group
+      flavorGroups.forEach((group, flavorName) => {
+        if (group.length === 1) {
+          // Single cake - add as is
+          consolidatedCards.push(group[0])
+        } else {
+          // Multiple cakes with same name - consolidate
+          const firstCake = group[0]
+          
+          // Sort categories by average price to ensure regular (cheaper) comes first, frilly (more expensive) comes second
+          const categoryOptions = group.map(cake => ({
+            categoryName: cake.categoryName!,
+            sizes: cake.sizes.sort((a, b) => a.price - b.price), // Sort sizes by price (cheapest first)
+            averagePrice: cake.sizes.reduce((sum, size) => sum + size.price, 0) / cake.sizes.length
+          })).sort((a, b) => a.averagePrice - b.averagePrice)
+          
+          consolidatedCards.push({
+            ...firstCake,
+            id: `consolidated-${flavorName}`,
+            isConsolidated: true,
+            categoryOptions: categoryOptions.map(option => ({
+              categoryName: option.categoryName,
+              sizes: option.sizes
+            })),
+            // Use the first cake's image and description, but remove individual category info
+            categoryName: undefined
+          })
+        }
+      })
+      
       // Sort cakes alphabetically by name
-      const sortedCards = cards.sort((a, b) => a.name.localeCompare(b.name))
+      const sortedCards = consolidatedCards.sort((a, b) => a.name.localeCompare(b.name))
       
       setCakeCards(sortedCards)
       setFilteredCakeCards(sortedCards)
@@ -149,16 +205,88 @@ export default function CakesPage() {
     }))
   }
 
-  // Auto-select size if there's only one option
+  const handleTabChange = (cakeId: string, tabIndex: number) => {
+    setActiveTabs(prev => ({
+      ...prev,
+      [cakeId]: tabIndex
+    }))
+    
+    // Auto-select the first size in the new tab
+    const cake = cakeCards.find(c => c.id === cakeId)
+    if (cake && cake.isConsolidated && cake.categoryOptions) {
+      const newSizes = cake.categoryOptions[tabIndex].sizes
+      if (newSizes.length > 0) {
+        setSelectedSizes(prev => ({
+          ...prev,
+          [cakeId]: newSizes[0].id
+        }))
+      }
+    }
+  }
+
+  const toggleFrillyPricing = (cakeId: string) => {
+    const newShowFrilly = !showFrillyPricing[cakeId]
+    setShowFrillyPricing(prev => ({ ...prev, [cakeId]: newShowFrilly }))
+    
+    // Auto-select the first size in the new pricing option
+    const cake = cakeCards.find(c => c.id === cakeId)
+    if (cake && cake.isConsolidated && cake.categoryOptions) {
+      const targetTab = newShowFrilly ? 1 : 0
+      const targetSizes = cake.categoryOptions[targetTab].sizes
+      if (targetSizes.length > 0) {
+        setActiveTabs(prev => ({ ...prev, [cakeId]: targetTab }))
+        setSelectedSizes(prev => ({ ...prev, [cakeId]: targetSizes[0].id }))
+      }
+    }
+  }
+
+  // Auto-select size if there's only one option, or first size if multiple options
   useEffect(() => {
+    if (cakeCards.length === 0) return
+    
     const autoSelectSizes: Record<string, string> = {}
+    const autoSelectTabs: Record<string, number> = {}
+    
     cakeCards.forEach(card => {
-      if (card.sizes.length === 1) {
+      if (card.isConsolidated && card.categoryOptions) {
+        // For consolidated cakes, set first tab as active
+        autoSelectTabs[card.id] = 0
+        // Auto-select first size in first tab (regardless of how many sizes)
+        if (card.categoryOptions[0]?.sizes.length > 0) {
+          autoSelectSizes[card.id] = card.categoryOptions[0].sizes[0].id
+        }
+      } else if (card.sizes.length > 0) {
+        // Always auto-select first size (whether single or multiple)
         autoSelectSizes[card.id] = card.sizes[0].id
       }
     })
-    setSelectedSizes(prev => ({ ...prev, ...autoSelectSizes }))
+    
+    // Only update if we have selections to make
+    if (Object.keys(autoSelectSizes).length > 0) {
+      setSelectedSizes(prev => ({ ...prev, ...autoSelectSizes }))
+    }
+    if (Object.keys(autoSelectTabs).length > 0) {
+      setActiveTabs(prev => ({ ...prev, ...autoSelectTabs }))
+    }
   }, [cakeCards])
+
+  // Helper function to get current sizes for a cake (handles consolidated cakes)
+  const getCurrentSizes = (cakeCard: CakeCard) => {
+    if (cakeCard.isConsolidated && cakeCard.categoryOptions) {
+      const activeTab = activeTabs[cakeCard.id] || 0
+      return cakeCard.categoryOptions[activeTab].sizes
+    }
+    return cakeCard.sizes
+  }
+
+  // Helper function to get current category name for a cake
+  const getCurrentCategoryName = (cakeCard: CakeCard) => {
+    if (cakeCard.isConsolidated && cakeCard.categoryOptions) {
+      const activeTab = activeTabs[cakeCard.id] || 0
+      return cakeCard.categoryOptions[activeTab].categoryName
+    }
+    return cakeCard.categoryName
+  }
 
   const handleAddToOrder = (cakeCard: CakeCard) => {
     const selectedSizeId = selectedSizes[cakeCard.id]
@@ -167,14 +295,15 @@ export default function CakesPage() {
       return
     }
 
-    const selectedSize = cakeCard.sizes.find(size => size.id === selectedSizeId)
+    const currentSizes = getCurrentSizes(cakeCard)
+    const selectedSize = currentSizes.find(size => size.id === selectedSizeId)
     if (!selectedSize) return
 
     // Create cart item
     const cartItem = {
       id: `${cakeCard.id}-${selectedSizeId}`,
-      categoryId: cakeCard.categoryName || '',
-      categoryName: cakeCard.categoryName || '',
+      categoryId: getCurrentCategoryName(cakeCard) || '',
+      categoryName: getCurrentCategoryName(cakeCard) || '',
       flavorId: cakeCard.id,
       flavorName: cakeCard.name,
       sizeId: selectedSizeId,
@@ -312,9 +441,9 @@ export default function CakesPage() {
           {filteredCakeCards.map((cakeCard) => (
             <div key={cakeCard.id} className="group relative">
               {/* Card Container with Gradient Background */}
-              <div className="bg-light-cream rounded-2xl shadow-xl overflow-hidden h-[600px] flex flex-col max-w-sm mx-auto w-full">
-                {/* Image Container with Overlay */}
-                <div className="relative h-56 bg-gradient-to-br from-orange-100 to-amber-100 overflow-hidden">
+              <div className="bg-light-cream rounded-2xl shadow-xl overflow-hidden h-[600px] flex flex-col max-w-sm mx-auto w-full relative">
+                {/* Image Container with Overlay - Fixed height */}
+                <div className="relative h-48 bg-gradient-to-br from-orange-100 to-amber-100 overflow-hidden flex-shrink-0">
                   {cakeCard.imageUrl ? (
                     <Image
                       src={cakeCard.imageUrl}
@@ -337,7 +466,6 @@ export default function CakesPage() {
                   
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-orange-900/20 via-transparent to-transparent"></div>
-                  
 
                 </div>
                 
@@ -348,84 +476,237 @@ export default function CakesPage() {
                     <div className="w-16 h-1 bg-gradient-to-r from-orange-400 to-amber-400 rounded-full"></div>
                   </div>
                   
-                  {/* Cake Name */}
-                  <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">{cakeCard.name}</h3>
+                  {/* Cake Name - Flexible height container */}
+                  <div className="min-h-[48px] flex items-start justify-center">
+                    <h3 className="text-xl font-bold text-gray-800 text-center leading-tight">{cakeCard.name}</h3>
+                  </div>
+                  
+                  {/* Frilly Pricing Toggle Link or Spacer */}
+                  <div className="text-center -mt-2 mb-3">
+                    {cakeCard.isConsolidated && cakeCard.categoryOptions ? (
+                      <button
+                        onClick={() => toggleFrillyPricing(cakeCard.id)}
+                        className="text-sm text-orange-600 hover:text-orange-700 underline decoration-dotted underline-offset-4 transition-colors duration-200"
+                      >
+                        {showFrillyPricing[cakeCard.id] ? 'See Regular Pricing' : 'See Frilly Pricing'}
+                      </button>
+                    ) : (
+                      <div className="h-5"></div>
+                    )}
+                  </div>
+                  
                   
 
-
                   {/* Size Selection */}
-                  <div className="flex-1 mb-6">
-                    {cakeCard.sizes.length === 1 ? (
-                      // Single size - show as info with matching styling but no radio button
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/80 border-2 border-orange-300 shadow-md">
-                          <div className="flex items-center space-x-2 min-w-0 flex-1">
-                            <div className="w-3.5 h-3.5 rounded-full border-2 border-orange-500 bg-orange-500 flex items-center justify-center flex-shrink-0">
-                              <div className="w-1 h-1 bg-white rounded-full"></div>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <span className="font-medium text-gray-800 text-sm block">{cakeCard.sizes[0].name}</span>
-                              {cakeCard.sizes[0].description && (
-                                <p className="text-xs text-gray-500 leading-tight">{cakeCard.sizes[0].description}</p>
-                              )}
-                            </div>
+                  <div className="flex-1 mb-4">
+                    {(() => {
+                      if (cakeCard.isConsolidated && cakeCard.categoryOptions) {
+                        // Consolidated cake - show either regular or frilly pricing based on toggle
+                        // First option should be regular (cheaper), second option should be frilly (more expensive)
+                        const regularOption = cakeCard.categoryOptions[0]
+                        const frillyOption = cakeCard.categoryOptions[1]
+                        const isShowingFrilly = showFrillyPricing[cakeCard.id]
+                        
+                        return (
+                          <div className="space-y-1.5 transition-all duration-300 ease-in-out">
+                            {regularOption.sizes.map((size, sizeIndex) => (
+                              <label
+                                key={sizeIndex}
+                                onClick={() => {
+                                  const targetTab = isShowingFrilly ? 1 : 0
+                                  const targetSizeId = isShowingFrilly ? frillyOption.sizes[sizeIndex].id : size.id
+                                  setActiveTabs(prev => ({ ...prev, [cakeCard.id]: targetTab }))
+                                  setSelectedSizes(prev => ({ ...prev, [cakeCard.id]: targetSizeId }))
+                                }}
+                                className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 min-h-[60px] ${
+                                  getSelectedSize(cakeCard.id) === (isShowingFrilly ? frillyOption.sizes[sizeIndex].id : size.id) && 
+                                  (activeTabs[cakeCard.id] || 0) === (isShowingFrilly ? 1 : 0)
+                                    ? 'bg-white/80 border-2 border-orange-300 shadow-md'
+                                    : 'bg-gray-50 border border-gray-200 hover:border-gray-300'
+                                }`}
+                              >
+                                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                  <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                    getSelectedSize(cakeCard.id) === (isShowingFrilly ? frillyOption.sizes[sizeIndex].id : size.id) && 
+                                    (activeTabs[cakeCard.id] || 0) === (isShowingFrilly ? 1 : 0)
+                                      ? 'border-orange-500 bg-orange-500'
+                                      : 'border-gray-300'
+                                  }`}>
+                                    {getSelectedSize(cakeCard.id) === (isShowingFrilly ? frillyOption.sizes[sizeIndex].id : size.id) && 
+                                    (activeTabs[cakeCard.id] || 0) === (isShowingFrilly ? 1 : 0) && (
+                                      <div className="w-1 h-1 bg-white rounded-full"></div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span className="font-medium text-gray-800 text-sm block">
+                                      {size.name} - {isShowingFrilly ? 'Frilly' : 'Regular'}
+                                    </span>
+                                    <div className="min-h-[16px]">
+                                      {size.description && (
+                                        <p className="text-xs text-gray-500 leading-tight">{size.description}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <span className="text-sm font-bold text-orange flex-shrink-0 ml-2">
+                                  £{(isShowingFrilly ? frillyOption.sizes[sizeIndex].price : size.price)?.toFixed(2) || '0.00'}
+                                </span>
+                              </label>
+                            ))}
                           </div>
-                          <span className="text-sm font-bold text-orange flex-shrink-0 ml-2">£{cakeCard.sizes[0].price?.toFixed(2) || '0.00'}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      // Multiple sizes - show selection interface
-                      <div className="space-y-1.5">
-                        {cakeCard.sizes.map((size) => (
-                                                  <label
-                          key={size.id}
-                          onClick={() => handleSizeSelect(cakeCard.id, size.id)}
-                          className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 ${
-                            getSelectedSize(cakeCard.id) === size.id
-                              ? 'bg-white/80 border-2 border-orange-300 shadow-md'
-                              : 'bg-gray-50 border border-gray-200 hover:border-gray-300'
-                          }`}
-                        >
-                            <div className="flex items-center space-x-2 min-w-0 flex-1">
-                                                          <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                              getSelectedSize(cakeCard.id) === size.id
-                                ? 'border-orange-500 bg-orange-500'
-                                : 'border-gray-300'
-                            }`}>
-                              {getSelectedSize(cakeCard.id) === size.id && (
-                                <div className="w-1 h-1 bg-white rounded-full"></div>
-                              )}
-                            </div>
-                              <div className="min-w-0 flex-1">
-                                <span className="font-medium text-gray-800 text-sm block">{size.name}</span>
-                                {size.description && (
-                                  <p className="text-xs text-gray-500 leading-tight">{size.description}</p>
-                                )}
+                        )
+                      } else {
+                        // Regular cake - show normal size selection
+                        const currentSizes = getCurrentSizes(cakeCard)
+                        const currentSizesLength = currentSizes.length
+                        
+                        if (currentSizesLength === 1) {
+                          // Single size - show as info with matching styling but no radio button
+                          return (
+                            <div className="space-y-1.5">
+                              <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/80 border-2 border-orange-300 shadow-md min-h-[60px]">
+                                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                  <div className="w-3.5 h-3.5 rounded-full border-2 border-orange-500 bg-orange-500 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-1 h-1 bg-white rounded-full"></div>
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <span className="font-medium text-gray-800 text-sm block">{currentSizes[0].name}</span>
+                                    <div className="min-h-[16px]">
+                                      {currentSizes[0].description && (
+                                        <p className="text-xs text-gray-500 leading-tight">{currentSizes[0].description}</p>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <span className="text-sm font-bold text-orange flex-shrink-0 ml-2">£{currentSizes[0].price?.toFixed(2) || '0.00'}</span>
                               </div>
                             </div>
-                            <span className="text-sm font-bold text-orange flex-shrink-0 ml-2">£{size.price.toFixed(2)}</span>
-                          </label>
-                        ))}
-                      </div>
-                    )}
+                          )
+                        } else {
+                          // Multiple sizes - show selection interface
+                          return (
+                            <div className="space-y-1.5">
+                              {currentSizes.map((size) => (
+                                <label
+                                  key={size.id}
+                                  onClick={() => handleSizeSelect(cakeCard.id, size.id)}
+                                  className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all duration-300 hover:shadow-sm hover:-translate-y-0.5 min-h-[60px] ${
+                                    getSelectedSize(cakeCard.id) === size.id
+                                      ? 'bg-white/80 border-2 border-orange-300 shadow-md'
+                                      : 'bg-gray-50 border border-gray-200 hover:border-gray-300'
+                                  }`}
+                                >
+                                  <div className="flex items-center space-x-2 min-w-0 flex-1">
+                                    <div className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                      getSelectedSize(cakeCard.id) === size.id
+                                        ? 'border-orange-500 bg-orange-500'
+                                        : 'border-gray-300'
+                                    }`}>
+                                      {getSelectedSize(cakeCard.id) === size.id && (
+                                        <div className="w-1 h-1 bg-white rounded-full"></div>
+                                      )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <span className="font-medium text-gray-800 text-sm block">{size.name}</span>
+                                      <div className="min-h-[16px]">
+                                        {size.description && (
+                                          <p className="text-xs text-gray-500 leading-tight">{size.description}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <span className="text-sm font-bold text-orange flex-shrink-0 ml-2">£{size.price.toFixed(2)}</span>
+                                </label>
+                              ))}
+                            </div>
+                          )
+                        }
+                      }
+                    })()}
                   </div>
 
                   {/* Add to Order Button */}
                   <button
                     onClick={() => handleAddToOrder(cakeCard)}
-                    disabled={!getSelectedSize(cakeCard.id)}
-                    className={`w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-300 mt-auto ${
-                      getSelectedSize(cakeCard.id)
-                        ? 'bg-orange-500 hover:bg-orange-500/90 text-white shadow-lg hover:shadow-xl transform hover:scale-105'
-                        : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                    }`}
+                    className="w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-300 mt-auto bg-orange-500 hover:bg-orange-500/90 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
                   >
-                    {cakeCard.sizes.length === 1 ? 'Add to Order' : (getSelectedSize(cakeCard.id) ? 'Add to Order' : 'Select a Size')}
+                    Add to Order
                   </button>
                 </div>
               </div>
             </div>
           ))}
+          
+          {/* Custom Cake Card */}
+          <div className="group relative">
+            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl shadow-xl overflow-hidden h-[600px] flex flex-col max-w-sm mx-auto w-full border-2 border-dashed border-orange-300 hover:border-orange-400 transition-all duration-300">
+              {/* Image Container - Fixed height */}
+              <div className="relative h-56 bg-gradient-to-br from-orange-100 to-amber-100 overflow-hidden flex items-center justify-center flex-shrink-0">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-gradient-to-br from-orange-200 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-orange-200">
+                    <svg className="w-10 h-10 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V21C3 22.1 3.9 23 5 23H19C20.1 23 21 22.1 21 21V9ZM19 21H5V3H13V9H19V21Z"/>
+                    </svg>
+                  </div>
+                  <p className="text-orange-700 text-sm font-medium">Custom Design</p>
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="p-6 relative flex-1 flex flex-col">
+                {/* Decorative Elements */}
+                <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="w-16 h-1 bg-gradient-to-r from-orange-400 to-amber-400 rounded-full"></div>
+                </div>
+                
+                {/* Card Title */}
+                <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">Can't find what you're looking for?</h3>
+                
+                {/* Description */}
+                <div className="flex-1 mb-6">
+                  <div className="text-center">
+                    <p className="text-gray-600 text-sm leading-relaxed mb-6">
+                      Have a special design in mind? We'd love to create something unique just for you!
+                    </p>
+                    <div className="flex justify-center space-x-6 mt-4">
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-8 h-8 bg-orange-200 rounded-full flex items-center justify-center mb-2">
+                          <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm6 14h-4v4c0 1.1-.9 2-2 2s-2-.9-2-2v-4H6c-1.1 0-2-.9-2-2s.9-2 2-2h4V6c0-1.1.9-2 2-2s2 .9 2 2v4h4c1.1 0 2 .9 2 2s-.9 2-2 2z"/>
+                          </svg>
+                        </div>
+                        <span className="text-xs text-gray-600">Custom flavors</span>
+                      </div>
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-8 h-8 bg-orange-200 rounded-full flex items-center justify-center mb-2">
+                          <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20.71 5.63l-2.34-2.34c-.39-.39-1.02-.39-1.41 0L7 12.96V17h4.04l10.71-10.71c.39-.39.39-1.02 0-1.41zM5 15v2h2v-2H5z"/>
+                          </svg>
+                        </div>
+                        <span className="text-xs text-gray-600">Decorations</span>
+                      </div>
+                      <div className="flex flex-col items-center text-center">
+                        <div className="w-8 h-8 bg-orange-200 rounded-full flex items-center justify-center mb-2">
+                          <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                          </svg>
+                        </div>
+                        <span className="text-xs text-gray-600">Dietary needs</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contact Button */}
+                <button
+                  onClick={() => window.location.href = '/order?type=custom'}
+                  className="w-full py-4 px-6 rounded-2xl font-semibold transition-all duration-300 mt-auto bg-orange-500 hover:bg-orange-600 text-white shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Order a Custom Cake
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {filteredCakeCards.length === 0 && !loading && (
