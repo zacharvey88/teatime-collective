@@ -100,7 +100,19 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
       try {
         setLoadingDetails(true)
         const details = await OrderService.getOrderById(order.id)
-        setOrderDetails(details)
+        if (details) {
+          // Transform the data to match OrderWithItems interface
+          const transformedDetails: OrderWithItems = {
+            ...details,
+            items: details.items.map(item => ({
+              ...item,
+              cake_id: item.cake_id || undefined,
+              cake_size_id: item.cake_size_id || undefined,
+              writing_on_cake: item.writing_on_cake || undefined
+            }))
+          }
+          setOrderDetails(transformedDetails)
+        }
       } catch (error) {
         console.error('Failed to load order details:', error)
       } finally {
