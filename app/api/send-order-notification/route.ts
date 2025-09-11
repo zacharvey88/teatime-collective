@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
       specialRequests: order.special_requests || '',
       items: order.items.map(item => ({
         name: item.item_name,
-        size: 'Standard', // This could be extracted from product_name or stored separately
-        details: item.item_details || null,
+        size: item.custom_cake_size || 'Standard',
+        details: item.custom_cake_description || null,
         quantity: item.quantity,
         price: item.estimated_unit_price,
         writingOnCake: item.writing_on_cake || ''
