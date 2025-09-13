@@ -126,7 +126,7 @@ const Weddings = () => {
               <span className="text-sm font-medium uppercase tracking-wider">{settings?.wedding_subtitle || 'Special Occasions'}</span>
             </div>
 
-            <h2 className={`text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster text-center lg:text-left transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+            <h2 className={`text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster text-center lg:text-left px-4 lg:px-0 transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               {settings?.wedding_title || 'Weddings'}
             </h2>
 
@@ -190,7 +190,7 @@ const Weddings = () => {
               </div>
             </div>
 
-            <div className={`prose prose-lg text-gray space-y-4 px-4 transition-all duration-1000 delay-200 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+            <div className={`prose prose-lg text-gray space-y-4 px-4 lg:px-0 transition-all duration-1000 delay-200 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               {settings?.wedding_content ? (
                 <div dangerouslySetInnerHTML={{ __html: settings.wedding_content.replace(/\n/g, '<br />') }} />
               ) : (
@@ -201,7 +201,7 @@ const Weddings = () => {
             </div>
 
             {/* Wedding Services */}
-            <div className={`flex flex-row flex-wrap gap-4 px-4 transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+            <div className={`flex flex-row flex-wrap gap-4 px-4 lg:px-0 transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px] transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
                 <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300 hover:bg-orange/20">
                   <Heart className="w-4 h-4 text-orange transition-all duration-300 hover:scale-110" />
@@ -227,13 +227,15 @@ const Weddings = () => {
               </div>
             </div>
 
-            <a
-            href="/contact"
-            className="inline-flex items-center space-x-2 bg-orange text-white px-6 py-3 rounded-lg font-medium text-base hover:bg-orange-900 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-md hover:shadow-lg"
-          >
-            <Mail className="w-4 h-4" />
-            <span>Get in Touch</span>
-          </a>
+            <div className="flex justify-center lg:justify-start px-4 lg:px-0">
+              <a
+                href="/contact"
+                className="inline-flex items-center space-x-2 bg-orange text-white px-6 py-3 rounded-lg font-medium text-base hover:bg-orange-900 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-md hover:shadow-lg"
+              >
+                <Mail className="w-4 h-4" />
+                <span>Get in Touch</span>
+              </a>
+            </div>
 
           </div>
 
