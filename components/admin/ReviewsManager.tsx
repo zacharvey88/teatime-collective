@@ -21,6 +21,10 @@ const ReviewsManager = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [deleteReview, setDeleteReview] = useState<Review | null>(null)
+  
+  // Drag and drop state
+  const [draggedReview, setDraggedReview] = useState<Review | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   // Form states
   const [formData, setFormData] = useState({
@@ -146,6 +150,69 @@ const ReviewsManager = () => {
     } catch (error: any) {
       toast.error('Failed to update review status')
     }
+  }
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, review: Review) => {
+    setDraggedReview(review)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/html', e.currentTarget.outerHTML)
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverIndex(index)
+  }
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    
+    if (!draggedReview) return
+
+    const dragIndex = reviews.findIndex(review => review.id === draggedReview.id)
+    if (dragIndex === dropIndex) {
+      setDragOverIndex(null)
+      setDraggedReview(null)
+      return
+    }
+
+    // Create new array with reordered reviews
+    const newReviews = [...reviews]
+    const [draggedItem] = newReviews.splice(dragIndex, 1)
+    newReviews.splice(dropIndex, 0, draggedItem)
+
+    // Update display_order for all affected reviews
+    const updatedReviews = newReviews.map((review, index) => ({
+      ...review,
+      display_order: index
+    }))
+
+    setReviews(updatedReviews)
+    setDragOverIndex(null)
+    setDraggedReview(null)
+
+    // Update display_order in database
+    try {
+      const updatePromises = updatedReviews.map((review, index) => 
+        ReviewsService.updateReview(review.id, { display_order: index })
+      )
+      await Promise.all(updatePromises)
+      toast.success('Review order updated successfully')
+    } catch (error: any) {
+      toast.error('Failed to update review order')
+      // Revert on error
+      fetchReviews()
+    }
+  }
+
+  const handleDragEnd = () => {
+    setDragOverIndex(null)
+    setDraggedReview(null)
   }
 
   const renderStars = (rating: number) => {
@@ -303,12 +370,26 @@ const ReviewsManager = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {reviews.map((review) => (
-              <Card key={review.id} className={`${!review.is_active ? 'opacity-60' : ''}`}>
+            {reviews.map((review, index) => (
+              <Card 
+                key={review.id} 
+                className={`
+                  ${!review.is_active ? 'opacity-60' : ''} 
+                  ${draggedReview?.id === review.id ? 'opacity-50 scale-95' : ''}
+                  ${dragOverIndex === index ? 'ring-2 ring-orange-500 ring-opacity-50' : ''}
+                  transition-all duration-200 cursor-move
+                `}
+                draggable
+                onDragStart={(e) => handleDragStart(e, review)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+              >
                 <CardContent className="pt-4">
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center space-x-3">
-                      <GripVertical className="w-4 h-4 text-gray-400" />
+                      <GripVertical className="w-4 h-4 text-gray-400 cursor-grab active:cursor-grabbing" />
                       <div>
                         <h4 className="font-medium">{review.customer_name}</h4>
                         <div className="flex items-center space-x-2">
@@ -317,9 +398,6 @@ const ReviewsManager = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge variant={review.is_active ? "default" : "secondary"}>
-                        Order: {review.display_order}
-                      </Badge>
                       <Button
                         variant="ghost"
                         size="sm"

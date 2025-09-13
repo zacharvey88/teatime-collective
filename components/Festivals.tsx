@@ -6,8 +6,10 @@ import { ChevronLeft, ChevronRight, Music, Users, Calendar, Recycle } from 'luci
 import LoadingSpinner from './ui/loading-spinner'
 import { FrontendImageService, FrontendImageItem } from '@/lib/frontendImageService'
 import { getYearsOfExperience } from '@/lib/utils'
+import { useSettings } from '@/lib/settingsContext'
 
 const Festivals = () => {
+  const { settings } = useSettings()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [festivalImages, setFestivalImages] = useState<FrontendImageItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -121,15 +123,15 @@ const Festivals = () => {
           <div className="lg:flex-1 lg:max-w-[50%] space-y-6 order-1 lg:order-2">
             <div className={`hidden lg:flex items-center justify-center lg:justify-start space-x-2 text-orange mb-4 transition-all duration-1000 ${isAnimated ? 'animate-fade-in' : 'opacity-0'}`}>
               <Music className="w-6 h-6" />
-              <span className="text-sm font-medium uppercase tracking-wider">Festivals and Events</span>
+              <span className="text-sm font-medium uppercase tracking-wider">{settings?.festival_subtitle || 'Festivals and Events'}</span>
             </div>
 
             <h2 className={`text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster text-center lg:text-left transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
-              Festival Catering
+              {settings?.festival_title || 'Festival Catering'}
             </h2>
 
             {/* Festival Gallery - Mobile Only */}
-            <div className="lg:hidden w-full mb-6">
+            <div className="lg:hidden w-full mb-6 px-4">
               <div 
                 ref={carouselRef}
                 className="relative h-96 rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-light-cream"
@@ -195,26 +197,32 @@ const Festivals = () => {
               </div>
             </div>
 
-            <div className={`prose prose-lg text-gray space-y-4 transition-all duration-1000 delay-200 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
-              <p>
-                We have {getYearsOfExperience()} years of festival catering experience, ranging from smaller festivals (up to 500) to Glastonbury. We also cater for food fairs, markets, weddings, corporate events.
-              </p>
+            <div className={`prose prose-lg text-gray space-y-4 px-4 transition-all duration-1000 delay-200 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+              {settings?.festival_content ? (
+                <div dangerouslySetInnerHTML={{ __html: settings.festival_content.replace(/\n/g, '<br />') }} />
+              ) : (
+                <>
+                  <p>
+                    We have {getYearsOfExperience()} years of festival catering experience, ranging from smaller festivals (up to 500) to Glastonbury. We also cater for food fairs, markets, weddings, corporate events.
+                  </p>
 
-              <p>
-                We have a variety of marquee set ups both 3M and 6M frontage, both indoor and outdoor, to allow us to provide excellent food and service at your event.
-              </p>
+                  <p>
+                    We have a variety of marquee set ups both 3M and 6M frontage, both indoor and outdoor, to allow us to provide excellent food and service at your event.
+                  </p>
 
-              <p>
-                We use good quality produce, sourced locally where possible and portion size is definitely not an issue! All of our disposable are recyclable!
-              </p>
+                  <p>
+                    We use good quality produce, sourced locally where possible and portion size is definitely not an issue! All of our disposable are recyclable!
+                  </p>
 
-              <p>
-                We can also provide crew catering. Please get in touch to discuss bookings.
-              </p>
+                  <p>
+                    We can also provide crew catering. Please get in touch to discuss bookings.
+                  </p>
+                </>
+              )}
             </div>
 
             {/* Stats */}
-            <div className={`flex flex-row flex-wrap gap-4 mt-8 transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+            <div className={`flex flex-row flex-wrap gap-4 mt-8 px-4 transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               <div className="text-center bg-white p-4 rounded-xl flex-1 min-w-[100px] shadow-md transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
                 <div className="flex items-center justify-center space-x-2 mb-2">
                   <Calendar className="w-5 h-5 text-orange transition-all duration-300 hover:scale-110" />

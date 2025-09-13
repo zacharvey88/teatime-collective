@@ -480,7 +480,7 @@ export default function StandaloneCakeManager() {
               
               {/* Cake info on the right */}
               <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-start">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2 mb-1">
                       <h3 className="font-semibold text-gray-800 truncate">{cake.name}</h3>
@@ -490,7 +490,25 @@ export default function StandaloneCakeManager() {
                       <p className="text-sm text-gray-500 mt-1 line-clamp-2">{cake.description}</p>
                     )}
                   </div>
-                  <div className="flex space-x-1 ml-2">
+                  <div className="flex flex-col items-end space-y-3 ml-2">
+                    <div className="flex space-x-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditCake(cake)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200 h-8 w-8 p-0"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeleteCake(cake)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 h-8 w-8 p-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                     <Switch
                       checked={cake.active}
                       onCheckedChange={async (checked) => {
@@ -504,20 +522,6 @@ export default function StandaloneCakeManager() {
                       style={{ backgroundColor: cake.active ? 'var(--primary-color)' : '#d1d5db' }}
                       className="[&>span]:!bg-white"
                     />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEditCake(cake)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDeleteCake(cake)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               </div>

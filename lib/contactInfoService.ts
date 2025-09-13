@@ -1,5 +1,11 @@
 import { supabase } from './supabaseClient'
 
+export interface SocialLink {
+  id: string
+  platform: string
+  url: string
+}
+
 export interface ContactInfo {
   id: string
   email: string
@@ -7,8 +13,7 @@ export interface ContactInfo {
   address_line1: string
   address_line2?: string
   address_line3?: string
-  instagram_url?: string
-  facebook_url?: string
+  social_links?: SocialLink[]
   created_at?: string
   updated_at?: string
 }
@@ -19,8 +24,7 @@ export interface UpdateContactInfoData {
   address_line1: string
   address_line2?: string
   address_line3?: string
-  instagram_url?: string
-  facebook_url?: string
+  social_links?: SocialLink[]
 }
 
 export class ContactInfoService {
@@ -32,8 +36,16 @@ export class ContactInfoService {
       .limit(1)
       .single()
 
-    if (error) throw new Error('Failed to fetch contact info')
-    return data
+    if (error) {
+      console.error('Error fetching contact info:', error)
+      return null
+    }
+    
+    // Ensure social_links is always an array
+    return {
+      ...data,
+      social_links: data.social_links || []
+    }
   }
 
   // Update contact info (admin)
@@ -45,27 +57,49 @@ export class ContactInfoService {
       .limit(1)
       .single()
 
+    // Prepare data for database (ensure social_links is properly formatted)
+    const dbData = {
+      ...contactData,
+      social_links: contactData.social_links || []
+    }
+
     if (existing) {
       // Update existing record
       const { data, error } = await supabase
         .from('contact_info')
-        .update(contactData)
+        .update(dbData)
         .eq('id', existing.id)
         .select()
         .single()
 
-      if (error) throw new Error('Failed to update contact info')
-      return data
+      if (error) {
+        console.error('Error updating contact info:', error)
+        throw new Error('Failed to update contact info')
+      }
+      
+      // Ensure social_links is always an array
+      return {
+        ...data,
+        social_links: data.social_links || []
+      }
     } else {
       // Create new record
       const { data, error } = await supabase
         .from('contact_info')
-        .insert([contactData])
+        .insert([dbData])
         .select()
         .single()
 
-      if (error) throw new Error('Failed to create contact info')
-      return data
+      if (error) {
+        console.error('Error creating contact info:', error)
+        throw new Error('Failed to create contact info')
+      }
+      
+      // Ensure social_links is always an array
+      return {
+        ...data,
+        social_links: data.social_links || []
+      }
     }
   }
 } 

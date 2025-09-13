@@ -214,9 +214,6 @@ export default function PrivacyPage() {
                 <p className="text-gray-600">
                   <strong>Email:</strong> <a href="mailto:info@teatimecollective.co.uk" className="text-orange hover:underline">info@teatimecollective.co.uk</a>
                 </p>
-                <p className="text-gray-600">
-                  <strong>Phone:</strong> <a href="tel:+447765833910" className="text-orange hover:underline">+44 07765 833 910</a>
-                </p>
               </div>
             </section>
 

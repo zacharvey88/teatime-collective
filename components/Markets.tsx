@@ -27,7 +27,7 @@ const Markets = () => {
         displayCount = Math.max(2, displayCount - 1)
       }
       
-      // Limit to maximum of 6 markets (3 rows of 2, or 2 rows of 3, or 1 row of 6)
+      // Limit to maximum of 6 markets (ensures even distribution)
       displayCount = Math.min(displayCount, 6)
       
       setMarkets(marketDates.slice(0, displayCount))
@@ -45,19 +45,12 @@ const Markets = () => {
           <h2 className="text-4xl md:text-5xl font-bold text-orange mb-4 underline decoration-4 underline-offset-4 font-lobster">
             Market Dates
           </h2>
-          <p className="text-lg text-gray mb-6">Find us at Makers Markets most weekends across Greater Manchester</p>
+          <p className="text-lg text-gray mb-6 px-4 sm:px-8 md:px-12 lg:px-16">Find us at Makers Markets most weekends across Greater Manchester</p>
         </div>
 
         {/* Market Cards */}
         <div className="flex justify-center">
-          <div className={`grid gap-6 justify-items-center ${
-            markets.length === 1 ? 'grid-cols-1' :
-            markets.length === 2 ? 'grid-cols-2' :
-            markets.length === 3 ? 'grid-cols-3' :
-            markets.length === 4 ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' :
-            markets.length === 5 ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5' :
-            'grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
-          }`}>
+          <div className="flex flex-wrap justify-center gap-6 max-w-5xl">
           {loading ? (
             <div className="flex items-center justify-center py-12 w-full col-span-full">
               <div className="w-8 h-8 border-4 border-orange border-t-transparent rounded-full animate-spin"></div>
@@ -96,14 +89,14 @@ const Markets = () => {
               const endTime = formatTime(market.end_time)
               
               return (
-                <div
-                  key={market.id}
-                  className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer flex flex-col h-full w-full max-w-[250px]"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => { if (market.url) window.open(market.url, '_blank', 'noopener') }}
-                  onKeyDown={e => { if (e.key === 'Enter' && market.url) window.open(market.url, '_blank', 'noopener') }}
-                >
+            <div
+              key={market.id}
+              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer flex flex-col w-64 sm:w-80 md:w-72 lg:w-64 xl:w-56 max-w-[280px]"
+              role="button"
+              tabIndex={0}
+              onClick={() => { if (market.url) window.open(market.url, '_blank', 'noopener') }}
+              onKeyDown={e => { if (e.key === 'Enter' && market.url) window.open(market.url, '_blank', 'noopener') }}
+            >
                   {/* Top section with icon and location */}
                   <div className="p-4 pb-3 flex flex-col items-center">
                     <div className="w-10 h-10 bg-orange/10 rounded-full flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-200">

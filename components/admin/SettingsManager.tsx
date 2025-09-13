@@ -64,7 +64,13 @@ export default function SettingsManager() {
         order_heading: localSettings.order_heading,
         empty_cart_message: localSettings.empty_cart_message,
         order_button_empty_text: localSettings.order_button_empty_text,
-        order_button_active_text: localSettings.order_button_active_text
+        order_button_active_text: localSettings.order_button_active_text,
+        festival_title: localSettings.festival_title,
+        festival_subtitle: localSettings.festival_subtitle,
+        festival_content: localSettings.festival_content,
+        wedding_title: localSettings.wedding_title,
+        wedding_subtitle: localSettings.wedding_subtitle,
+        wedding_content: localSettings.wedding_content
       }
 
       await SettingsService.updateSettings(settingsData)
@@ -435,6 +441,91 @@ export default function SettingsManager() {
               </p>
             </div>
 
+            {/* Festival Content */}
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Festival Section Title</label>
+              <input
+                type="text"
+                value={localSettings.festival_title || ''}
+                onChange={(e) => handleInputChange('festival_title', e.target.value)}
+                placeholder="Festival Catering"
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Main title for the festival section
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Festival Section Subtitle</label>
+              <input
+                type="text"
+                value={localSettings.festival_subtitle || ''}
+                onChange={(e) => handleInputChange('festival_subtitle', e.target.value)}
+                placeholder="Festivals and Events"
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Subtitle shown above the main title
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Festival Content</label>
+              <textarea
+                value={localSettings.festival_content || ''}
+                onChange={(e) => handleInputChange('festival_content', e.target.value)}
+                placeholder="We have 11 years of festival catering experience..."
+                rows={8}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Main content text for the festival section (supports multiple paragraphs)
+              </p>
+            </div>
+
+            {/* Wedding Content */}
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Wedding Section Title</label>
+              <input
+                type="text"
+                value={localSettings.wedding_title || ''}
+                onChange={(e) => handleInputChange('wedding_title', e.target.value)}
+                placeholder="Wedding Cakes"
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Main title for the wedding section
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Wedding Section Subtitle</label>
+              <input
+                type="text"
+                value={localSettings.wedding_subtitle || ''}
+                onChange={(e) => handleInputChange('wedding_subtitle', e.target.value)}
+                placeholder="Weddings and Special Occasions"
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Subtitle shown above the main title
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-sm font-bold text-gray">Wedding Content</label>
+              <textarea
+                value={localSettings.wedding_content || ''}
+                onChange={(e) => handleInputChange('wedding_content', e.target.value)}
+                placeholder="Yes, we cater for weddings and other special occasions too..."
+                rows={6}
+                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+              />
+              <p className="text-xs text-gray-600 mt-1">
+                Main content text for the wedding section
+              </p>
+            </div>
 
           </div>
 
@@ -500,6 +591,7 @@ export default function SettingsManager() {
             </div>
           </div>
         </div>
+
 
       <div className="flex justify-end pt-6">
         <Button 

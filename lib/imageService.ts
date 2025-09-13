@@ -18,7 +18,7 @@ export interface CreateImageData {
 }
 
 export class ImageService {
-  private static getTableName(type: 'carousel' | 'weddings' | 'festivals'): string {
+  private static getTableName(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes'): string {
     switch (type) {
       case 'carousel':
         return 'carousel_images'
@@ -26,13 +26,15 @@ export class ImageService {
         return 'wedding_images'
       case 'festivals':
         return 'festival_images'
+      case 'custom_cakes':
+        return 'custom_cake_images'
       default:
         throw new Error(`Invalid image type: ${type}`)
     }
   }
 
   // Get all images for a specific type, ordered by order_index
-  static async getImages(type: 'carousel' | 'weddings' | 'festivals'): Promise<ImageItem[]> {
+  static async getImages(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes'): Promise<ImageItem[]> {
     const tableName = this.getTableName(type)
     
     const { data, error } = await supabase
@@ -49,7 +51,7 @@ export class ImageService {
   }
 
   // Create a new image
-  static async createImage(type: 'carousel' | 'weddings' | 'festivals', imageData: CreateImageData): Promise<ImageItem> {
+  static async createImage(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes', imageData: CreateImageData): Promise<ImageItem> {
     const tableName = this.getTableName(type)
     
     const { data, error } = await supabase
@@ -66,7 +68,7 @@ export class ImageService {
   }
 
   // Update an existing image
-  static async updateImage(type: 'carousel' | 'weddings' | 'festivals', id: string, updates: Partial<ImageItem>): Promise<ImageItem> {
+  static async updateImage(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes', id: string, updates: Partial<ImageItem>): Promise<ImageItem> {
     const tableName = this.getTableName(type)
     
     const { data, error } = await supabase
@@ -84,7 +86,7 @@ export class ImageService {
   }
 
   // Delete an image (soft delete by setting active to false)
-  static async deleteImage(type: 'carousel' | 'weddings' | 'festivals', id: string): Promise<void> {
+  static async deleteImage(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes', id: string): Promise<void> {
     const tableName = this.getTableName(type)
     
     const { error } = await supabase
@@ -98,7 +100,7 @@ export class ImageService {
   }
 
   // Reorder images by updating their order_index values
-  static async reorderImages(type: 'carousel' | 'weddings' | 'festivals', imageIds: string[]): Promise<void> {
+  static async reorderImages(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes', imageIds: string[]): Promise<void> {
     const tableName = this.getTableName(type)
     
     // Update each image individually to avoid null constraint issues
@@ -115,7 +117,7 @@ export class ImageService {
   }
 
   // Upload image file to Supabase Storage
-  static async uploadImage(file: File, type: 'carousel' | 'weddings' | 'festivals'): Promise<string> {
+  static async uploadImage(file: File, type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes'): Promise<string> {
     const fileExt = file.name.split('.').pop()
     const fileName = `${type}/${Date.now()}.${fileExt}`
     
@@ -139,7 +141,7 @@ export class ImageService {
   }
 
   // Get the next available order_index for a new image
-  static async getNextOrderIndex(type: 'carousel' | 'weddings' | 'festivals'): Promise<number> {
+  static async getNextOrderIndex(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes'): Promise<number> {
     const images = await this.getImages(type)
     return images.length
   }

@@ -87,20 +87,6 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-4">
-                  <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-5 h-5 text-orange" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">Phone</h3>
-                    <p className="text-gray-600">
-                      <a href="tel:+4407765833910" className="hover:text-orange transition-colors">
-                        +44 07765 833 910
-                      </a>
-                    </p>
-                    <p className="text-sm text-gray-500 mt-1">Call or WhatsApp</p>
-                  </div>
-                </div>
 
                 <div className="flex items-start space-x-4">
                   <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">

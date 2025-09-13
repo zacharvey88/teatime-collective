@@ -179,7 +179,7 @@ const OurStory = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-6">
+                <div className="space-y-6 px-4">
                   <div className="relative w-full h-64 rounded-xl overflow-hidden shadow-lg">
                     <Image
                       src={event.image}

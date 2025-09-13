@@ -7,21 +7,21 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { 
   Upload, 
   Trash2, 
-  ChevronLeft, 
-  ChevronRight, 
   Image as ImageIcon,
   Plus,
-  Loader2
+  Loader2,
+  GripVertical
 } from 'lucide-react'
 import { ImageService, ImageItem } from '@/lib/imageService'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 
-type ImageType = 'carousel' | 'weddings' | 'festivals'
+type ImageType = 'carousel' | 'weddings' | 'festivals' | 'custom_cakes'
 
 const imageTypes: { type: ImageType; label: string }[] = [
   { type: 'carousel', label: 'Carousel Images' },
   { type: 'weddings', label: 'Wedding Images' },
-  { type: 'festivals', label: 'Festival Images' }
+  { type: 'festivals', label: 'Festival Images' },
+  { type: 'custom_cakes', label: 'Custom Cakes' }
 ]
 
 export default function ImagesManager() {
@@ -30,6 +30,8 @@ export default function ImagesManager() {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
+  const [draggedImage, setDraggedImage] = useState<ImageItem | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   const fileInputEmptyRef = useRef<HTMLInputElement>(null)
@@ -93,27 +95,58 @@ export default function ImagesManager() {
     }
   }
 
-  const handleMove = async (id: string, direction: 'up' | 'down') => {
-    const index = images.findIndex(img => img.id === id)
-    if (index === -1) return
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, image: ImageItem) => {
+    setDraggedImage(image)
+    e.dataTransfer.effectAllowed = 'move'
+  }
 
-    const newImages = [...images]
-    if (direction === 'up' && index > 0) {
-      [newImages[index], newImages[index - 1]] = [newImages[index - 1], newImages[index]]
-    } else if (direction === 'down' && index < images.length - 1) {
-      [newImages[index], newImages[index + 1]] = [newImages[index + 1], newImages[index]]
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverIndex(index)
+  }
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    
+    if (!draggedImage) return
+
+    const dragIndex = images.findIndex(img => img.id === draggedImage.id)
+    if (dragIndex === -1 || dragIndex === dropIndex) {
+      setDraggedImage(null)
+      setDragOverIndex(null)
+      return
     }
+
+    // Create new array with reordered images
+    const newImages = [...images]
+    const [draggedItem] = newImages.splice(dragIndex, 1)
+    newImages.splice(dropIndex, 0, draggedItem)
+
+    // Update local state immediately for better UX
+    setImages(newImages)
+    setDraggedImage(null)
+    setDragOverIndex(null)
 
     try {
       // Update order_index values in database
       const imageIds = newImages.map(img => img.id)
       await ImageService.reorderImages(activeTab, imageIds)
-      
-      // Reload images to get the updated order
-      await loadImages()
     } catch (err: any) {
       setError(err.message || 'Failed to reorder images')
+      // Revert local state on error
+      await loadImages()
     }
+  }
+
+  const handleDragEnd = () => {
+    setDraggedImage(null)
+    setDragOverIndex(null)
   }
 
   const handleAltTextChange = async (id: string, altText: string) => {
@@ -167,56 +200,57 @@ export default function ImagesManager() {
           {/* Images Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {images.map((image, index) => (
-              <div key={image.id} className="overflow-hidden bg-white rounded-lg border border-gray-200 shadow-sm">
+              <div 
+                key={image.id} 
+                draggable
+                onDragStart={(e) => handleDragStart(e, image)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+                className={`overflow-hidden bg-white rounded-lg border shadow-sm transition-all duration-200 ${
+                  draggedImage?.id === image.id 
+                    ? 'opacity-50 scale-95' 
+                    : dragOverIndex === index 
+                    ? 'ring-2 ring-orange-500 border-orange-500' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
                 <div className="relative aspect-[4/5] bg-gray-100">
                   <img
                     src={image.url}
                     alt={image.alt_text}
                     className="w-full h-full object-cover"
                   />
-                  <div className="absolute top-3 right-3 bg-orange text-white text-sm font-bold px-3 py-2 rounded-lg shadow-lg">
-                    #{image.order_index + 1}
+                  {/* Drag handle */}
+                  <div className="absolute top-3 left-3 bg-black bg-opacity-50 text-white p-1 rounded cursor-grab active:cursor-grabbing">
+                    <GripVertical className="w-4 h-4" />
                   </div>
                 </div>
                 <div className="p-4">
                   <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Image Label
-                      </label>
-                      <Input
-                        value={image.alt_text}
-                        onChange={(e) => handleAltTextChange(image.id, e.target.value)}
-                        placeholder="Add a description of the image"
-                        className="text-sm"
-                      />
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleMove(image.id, 'up')}
-                        disabled={index === 0}
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleMove(image.id, 'down')}
-                        disabled={index === images.length - 1}
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDelete(image.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                    <div className="flex items-end gap-2">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Image Label
+                        </label>
+                        <Input
+                          value={image.alt_text}
+                          onChange={(e) => handleAltTextChange(image.id, e.target.value)}
+                          placeholder="Add a description of the image"
+                          className="text-sm"
+                        />
+                      </div>
+                      <div className="flex flex-col justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDelete(image.id)}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 flex-shrink-0 h-10"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>

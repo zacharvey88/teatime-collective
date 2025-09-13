@@ -97,7 +97,7 @@ const Carousel: React.FC = () => {
         onClick={handlePrev}
         style={{
           position: 'absolute',
-          left: windowWidth < 768 ? '5%' : '18%',
+          left: windowWidth < 768 ? '8%' : '18%',
           top: '50%',
           transform: 'translateY(-50%)',
           zIndex: 20,
@@ -179,7 +179,7 @@ const Carousel: React.FC = () => {
         onClick={handleNext}
         style={{
           position: 'absolute',
-          right: windowWidth < 768 ? '5%' : '18%',
+          right: windowWidth < 768 ? '8%' : '18%',
           top: '50%',
           transform: 'translateY(-50%)',
           zIndex: 20,

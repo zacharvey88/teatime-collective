@@ -22,6 +22,12 @@ export interface Settings {
   empty_cart_message?: string
   order_button_empty_text?: string
   order_button_active_text?: string
+  festival_title?: string
+  festival_subtitle?: string
+  festival_content?: string
+  wedding_title?: string
+  wedding_subtitle?: string
+  wedding_content?: string
   created_at?: string
   updated_at?: string
 }
@@ -47,6 +53,12 @@ export interface UpdateSettingsData {
   empty_cart_message?: string
   order_button_empty_text?: string
   order_button_active_text?: string
+  festival_title?: string
+  festival_subtitle?: string
+  festival_content?: string
+  wedding_title?: string
+  wedding_subtitle?: string
+  wedding_content?: string
 }
 
 export class SettingsService {

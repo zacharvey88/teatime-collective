@@ -55,4 +55,20 @@ export class FrontendImageService {
 
     return data || []
   }
+
+  // Get custom cake images for the frontend
+  static async getCustomCakeImages(): Promise<FrontendImageItem[]> {
+    const { data, error } = await supabase
+      .from('custom_cake_images')
+      .select('id, url, alt_text, order_index')
+      .eq('active', true)
+      .order('order_index', { ascending: true })
+
+    if (error) {
+      console.error('Failed to fetch custom cake images:', error)
+      return []
+    }
+
+    return data || []
+  }
 } 

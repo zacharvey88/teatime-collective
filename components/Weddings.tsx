@@ -2,11 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
-import { ChevronLeft, ChevronRight, Heart, Mail } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Heart, Mail, DollarSign, X } from 'lucide-react'
 import { FrontendImageService, FrontendImageItem } from '@/lib/frontendImageService'
 import LoadingSpinner from './ui/loading-spinner'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { useSettings } from '@/lib/settingsContext'
 
 const Weddings = () => {
+  const { settings } = useSettings()
   const [currentSlide, setCurrentSlide] = useState(0)
   const [weddingImages, setWeddingImages] = useState<FrontendImageItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -120,15 +123,15 @@ const Weddings = () => {
           <div className="lg:flex-1 lg:max-w-[50%] space-y-6 order-1 lg:order-1">
             <div className={`hidden lg:flex items-center justify-center lg:justify-start space-x-2 text-orange mb-4 transition-all duration-1000 ${isAnimated ? 'animate-fade-in' : 'opacity-0'}`}>
               <Heart className="w-6 h-6" />
-              <span className="text-sm font-medium uppercase tracking-wider">Special Occasions</span>
+              <span className="text-sm font-medium uppercase tracking-wider">{settings?.wedding_subtitle || 'Special Occasions'}</span>
             </div>
 
             <h2 className={`text-4xl md:text-5xl font-bold text-orange mb-6 underline decoration-4 underline-offset-4 font-lobster text-center lg:text-left transition-all duration-1000 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
-              Weddings
+              {settings?.wedding_title || 'Weddings'}
             </h2>
 
             {/* Wedding Gallery - Mobile Only */}
-            <div className="lg:hidden w-full mb-6">
+            <div className="lg:hidden w-full mb-6 px-4">
               <div 
                 ref={carouselRef}
                 className="relative h-96 rounded-3xl overflow-hidden bg-gradient-to-br from-orange/10 to-cream"
@@ -187,18 +190,18 @@ const Weddings = () => {
               </div>
             </div>
 
-            <div className={`prose prose-lg text-gray space-y-4 transition-all duration-1000 delay-200 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
-              <p>
-                Yes, we cater for weddings and other special occasions too! And that doesn't have to mean just one magnificent tiered cake; we also do cake buffets! So for the cherry on top of your day, get in touch for a quote or to discuss your special day and let's create something magical together.
-              </p>
-
-              {/* <p>
-                Please note that I no longer sell Fondant Iced Cakes. I am able to create tiered masterpieces similar to the cakes shown below, or frosted cakes such as this one!
-              </p> */}
+            <div className={`prose prose-lg text-gray space-y-4 px-4 transition-all duration-1000 delay-200 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+              {settings?.wedding_content ? (
+                <div dangerouslySetInnerHTML={{ __html: settings.wedding_content.replace(/\n/g, '<br />') }} />
+              ) : (
+                <p>
+                  Yes, we cater for weddings and other special occasions too! And that doesn't have to mean just one magnificent tiered cake; we also do cake buffets! So for the cherry on top of your day, get in touch for a quote or to discuss your special day and let's create something magical together.
+                </p>
+              )}
             </div>
 
             {/* Wedding Services */}
-            <div className={`flex flex-row flex-wrap gap-4 transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
+            <div className={`flex flex-row flex-wrap gap-4 px-4 transition-all duration-1000 delay-300 ${isAnimated ? 'animate-slide-up' : 'opacity-0 translate-y-10'}`}>
               <div className="bg-white p-4 rounded-xl shadow-md text-center flex-1 min-w-[120px] transition-all duration-300 hover:shadow-lg hover:scale-105 hover:-translate-y-1">
                 <div className="w-8 h-8 bg-orange/10 rounded-full flex items-center justify-center mx-auto mb-3 transition-all duration-300 hover:bg-orange/20">
                   <Heart className="w-4 h-4 text-orange transition-all duration-300 hover:scale-110" />

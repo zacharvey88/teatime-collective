@@ -729,12 +729,12 @@ export default function CakeManager() {
                 {/* Sizes */}
                 <div>
                   <h4 className="font-semibold text-gray-800 mb-3">Sizes & Pricing</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                     {cake.sizes.map(size => (
                                               <div key={size.id} className={`border rounded-lg p-4 ${size.active ? 'bg-gray-50' : 'bg-gray-100 opacity-60'}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <h5 className={`font-medium ${!size.active ? 'text-gray-500' : ''}`}>{size.name}</h5>
-                          <div className="flex items-center gap-1">
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h5 className={`font-medium ${!size.active ? 'text-gray-500' : ''}`}>{size.name}</h5>
                             <Switch
                               checked={size.active}
                               onCheckedChange={async (checked) => {
@@ -745,34 +745,40 @@ export default function CakeManager() {
                                   console.error('Failed to update size availability:', error)
                                 }
                               }}
-                              className="mr-2 [&>span]:!bg-white"
+                              className="[&>span]:!bg-white"
                               style={{
                                 '--tw-bg-opacity': '1',
                                 backgroundColor: size.active ? 'var(--primary-color)' : '#d1d5db'
                               } as React.CSSProperties}
                             />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditSize(size)}
-                              className="text-blue-600 hover:text-blue-700 h-6 w-6 p-0 flex-shrink-0"
-                            >
-                              <Edit className="w-3 h-3" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteSize(size.id)}
-                              className="text-red-600 hover:text-red-700 h-6 w-6 p-0 flex-shrink-0"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              {size.description && (
+                                <p className="text-sm text-gray-600 mb-1 truncate">{size.description}</p>
+                              )}
+                              <p className="text-lg font-bold text-orange">£{size.price.toFixed(2)}</p>
+                            </div>
+                            <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditSize(size)}
+                                className="text-blue-600 hover:text-blue-700 h-6 w-6 p-0"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteSize(size.id)}
+                                className="text-red-600 hover:text-red-700 h-6 w-6 p-0"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                        {size.description && (
-                          <p className="text-sm text-gray-600 mb-2">{size.description}</p>
-                        )}
-                        <p className="text-lg font-bold text-orange">£{size.price.toFixed(2)}</p>
                       </div>
                     ))}
                     <div 

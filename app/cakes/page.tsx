@@ -9,6 +9,7 @@ import { Search, X, ChevronDown } from 'lucide-react'
 import { useSettings } from '@/lib/settingsContext'
 import WaveTransition from '@/components/WaveTransition'
 import LoadingSpinner from '@/components/ui/loading-spinner'
+import { FrontendImageService, FrontendImageItem } from '@/lib/frontendImageService'
 
 interface CakeCard {
   id: string
@@ -50,10 +51,17 @@ export default function CakesPage() {
   const [showNotification, setShowNotification] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
   const [showBackToTop, setShowBackToTop] = useState(false)
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null)
+  const [lightboxAlt, setLightboxAlt] = useState<string>('')
+  const [lightboxImages, setLightboxImages] = useState<FrontendImageItem[]>([])
+  const [lightboxCurrentIndex, setLightboxCurrentIndex] = useState<number>(0)
+  const [customCakeImages, setCustomCakeImages] = useState<FrontendImageItem[]>([])
 
   useEffect(() => {
     loadCakes()
+    loadCustomCakeImages()
   }, [])
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -63,6 +71,30 @@ export default function CakesPage() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && lightboxImage) {
+        closeLightbox()
+      } else if (event.key === 'ArrowRight' && lightboxImages.length > 0) {
+        nextImage()
+      } else if (event.key === 'ArrowLeft' && lightboxImages.length > 0) {
+        prevImage()
+      }
+    }
+
+    if (lightboxImage) {
+      document.addEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.body.style.overflow = 'unset'
+    }
+  }, [lightboxImage, lightboxImages, lightboxCurrentIndex])
 
   useEffect(() => {
     if (!searchTerm.trim()) {
@@ -195,6 +227,15 @@ export default function CakesPage() {
       setError('Failed to load cakes. Please try again later.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadCustomCakeImages = async () => {
+    try {
+      const images = await FrontendImageService.getCustomCakeImages()
+      setCustomCakeImages(images)
+    } catch (err) {
+      console.error('Failed to load custom cake images:', err)
     }
   }
 
@@ -356,6 +397,44 @@ export default function CakesPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const openLightbox = (imageUrl: string, alt: string, images?: FrontendImageItem[], currentIndex?: number) => {
+    console.log('Opening lightbox for:', alt, imageUrl)
+    setLightboxImage(imageUrl)
+    setLightboxAlt(alt)
+    if (images && currentIndex !== undefined) {
+      setLightboxImages(images)
+      setLightboxCurrentIndex(currentIndex)
+    } else {
+      setLightboxImages([])
+      setLightboxCurrentIndex(0)
+    }
+  }
+
+  const closeLightbox = () => {
+    setLightboxImage(null)
+    setLightboxAlt('')
+    setLightboxImages([])
+    setLightboxCurrentIndex(0)
+  }
+
+  const nextImage = () => {
+    if (lightboxImages.length > 0) {
+      const nextIndex = (lightboxCurrentIndex + 1) % lightboxImages.length
+      setLightboxCurrentIndex(nextIndex)
+      setLightboxImage(lightboxImages[nextIndex].url)
+      setLightboxAlt(lightboxImages[nextIndex].alt_text || 'Custom Cake Examples')
+    }
+  }
+
+  const prevImage = () => {
+    if (lightboxImages.length > 0) {
+      const prevIndex = lightboxCurrentIndex === 0 ? lightboxImages.length - 1 : lightboxCurrentIndex - 1
+      setLightboxCurrentIndex(prevIndex)
+      setLightboxImage(lightboxImages[prevIndex].url)
+      setLightboxAlt(lightboxImages[prevIndex].alt_text || 'Custom Cake Examples')
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
@@ -443,7 +522,10 @@ export default function CakesPage() {
               {/* Card Container with Gradient Background */}
               <div className="bg-light-cream rounded-2xl shadow-xl overflow-hidden h-[600px] flex flex-col max-w-sm mx-auto w-full relative">
                 {/* Image Container with Overlay - Fixed height */}
-                <div className="relative h-48 bg-gradient-to-br from-orange-100 to-amber-100 overflow-hidden flex-shrink-0">
+                <div 
+                  className="relative h-48 bg-gradient-to-br from-orange-100 to-amber-100 overflow-hidden flex-shrink-0 cursor-pointer"
+                  onClick={() => cakeCard.imageUrl && openLightbox(cakeCard.imageUrl, cakeCard.name)}
+                >
                   {cakeCard.imageUrl ? (
                     <Image
                       src={cakeCard.imageUrl}
@@ -466,6 +548,17 @@ export default function CakesPage() {
                   
                   {/* Gradient Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-orange-900/20 via-transparent to-transparent"></div>
+                  
+                  {/* Magnifying glass icon on hover */}
+                  {cakeCard.imageUrl && (
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg">
+                        <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
 
                 </div>
                 
@@ -481,19 +574,19 @@ export default function CakesPage() {
                     <h3 className="text-xl font-bold text-gray-800 text-center leading-tight">{cakeCard.name}</h3>
                   </div>
                   
-                  {/* Frilly Pricing Toggle Link or Spacer */}
-                  <div className="text-center -mt-2 mb-3">
-                    {cakeCard.isConsolidated && cakeCard.categoryOptions ? (
-                      <button
-                        onClick={() => toggleFrillyPricing(cakeCard.id)}
-                        className="text-sm text-orange-600 hover:text-orange-700 underline decoration-dotted underline-offset-4 transition-colors duration-200"
-                      >
-                        {showFrillyPricing[cakeCard.id] ? 'See Regular Pricing' : 'See Frilly Pricing'}
-                      </button>
-                    ) : (
-                      <div className="h-5"></div>
-                    )}
-                  </div>
+                                {/* Frilly Pricing Toggle Link or Spacer */}
+                                <div className="text-center -mt-2 mb-3">
+                                  {cakeCard.isConsolidated && cakeCard.categoryOptions ? (
+                                    <button
+                                      onClick={() => toggleFrillyPricing(cakeCard.id)}
+                                      className="text-sm font-semibold text-orange-600 hover:text-orange-700 hover:bg-orange-50 px-3 py-1 rounded-full border border-orange-200 hover:border-orange-300 transition-all duration-200 shadow-sm hover:shadow-md"
+                                    >
+                                      {showFrillyPricing[cakeCard.id] ? 'See Regular Pricing' : 'See Frilly Pricing'}
+                                    </button>
+                                  ) : (
+                                    <div className="h-5"></div>
+                                  )}
+                                </div>
                   
                   
 
@@ -642,31 +735,86 @@ export default function CakesPage() {
             <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl shadow-xl overflow-hidden h-[600px] flex flex-col max-w-sm mx-auto w-full border-2 border-dashed border-orange-300 hover:border-orange-400 transition-all duration-300">
               {/* Image Container - Fixed height */}
               <div className="relative h-56 bg-gradient-to-br from-orange-100 to-amber-100 overflow-hidden flex items-center justify-center flex-shrink-0">
-                <div className="text-center">
-                  <div className="w-20 h-20 bg-gradient-to-br from-orange-200 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-orange-200">
-                    <svg className="w-10 h-10 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V21C3 22.1 3.9 23 5 23H19C20.1 23 21 22.1 21 21V9ZM19 21H5V3H13V9H19V21Z"/>
-                    </svg>
+                {customCakeImages.length > 0 ? (
+                  <div className="relative w-full h-full">
+                    {/* Main image */}
+                    <div 
+                      className="relative w-full h-full cursor-pointer"
+                      onClick={() => openLightbox(customCakeImages[0].url, 'Custom Cake Examples', customCakeImages, 0)}
+                    >
+                      <Image
+                        src={customCakeImages[0].url}
+                        alt={customCakeImages[0].alt_text || 'Custom Cake Examples'}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-orange-900/20 via-transparent to-transparent"></div>
+                      {/* Magnifying glass icon on hover */}
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <div className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-lg">
+                          <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Additional images as small thumbnails */}
+                    {customCakeImages.length > 1 && (
+                      <div className="absolute bottom-2 right-2 flex space-x-1">
+                        {customCakeImages.slice(1, 4).map((image, index) => (
+                          <div
+                            key={image.id}
+                            className="relative w-8 h-8 rounded border-2 border-white shadow-md cursor-pointer overflow-hidden"
+                            onClick={() => openLightbox(image.url, image.alt_text || 'Custom Cake Examples', customCakeImages, index + 1)}
+                          >
+                            <Image
+                              src={image.url}
+                              alt={image.alt_text || 'Custom Cake Examples'}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        ))}
+                        {customCakeImages.length > 4 && (
+                          <div className="w-8 h-8 rounded border-2 border-white shadow-md bg-black bg-opacity-50 flex items-center justify-center">
+                            <span className="text-white text-xs font-bold">+{customCakeImages.length - 4}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <p className="text-orange-700 text-sm font-medium">Custom Design</p>
-                </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-gradient-to-br from-orange-200 to-amber-200 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-orange-200">
+                      <svg className="w-10 h-10 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V21C3 22.1 3.9 23 5 23H19C20.1 23 21 22.1 21 21V9ZM19 21H5V3H13V9H19V21Z"/>
+                      </svg>
+                    </div>
+                    <p className="text-orange-700 text-sm font-medium">Custom Design</p>
+                  </div>
+                )}
               </div>
               
               {/* Content */}
-              <div className="p-6 relative flex-1 flex flex-col">
+              <div className="px-8 py-6 relative flex-1 flex flex-col">
                 {/* Decorative Elements */}
                 <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
                   <div className="w-16 h-1 bg-gradient-to-r from-orange-400 to-amber-400 rounded-full"></div>
                 </div>
                 
                 {/* Card Title */}
-                <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">Can't find what you're looking for?</h3>
+                <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">
+                  Can't find what you're<br />
+                  looking for?
+                </h3>
                 
                 {/* Description */}
                 <div className="flex-1 mb-6">
                   <div className="text-center">
                     <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                      Have a special design in mind? We'd love to create something unique just for you!
+                      If you have a special design in mind, we'd love to create something unique just for you!
                     </p>
                     <div className="flex justify-center space-x-6 mt-4">
                       <div className="flex flex-col items-center text-center">
@@ -732,6 +880,69 @@ export default function CakesPage() {
 
       <WaveTransition direction="down" color="#FFF5E0" />
       <Footer />
+
+      {/* Lightbox */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-50 p-4"
+          onClick={closeLightbox}
+        >
+          <div className="relative max-w-4xl max-h-[calc(100vh-2rem)] overflow-hidden rounded-lg">
+            <button
+              onClick={closeLightbox}
+              className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* Navigation arrows - only show if there are multiple images */}
+            {lightboxImages.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    prevImage()
+                  }}
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10 bg-black bg-opacity-50 rounded-full p-2"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    nextImage()
+                  }}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors z-10 bg-black bg-opacity-50 rounded-full p-2"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </>
+            )}
+            
+            <Image
+              src={lightboxImage}
+              alt={lightboxAlt}
+              width={800}
+              height={600}
+              className="max-w-full max-h-full object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+            {lightboxImages.length > 1 && (
+              <div className="absolute bottom-4 left-4 right-4 text-center">
+                <p className="text-white text-lg font-medium bg-black bg-opacity-50 px-4 py-2 rounded-lg">
+                  {lightboxCurrentIndex + 1} of {lightboxImages.length}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
