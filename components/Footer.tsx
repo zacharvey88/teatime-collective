@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { MapPin, Phone, Mail, Instagram, Facebook, Twitter, Youtube, Linkedin } from 'lucide-react'
+import { MapPin, Phone, Mail, Instagram, Facebook, Twitter, Youtube, Linkedin, Globe } from 'lucide-react'
 import { ContactInfoService, ContactInfo } from '@/lib/contactInfoService'
 import { useSettings } from '@/lib/settingsContext'
 import Image from 'next/image'
