@@ -32,9 +32,19 @@ export default function ContactPage() {
     setSubmitError('')
 
     try {
-      // Here you would typically send the contact form data to your backend
-      // For now, we'll simulate a successful submission
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const response = await fetch('/api/send-contact-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to send message')
+      }
       
       setSubmitSuccess(true)
       setFormData({ name: '', email: '', subject: '', message: '' })
