@@ -47,8 +47,8 @@ export default function AdminPage() {
         return <ReviewsManager />
       case 'contact':
         return <ContactManager />
-      case 'markets':
-        return <MarketManager />
+        case 'markets':
+          return <MarketManager />
       case 'holidays':
         return <HolidayManager />
       case 'settings':

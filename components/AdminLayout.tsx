@@ -19,7 +19,8 @@ import {
   Home,
   ShoppingCart,
   Calendar,
-  Star
+  Star,
+  Store
 } from 'lucide-react'
 import Image from 'next/image'
 import { useSettings } from '@/lib/settingsContext'
@@ -38,7 +39,7 @@ const baseNavigationItems = [
   { id: 'cakes', label: 'Cake Management', icon: CakeSlice },
   { id: 'reviews', label: 'Reviews', icon: Star },
   { id: 'contact', label: 'Contact Info', icon: Mail },
-  { id: 'markets', label: 'Market Dates', icon: MapPin },
+  { id: 'markets', label: 'Markets', icon: Store },
   { id: 'holidays', label: 'Holidays', icon: Calendar },
   { id: 'settings', label: 'Settings', icon: Settings },
 ]

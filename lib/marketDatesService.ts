@@ -2,50 +2,102 @@ import { supabase } from './supabaseClient'
 
 export interface MarketDate {
   id: string
-  name: string
+  market_id: string
   date: string
   start_time: string
   end_time: string
-  location: string
-  url?: string
-  active: boolean
   created_at?: string
   updated_at?: string
+  // Joined market data
+  market_name?: string
+  market_location?: string
+  market_url?: string
 }
 
 export interface CreateMarketDateData {
-  name: string
+  market_id: string
   date: string
   start_time: string
   end_time: string
-  location: string
-  url?: string
-  active?: boolean
 }
 
 export class MarketDatesService {
-  // Get all market dates (admin)
+  // Get all market dates with market info (admin)
   static async getMarketDates(): Promise<MarketDate[]> {
     const { data, error } = await supabase
       .from('market_dates')
-      .select('*')
+      .select(`
+        *,
+        markets!inner(
+          name,
+          location,
+          url
+        )
+      `)
       .order('date', { ascending: true })
 
     if (error) throw new Error('Failed to fetch market dates')
-    return data || []
+    
+    // Transform the data to flatten the market info
+    return data?.map(date => ({
+      ...date,
+      market_name: date.markets?.name,
+      market_location: date.markets?.location,
+      market_url: date.markets?.url
+    })) || []
   }
 
-  // Get active market dates (frontend)
+  // Get active market dates with market info (frontend)
   static async getActiveMarketDates(): Promise<MarketDate[]> {
     const { data, error } = await supabase
       .from('market_dates')
-      .select('*')
-      .eq('active', true)
+      .select(`
+        *,
+        markets!inner(
+          name,
+          location,
+          url
+        )
+      `)
+      .eq('markets.active', true)
       .gte('date', new Date().toISOString().split('T')[0]) // Only future dates
       .order('date', { ascending: true })
 
     if (error) throw new Error('Failed to fetch active market dates')
-    return data || []
+    
+    // Transform the data to flatten the market info
+    return data?.map(date => ({
+      ...date,
+      market_name: date.markets?.name,
+      market_location: date.markets?.location,
+      market_url: date.markets?.url
+    })) || []
+  }
+
+  // Get market dates for a specific market
+  static async getMarketDatesByMarketId(marketId: string): Promise<MarketDate[]> {
+    const { data, error } = await supabase
+      .from('market_dates')
+      .select(`
+        *,
+        markets!inner(
+          name,
+          location,
+          url
+        )
+      `)
+      .eq('market_id', marketId)
+      .order('date', { ascending: true })
+
+    if (error) throw new Error('Failed to fetch market dates for market')
+    
+    // Transform the data to flatten the market info
+    return data?.map(date => ({
+      ...date,
+      market_name: date.markets?.name,
+      market_location: date.markets?.location,
+      market_url: date.markets?.url
+    })) || []
   }
 
   // Create new market date
@@ -53,24 +105,57 @@ export class MarketDatesService {
     const { data, error } = await supabase
       .from('market_dates')
       .insert([marketData])
-      .select()
+      .select(`
+        *,
+        markets!inner(
+          name,
+          location,
+          url
+        )
+      `)
       .single()
 
     if (error) throw new Error('Failed to create market date')
-    return data
+    
+    // Transform the data to flatten the market info
+    return {
+      ...data,
+      market_name: data.markets?.name,
+      market_location: data.markets?.location,
+      market_url: data.markets?.url,
+      market_description: data.markets?.description
+    }
   }
 
   // Update market date
   static async updateMarketDate(id: string, updates: Partial<MarketDate>): Promise<MarketDate> {
+    // Remove market info from updates as it shouldn't be updated here
+    const { market_name, market_location, market_url, ...dateUpdates } = updates
+    
     const { data, error } = await supabase
       .from('market_dates')
-      .update(updates)
+      .update(dateUpdates)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        markets!inner(
+          name,
+          location,
+          url
+        )
+      `)
       .single()
 
     if (error) throw new Error('Failed to update market date')
-    return data
+    
+    // Transform the data to flatten the market info
+    return {
+      ...data,
+      market_name: data.markets?.name,
+      market_location: data.markets?.location,
+      market_url: data.markets?.url,
+      market_description: data.markets?.description
+    }
   }
 
   // Delete market date
@@ -83,8 +168,5 @@ export class MarketDatesService {
     if (error) throw new Error('Failed to delete market date')
   }
 
-  // Toggle market date active status
-  static async toggleActive(id: string, active: boolean): Promise<MarketDate> {
-    return this.updateMarketDate(id, { active })
-  }
+  // Note: Market dates don't have an active status - they inherit from their parent market
 } 

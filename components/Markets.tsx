@@ -20,15 +20,8 @@ const Markets = () => {
       setLoading(true)
       const marketDates = await MarketDatesService.getActiveMarketDates()
       
-      // Ensure we always show an even number of markets for balanced rows
-      let displayCount = marketDates.length
-      if (displayCount % 2 !== 0) {
-        // If odd number, reduce by 1 to make it even
-        displayCount = Math.max(2, displayCount - 1)
-      }
-      
-      // Limit to maximum of 6 markets (ensures even distribution)
-      displayCount = Math.min(displayCount, 6)
+      // Show all market dates (up to a reasonable limit)
+      const displayCount = Math.min(marketDates.length, 12)
       
       setMarkets(marketDates.slice(0, displayCount))
     } catch (err: any) {
@@ -91,11 +84,11 @@ const Markets = () => {
               return (
             <div
               key={market.id}
-              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer flex flex-col w-64 sm:w-80 md:w-72 lg:w-64 xl:w-56 max-w-[280px]"
+              className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 group cursor-pointer flex flex-col w-56 sm:w-64 md:w-56 lg:w-52 xl:w-48 max-w-[240px]"
               role="button"
               tabIndex={0}
-              onClick={() => { if (market.url) window.open(market.url, '_blank', 'noopener') }}
-              onKeyDown={e => { if (e.key === 'Enter' && market.url) window.open(market.url, '_blank', 'noopener') }}
+              onClick={() => { if (market.market_url) window.open(market.market_url, '_blank', 'noopener') }}
+              onKeyDown={e => { if (e.key === 'Enter' && market.market_url) window.open(market.market_url, '_blank', 'noopener') }}
             >
                   {/* Top section with icon and location */}
                   <div className="p-4 pb-3 flex flex-col items-center">
@@ -104,7 +97,7 @@ const Markets = () => {
                     </div>
                     
                     <h3 className="text-base font-semibold text-gray text-center leading-tight">
-                      {market.name}
+                      {market.market_name}
                     </h3>
                   </div>
 

@@ -536,8 +536,8 @@ export default function CakesPage() {
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center">
-                        <div className="w-20 h-20 bg-gradient-to-br from-orange-50 to-amber-50 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-orange-100">
-                          <svg className="w-10 h-10 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+                    <div className="w-20 h-20 bg-gradient-to-br from-orange-50 to-amber-50 rounded-full flex items-center justify-center mx-auto mb-3 shadow-md border border-orange-100">
+                      <svg className="w-10 h-10 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 1H5C3.9 1 3 1.9 3 3V21C3 22.1 3.9 23 5 23H19C20.1 23 21 22.1 21 21V9ZM19 21H5V3H13V9H19V21Z"/>
                           </svg>
                         </div>
@@ -818,24 +818,24 @@ export default function CakesPage() {
                     </p>
                     <div className="flex justify-center space-x-6 mt-4">
                       <div className="flex flex-col items-center text-center">
-                        <div className="w-8 h-8 bg-orange-200 rounded-full flex items-center justify-center mb-2">
-                          <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mb-2">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.6 0 12 0zm6 14h-4v4c0 1.1-.9 2-2 2s-2-.9-2-2v-4H6c-1.1 0-2-.9-2-2s.9-2 2-2h4V6c0-1.1.9-2 2-2s2 .9 2 2v4h4c1.1 0 2 .9 2 2s-.9 2-2 2z"/>
                           </svg>
                         </div>
                         <span className="text-xs text-gray-600">Custom flavors</span>
                       </div>
                       <div className="flex flex-col items-center text-center">
-                        <div className="w-8 h-8 bg-orange-200 rounded-full flex items-center justify-center mb-2">
-                          <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mb-2">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M20.71 5.63l-2.34-2.34c-.39-.39-1.02-.39-1.41 0L7 12.96V17h4.04l10.71-10.71c.39-.39.39-1.02 0-1.41zM5 15v2h2v-2H5z"/>
                           </svg>
                         </div>
                         <span className="text-xs text-gray-600">Decorations</span>
                       </div>
                       <div className="flex flex-col items-center text-center">
-                        <div className="w-8 h-8 bg-orange-200 rounded-full flex items-center justify-center mb-2">
-                          <svg className="w-4 h-4 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
+                        <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mb-2">
+                          <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                           </svg>
                         </div>

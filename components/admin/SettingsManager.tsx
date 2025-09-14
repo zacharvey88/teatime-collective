@@ -14,7 +14,12 @@ import {
   Info,
   AlertCircle,
   CheckCircle,
-  X
+  X,
+  Settings as SettingsIcon,
+  Home,
+  ShoppingCart,
+  Heart,
+  Music
 } from 'lucide-react'
 import { SettingsService, Settings, UpdateSettingsData } from '@/lib/settingsService'
 import { useSettings } from '@/lib/settingsContext'
@@ -29,7 +34,16 @@ export default function SettingsManager() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [modalType, setModalType] = useState<'success' | 'error'>('success')
   const [modalMessage, setModalMessage] = useState('')
+  const [activeTab, setActiveTab] = useState('general')
   const logoInputRef = useRef<HTMLInputElement>(null)
+
+  const tabs = [
+    { id: 'general', name: 'General', icon: SettingsIcon },
+    { id: 'home', name: 'Home Page', icon: Home },
+    { id: 'orders', name: 'Orders', icon: ShoppingCart },
+    { id: 'festivals', name: 'Festivals', icon: Music },
+    { id: 'weddings', name: 'Weddings', icon: Heart }
+  ]
 
   // Sync local settings with context settings
   useEffect(() => {
@@ -128,10 +142,33 @@ export default function SettingsManager() {
         <p className="text-gray-600">Manage your website settings and branding</p>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          {tabs.map((tab) => {
+            const Icon = tab.icon
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
+                  activeTab === tab.id
+                    ? 'border-orange text-orange'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.name}</span>
+              </button>
+            )
+          })}
+        </nav>
+      </div>
 
-
-              <div className="space-y-8">
-          {/* General Settings */}
+      {/* Tab Content */}
+      <div className="space-y-8">
+        {/* General Settings Tab */}
+        {activeTab === 'general' && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
               <Info className="w-5 h-5 mr-2 text-orange" />
@@ -217,8 +254,212 @@ export default function SettingsManager() {
               </div>
             </div>
           </div>
+        )}
 
-          {/* SEO Settings */}
+        {/* Home Page Tab */}
+        {activeTab === 'home' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <Home className="w-5 h-5 mr-2 text-orange" />
+              Home Page Settings
+            </h2>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-bold text-gray">Home Page Title</label>
+                <input
+                  type="text"
+                  value={localSettings.home_title || ''}
+                  onChange={(e) => handleInputChange('home_title', e.target.value)}
+                  placeholder="Delicious Vegan Cakes"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Main title displayed on the homepage
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray">Home Page Subtitle</label>
+                <input
+                  type="text"
+                  value={localSettings.home_subheading || ''}
+                  onChange={(e) => handleInputChange('home_subheading', e.target.value)}
+                  placeholder="Vegan bakery, market traders and amazing cake makers since 2013"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Subtitle displayed below the main title
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Orders Tab */}
+        {activeTab === 'orders' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <ShoppingCart className="w-5 h-5 mr-2 text-orange" />
+              Order Settings
+            </h2>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-bold text-gray">Empty Cart Message</label>
+                <input
+                  type="text"
+                  value={localSettings.empty_cart_message || ''}
+                  onChange={(e) => handleInputChange('empty_cart_message', e.target.value)}
+                  placeholder="Your cart is empty. Add some delicious cakes!"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Message shown when the cart is empty
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray">Order Button Text (Empty Cart)</label>
+                <input
+                  type="text"
+                  value={localSettings.order_button_empty_text || ''}
+                  onChange={(e) => handleInputChange('order_button_empty_text', e.target.value)}
+                  placeholder="Order Cakes Here"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Text for the order button when cart is empty
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray">Order Button Text (Active Cart)</label>
+                <input
+                  type="text"
+                  value={localSettings.order_button_active_text || ''}
+                  onChange={(e) => handleInputChange('order_button_active_text', e.target.value)}
+                  placeholder="Proceed to Order"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Text for the order button when cart has items
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Festivals Tab */}
+        {activeTab === 'festivals' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <Music className="w-5 h-5 mr-2 text-orange" />
+              Festival Section Settings
+            </h2>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-bold text-gray">Festival Section Title</label>
+                <input
+                  type="text"
+                  value={localSettings.festival_title || ''}
+                  onChange={(e) => handleInputChange('festival_title', e.target.value)}
+                  placeholder="Festival Catering"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Main title for the festival section
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray">Festival Section Subtitle</label>
+                <input
+                  type="text"
+                  value={localSettings.festival_subtitle || ''}
+                  onChange={(e) => handleInputChange('festival_subtitle', e.target.value)}
+                  placeholder="Festivals and Events"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Subtitle shown above the main title
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray">Festival Content</label>
+                <textarea
+                  value={localSettings.festival_content || ''}
+                  onChange={(e) => handleInputChange('festival_content', e.target.value)}
+                  placeholder="We have 11 years of festival catering experience..."
+                  rows={8}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Main content text for the festival section (supports multiple paragraphs)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Weddings Tab */}
+        {activeTab === 'weddings' && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
+              <Heart className="w-5 h-5 mr-2 text-orange" />
+              Wedding Section Settings
+            </h2>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="text-sm font-bold text-gray">Wedding Section Title</label>
+                <input
+                  type="text"
+                  value={localSettings.wedding_title || ''}
+                  onChange={(e) => handleInputChange('wedding_title', e.target.value)}
+                  placeholder="Wedding Cakes"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Main title for the wedding section
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray">Wedding Section Subtitle</label>
+                <input
+                  type="text"
+                  value={localSettings.wedding_subtitle || ''}
+                  onChange={(e) => handleInputChange('wedding_subtitle', e.target.value)}
+                  placeholder="Weddings and Special Occasions"
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Subtitle shown above the main title
+                </p>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold text-gray">Wedding Content</label>
+                <textarea
+                  value={localSettings.wedding_content || ''}
+                  onChange={(e) => handleInputChange('wedding_content', e.target.value)}
+                  placeholder="Yes, we cater for weddings and other special occasions too..."
+                  rows={8}
+                  className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
+                />
+                <p className="text-xs text-gray-600 mt-1">
+                  Main content text for the wedding section (supports multiple paragraphs)
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SEO Settings */}
+        {activeTab === 'general' && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
               <Info className="w-5 h-5 mr-2 text-orange" />
@@ -252,284 +493,10 @@ export default function SettingsManager() {
               </div>
             </div>
           </div>
+        )}
 
-          {/* Home Page Settings */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
-              <Info className="w-5 h-5 mr-2 text-orange" />
-              Home Page Settings
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-bold text-gray">Home Page Title</label>
-                <Input
-                  value={localSettings.home_title || ''}
-                  onChange={(e) => handleInputChange('home_title', e.target.value)}
-                  placeholder="Teatime Collective"
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Main heading displayed on the home page
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-bold text-gray">Home Page Subheading</label>
-                <Input
-                  value={localSettings.home_subheading || ''}
-                  onChange={(e) => handleInputChange('home_subheading', e.target.value)}
-                  placeholder="Delicious Vegan Cakes & Bakes"
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Subtitle displayed below the main heading on the home page
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Cakes Page Settings */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
-              <Info className="w-5 h-5 mr-2 text-orange" />
-              Cakes Page Settings
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-bold text-gray">Cakes Page Heading</label>
-                <Input
-                  value={localSettings.cakes_heading || ''}
-                  onChange={(e) => handleInputChange('cakes_heading', e.target.value)}
-                  placeholder="Our Cakes"
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Main heading displayed on the cakes page
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-bold text-gray">Cakes Page Subheading</label>
-                <Input
-                  value={localSettings.cakes_subheading || ''}
-                  onChange={(e) => handleInputChange('cakes_subheading', e.target.value)}
-                  placeholder="Plant-powered cakes so good, even the cows are jealous! 🌱🍰✨"
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Subtitle that appears below the main heading on the cakes page
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Order Page Settings */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
-              <Info className="w-5 h-5 mr-2 text-orange" />
-              Order Page Settings
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="text-sm font-bold text-gray">Order Page Heading</label>
-                <Input
-                  value={localSettings.order_heading || ''}
-                  onChange={(e) => handleInputChange('order_heading', e.target.value)}
-                  placeholder="Order Your Cakes"
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Main heading displayed on the order page
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-bold text-gray">Order Page Subheading</label>
-                <Input
-                  value={localSettings.order_subheading || ''}
-                  onChange={(e) => handleInputChange('order_subheading', e.target.value)}
-                  placeholder="Don't leave them in the cart - someone else will eat them!"
-                  className="mt-1"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  Subtitle that appears below the main heading on the order page
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Order Page Notice</label>
-              <textarea
-                value={localSettings.payment_notice || ''}
-                onChange={(e) => handleInputChange('payment_notice', e.target.value)}
-                placeholder="Please note: No payment will be required at this point. I will review your order and get back to you to confirm or discuss options. Thanks"
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
-                rows={4}
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                This notice will appear on the order page above the submit button
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Cart Notice</label>
-              <textarea
-                value={localSettings.cart_notice || ''}
-                onChange={(e) => handleInputChange('cart_notice', e.target.value)}
-                placeholder="Prices shown are estimates and may vary based on special requests, decorations, dietary requirements, and other factors. Final pricing will be confirmed when we review your order."
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
-                rows={4}
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                This notice will appear below the cart total on the order page
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Custom Order Notice</label>
-              <textarea
-                value={localSettings.custom_order_notice || ''}
-                onChange={(e) => handleInputChange('custom_order_notice', e.target.value)}
-                placeholder="Custom orders require special pricing based on complexity, ingredients, and design requirements. We'll provide a detailed quote after reviewing your specifications."
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
-                rows={4}
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                This notice will appear when custom cakes are in the cart
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Empty Cart Message</label>
-              <textarea
-                value={localSettings.empty_cart_message || ''}
-                onChange={(e) => handleInputChange('empty_cart_message', e.target.value)}
-                placeholder="Oh no! There's no cakes in your cart."
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent resize-none"
-                rows={3}
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                This message will appear when the cart is empty
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Order Button - Empty Cart</label>
-              <input
-                type="text"
-                value={localSettings.order_button_empty_text || ''}
-                onChange={(e) => handleInputChange('order_button_empty_text', e.target.value)}
-                placeholder="Add cakes to cart first"
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                Text shown on the order button when cart is empty
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Order Button - Active Cart</label>
-              <input
-                type="text"
-                value={localSettings.order_button_active_text || ''}
-                onChange={(e) => handleInputChange('order_button_active_text', e.target.value)}
-                placeholder="Let there be cake!"
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                Text shown on the order button when cart has items
-              </p>
-            </div>
-
-            {/* Festival Content */}
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Festival Section Title</label>
-              <input
-                type="text"
-                value={localSettings.festival_title || ''}
-                onChange={(e) => handleInputChange('festival_title', e.target.value)}
-                placeholder="Festival Catering"
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                Main title for the festival section
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Festival Section Subtitle</label>
-              <input
-                type="text"
-                value={localSettings.festival_subtitle || ''}
-                onChange={(e) => handleInputChange('festival_subtitle', e.target.value)}
-                placeholder="Festivals and Events"
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                Subtitle shown above the main title
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Festival Content</label>
-              <textarea
-                value={localSettings.festival_content || ''}
-                onChange={(e) => handleInputChange('festival_content', e.target.value)}
-                placeholder="We have 11 years of festival catering experience..."
-                rows={8}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                Main content text for the festival section (supports multiple paragraphs)
-              </p>
-            </div>
-
-            {/* Wedding Content */}
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Wedding Section Title</label>
-              <input
-                type="text"
-                value={localSettings.wedding_title || ''}
-                onChange={(e) => handleInputChange('wedding_title', e.target.value)}
-                placeholder="Wedding Cakes"
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                Main title for the wedding section
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Wedding Section Subtitle</label>
-              <input
-                type="text"
-                value={localSettings.wedding_subtitle || ''}
-                onChange={(e) => handleInputChange('wedding_subtitle', e.target.value)}
-                placeholder="Weddings and Special Occasions"
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                Subtitle shown above the main title
-              </p>
-            </div>
-
-            <div className="mt-6">
-              <label className="text-sm font-bold text-gray">Wedding Content</label>
-              <textarea
-                value={localSettings.wedding_content || ''}
-                onChange={(e) => handleInputChange('wedding_content', e.target.value)}
-                placeholder="Yes, we cater for weddings and other special occasions too..."
-                rows={6}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange focus:border-transparent"
-              />
-              <p className="text-xs text-gray-600 mt-1">
-                Main content text for the wedding section
-              </p>
-            </div>
-
-          </div>
-
-          {/* Feature Toggles */}
+        {/* Feature Toggles */}
+        {activeTab === 'general' && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-xl font-bold text-gray mb-6 flex items-center">
               <Info className="w-5 h-5 mr-2 text-orange" />
@@ -590,10 +557,10 @@ export default function SettingsManager() {
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-
-      <div className="flex justify-end pt-6">
+        {/* Save Button */}
+        <div className="flex justify-end pt-6">
         <Button 
           onClick={handleSave}
           disabled={saving}
@@ -611,6 +578,7 @@ export default function SettingsManager() {
             </>
           )}
         </Button>
+        </div>
       </div>
 
       {/* Success/Error Modal */}
