@@ -229,11 +229,11 @@ const Weddings = () => {
 
             <div className="flex justify-center lg:justify-start px-4 lg:px-0">
               <a
-                href="/contact"
+                href="/cakes"
                 className="inline-flex items-center space-x-2 bg-orange text-white px-6 py-3 rounded-lg font-medium text-base hover:bg-orange-900 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 shadow-md hover:shadow-lg"
               >
                 <Mail className="w-4 h-4" />
-                <span>Get in Touch</span>
+                <span>Order Wedding Cakes</span>
               </a>
             </div>
 
