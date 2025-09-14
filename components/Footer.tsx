@@ -201,9 +201,6 @@ const Footer = () => {
             </div>
 
             <div className="flex space-x-6 text-sm">
-              <Link href="/contact" className="text-gray hover:text-orange transition-colors">
-                Contact
-              </Link>
               <Link href="/privacy" className="text-gray hover:text-orange transition-colors">
                 Privacy Policy
               </Link>

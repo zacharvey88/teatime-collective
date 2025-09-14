@@ -87,8 +87,7 @@ const Navigation = () => {
     { name: 'Markets', href: '/#markets' },
     { name: 'Festivals', href: '/#festivals' },
     { name: 'Weddings', href: '/#weddings' },
-    { name: 'Our Story', href: '/#story' },
-    { name: 'Contact', href: '/contact' }
+    { name: 'Our Story', href: '/#story' }
   ]
 
   const handleMenuMouseEnter = () => {

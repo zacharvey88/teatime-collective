@@ -1070,6 +1070,11 @@ export default function OrderPage() {
               <p className="text-gray-600 mb-4">
                 Thank you for your order. We'll review your request and get back to you as soon as possible.
               </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Note:</strong> Email notifications are temporarily disabled. We'll contact you directly to confirm your order details and arrange collection.
+                </p>
+              </div>
               
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
                 <h4 className="text-sm font-semibold text-orange-800 mb-2">📍 Collection Information</h4>

@@ -44,11 +44,11 @@ export async function POST(request: NextRequest) {
       orderDate: new Date(order.created_at).toLocaleDateString('en-GB')
     }
 
-    // Send emails
-    await Promise.all([
-      EmailService.sendOrderConfirmation(emailData),
-      EmailService.sendOrderNotification(emailData)
-    ])
+    // Send emails - TEMPORARILY DISABLED
+    // await Promise.all([
+    //   EmailService.sendOrderConfirmation(emailData),
+    //   EmailService.sendOrderNotification(emailData)
+    // ])
 
     return NextResponse.json({ success: true })
   } catch (error) {
