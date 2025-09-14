@@ -182,7 +182,7 @@ export default function MarketManager() {
   }
 
   const handleAddDate = async () => {
-    if (!newDate.date || !newDate.start_time || !newDate.end_time) {
+    if (!newDate.market_id || !newDate.date || !newDate.start_time || !newDate.end_time) {
       setDialogError('Date, start time, and end time are required')
       return
     }
