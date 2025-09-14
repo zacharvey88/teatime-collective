@@ -7,7 +7,7 @@ const mailerSend = new MailerSend({
 })
 
 // From email (using MailerSend verified domain)
-const FROM_EMAIL = 'orders@test-vz9dlem3z0p4kj50.mlsender.net'
+const FROM_EMAIL = process.env.MAILERSEND_FROM_EMAIL || 'noreply@teatimecollective.co.uk'
 
 export interface OrderEmailData {
   orderId: string
