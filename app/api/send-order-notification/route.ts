@@ -72,7 +72,9 @@ export async function POST(request: NextRequest) {
             
             if (cake && cakeSize) {
               // Append category name to cake name if it exists
-              const categoryName = cake.cake_categories?.name
+              const categoryName = Array.isArray(cake.cake_categories) 
+                ? cake.cake_categories[0]?.name 
+                : cake.cake_categories?.name
               cakeName = categoryName ? `${cake.name} - ${categoryName}` : cake.name
               sizeName = cakeSize.name
               console.log('Updated cake name:', cakeName, 'size:', sizeName)
