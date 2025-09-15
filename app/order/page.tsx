@@ -439,7 +439,27 @@ export default function OrderPage() {
       }
 
       const orderRequest = await OrderService.createOrderRequest(orderData)
-      await OrderService.sendOrderNotification(orderRequest)
+      
+      // Send email notifications
+      try {
+        const response = await fetch('/api/send-order-notification', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ orderId: orderRequest.id }),
+        })
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Failed to send email notifications:', errorText)
+          // Don't throw error - order was created successfully, just email failed
+        } else {
+          console.log('Email notifications sent successfully')
+        }
+      } catch (error) {
+        console.error('Error sending email notifications:', error)
+      }
 
       setSubmitSuccess(true)
       setFormData({ name: '', email: '', phone: '', dateRequired: '', allergies: '', otherInfo: '' })
@@ -1070,11 +1090,6 @@ export default function OrderPage() {
               <p className="text-gray-600 mb-4">
                 Thank you for your order. We'll review your request and get back to you as soon as possible.
               </p>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> Email notifications are temporarily disabled. We'll contact you directly to confirm your order details and arrange collection.
-                </p>
-              </div>
               
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
                 <h4 className="text-sm font-semibold text-orange-800 mb-2">📍 Collection Information</h4>

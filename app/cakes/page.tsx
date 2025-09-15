@@ -27,6 +27,7 @@ interface CakeCard {
   // For consolidated cakes with multiple category options
   categoryOptions?: Array<{
     categoryName: string
+    cakeId: string
     sizes: Array<{
       id: string
       name: string
@@ -199,6 +200,7 @@ export default function CakesPage() {
           // Sort categories by average price to ensure regular (cheaper) comes first, frilly (more expensive) comes second
           const categoryOptions = group.map(cake => ({
             categoryName: cake.categoryName!,
+            cakeId: cake.id, // Store the original cake ID
             sizes: cake.sizes.sort((a, b) => a.price - b.price), // Sort sizes by price (cheapest first)
             averagePrice: cake.sizes.reduce((sum, size) => sum + size.price, 0) / cake.sizes.length
           })).sort((a, b) => a.averagePrice - b.averagePrice)
@@ -209,6 +211,7 @@ export default function CakesPage() {
             isConsolidated: true,
             categoryOptions: categoryOptions.map(option => ({
               categoryName: option.categoryName,
+              cakeId: option.cakeId, // Include the original cake ID
               sizes: option.sizes
             })),
             // Use the first cake's image and description, but remove individual category info
@@ -340,12 +343,20 @@ export default function CakesPage() {
     const selectedSize = currentSizes.find(size => size.id === selectedSizeId)
     if (!selectedSize) return
 
+    // Get the correct cake ID for consolidated cakes
+    let actualCakeId = cakeCard.id
+    if (cakeCard.isConsolidated && cakeCard.categoryOptions) {
+      const activeTab = activeTabs[cakeCard.id] || 0
+      const selectedCategory = cakeCard.categoryOptions[activeTab]
+      actualCakeId = selectedCategory.cakeId
+    }
+
     // Create cart item
     const cartItem = {
       id: `${cakeCard.id}-${selectedSizeId}`,
       categoryId: getCurrentCategoryName(cakeCard) || '',
       categoryName: getCurrentCategoryName(cakeCard) || '',
-      flavorId: cakeCard.id,
+      flavorId: actualCakeId,
       flavorName: cakeCard.name,
       sizeId: selectedSizeId,
       sizeName: selectedSize.name,

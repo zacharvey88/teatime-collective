@@ -113,11 +113,14 @@ export class OrderService {
   static async createOrder(orderData: CreateOrderData): Promise<Order> {
     try {
       // Start a transaction
+      console.log('Looking up customer with email:', orderData.customer_email)
       const { data: customer, error: customerError } = await supabase
         .from('customers')
         .select('id')
         .eq('email', orderData.customer_email)
         .single()
+      
+      console.log('Customer lookup result:', { customer, customerError })
 
       let customerId: string
 

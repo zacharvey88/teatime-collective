@@ -40,6 +40,10 @@ export class EmailService {
   // Send order confirmation email to customer
   static async sendOrderConfirmation(data: OrderEmailData): Promise<void> {
     try {
+      console.log('Sending order confirmation email to:', data.customerEmail)
+      console.log('FROM_EMAIL:', FROM_EMAIL)
+      console.log('MAILERSEND_API_KEY exists:', !!process.env.MAILERSEND_API_KEY)
+      
       const sender = new Sender(FROM_EMAIL, 'Teatime Collective')
       const recipient = new Recipient(data.customerEmail, data.customerName)
 
@@ -50,7 +54,9 @@ export class EmailService {
         .setHtml(await this.generateCustomerEmailHTML(data))
         .setText(await this.generateCustomerEmailText(data))
 
+      console.log('Sending email via MailerSend...')
       await mailerSend.email.send(emailParams)
+      console.log('Order confirmation email sent successfully')
     } catch (error) {
       console.error('Failed to send order confirmation email:', error)
       throw error
@@ -62,10 +68,13 @@ export class EmailService {
     try {
       // Get the order email from settings
       const settings = await SettingsService.getSettings()
+      console.log('Settings retrieved:', settings?.order_email)
       
       if (!settings?.order_email) {
         throw new Error('Order email not configured in settings')
       }
+
+      console.log('Sending order notification email to:', settings.order_email)
 
       const sender = new Sender(FROM_EMAIL, 'Teatime Collective Orders')
       const recipient = new Recipient(settings.order_email, 'Teatime Collective')
@@ -77,7 +86,9 @@ export class EmailService {
         .setHtml(this.generateOwnerEmailHTML(data))
         .setText(this.generateOwnerEmailText(data))
 
+      console.log('Sending notification email via MailerSend...')
       await mailerSend.email.send(emailParams)
+      console.log('Order notification email sent successfully')
     } catch (error) {
       console.error('Failed to send order notification email:', error)
       throw error
@@ -287,6 +298,7 @@ Contact: orders@teatimecollective.co.uk
           ${item.details ? `<div style="font-size: 12px; color: #666; margin-top: 2px;">${item.details}</div>` : ''}
           ${item.writingOnCake ? `<div style="font-size: 12px; color: #666; margin-top: 2px;"><strong>Writing:</strong> ${item.writingOnCake}</div>` : ''}
         </td>
+        <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.size}</td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
         <td style="padding: 12px; border-bottom: 1px solid #eee; text-align: right;">£${item.price.toFixed(2)}</td>
       </tr>
@@ -300,21 +312,21 @@ Contact: orders@teatimecollective.co.uk
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>New Order Received</title>
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #000000; background-color: #FFFBF0; }
           .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-          .header { background: #dc2626; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-          .content { background: #fff; padding: 30px; border: 1px solid #ddd; border-top: none; }
-          .customer-info { background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626; }
+          .header { background: #E57634; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+          .content { background: #fff; padding: 30px; border: 1px solid #E57634; border-top: none; }
+          .customer-info { background: #FFF5E0; padding: 20px; border-radius: 8px; margin: 20px 0; }
           .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          .items-table th { background: #dc2626; color: white; padding: 12px; text-align: left; }
-          .total { font-weight: bold; font-size: 1.2em; text-align: right; padding: 20px 0; border-top: 2px solid #dc2626; }
-          .highlight { color: #dc2626; font-weight: bold; }
+          .items-table th { background: #E57634; color: white; padding: 12px; text-align: left; }
+          .total { font-weight: bold; font-size: 1.2em; text-align: right; padding: 20px 0; border-top: 2px solid #E57634; }
+          .highlight { color: #E57634; font-weight: bold; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>🆕 New Order Received</h1>
+            <h1>New Order Received</h1>
             <p>Order #${data.orderId}</p>
           </div>
           
@@ -324,7 +336,12 @@ Contact: orders@teatimecollective.co.uk
               <p><strong>Name:</strong> ${data.customerName}</p>
               <p><strong>Email:</strong> <a href="mailto:${data.customerEmail}">${data.customerEmail}</a></p>
               <p><strong>Phone:</strong> <a href="tel:${data.customerPhone}">${data.customerPhone}</a></p>
-              <p><strong>Collection Date:</strong> ${data.collectionDate}</p>
+              <p><strong>Collection Date:</strong> ${new Date(data.collectionDate).toLocaleDateString('en-GB', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}</p>
               ${data.allergies ? `<p><strong>Allergies:</strong> ${data.allergies}</p>` : ''}
               ${data.specialRequests ? `<p><strong>Special Requests:</strong> ${data.specialRequests}</p>` : ''}
             </div>
@@ -334,6 +351,7 @@ Contact: orders@teatimecollective.co.uk
               <thead>
                 <tr>
                   <th>Item</th>
+                  <th style="text-align: center;">Size</th>
                   <th style="text-align: center;">Qty</th>
                   <th style="text-align: right;">Price</th>
                 </tr>
@@ -360,7 +378,7 @@ Contact: orders@teatimecollective.co.uk
   // Generate text email for owner
   private static generateOwnerEmailText(data: OrderEmailData): string {
     const itemsText = data.items.map(item => 
-      `- ${item.name}${item.details ? `\n  ${item.details}` : ''} x${item.quantity} - £${item.price.toFixed(2)}${item.writingOnCake ? `\n  Writing: ${item.writingOnCake}` : ''}`
+      `- ${item.name} (${item.size})${item.details ? `\n  ${item.details}` : ''} x${item.quantity} - £${item.price.toFixed(2)}${item.writingOnCake ? `\n  Writing: ${item.writingOnCake}` : ''}`
     ).join('\n')
 
     return `

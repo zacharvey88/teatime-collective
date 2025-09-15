@@ -175,10 +175,9 @@ export default function SettingsManager() {
               General Settings
             </h2>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="flex flex-col lg:flex-row gap-12 items-end">
               {/* Logo Management */}
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray mb-3">Logo</h3>
                 <div className="flex items-center gap-4">
                   <div className="relative w-20 h-20 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 flex items-center justify-center">
                     {localSettings.logo_url ? (
@@ -212,7 +211,6 @@ export default function SettingsManager() {
 
               {/* Branding */}
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray mb-3">Branding</h3>
                 <div>
                   <label className="text-sm font-bold text-gray">Accent Colour</label>
                   <div className="flex items-center gap-3 mt-1">
@@ -237,7 +235,6 @@ export default function SettingsManager() {
 
               {/* Order Email */}
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-gray mb-3">Email</h3>
                 <div>
                   <label className="text-sm font-bold text-gray">Email for Orders</label>
                   <Input
