@@ -174,7 +174,8 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
               cake_id: item.cake_id || undefined,
               cake_size_id: item.cake_size_id || undefined,
               writing_on_cake: item.writing_on_cake || undefined,
-              custom_cake_description: item.custom_cake_description || undefined
+              custom_cake_description: item.custom_cake_description || undefined,
+              custom_cake_size: item.custom_cake_size || undefined
             }))
           }
           setOrderDetails(transformedDetails)
