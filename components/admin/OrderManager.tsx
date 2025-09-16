@@ -137,8 +137,8 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
         if (cake && cakeSize) {
           // Append category name to cake name if it exists
           const categoryName = Array.isArray(cake.cake_categories) 
-            ? cake.cake_categories[0]?.name 
-            : cake.cake_categories?.name
+            ? (cake.cake_categories as any)[0]?.name 
+            : (cake.cake_categories as any)?.name
           cakeName = categoryName ? `${cake.name} - ${categoryName}` : cake.name
           sizeName = cakeSize.name
         }
