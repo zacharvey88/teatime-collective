@@ -176,7 +176,13 @@ export default function HolidayManager() {
           <h2 className="text-2xl font-bold text-gray-800">Holiday Management</h2>
           <p className="text-gray-600 mt-1">Manage blocked dates for cake orders</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={(open) => {
+          setIsCreateDialogOpen(open)
+          if (!open) {
+            setError('')
+            setSuccess('')
+          }
+        }}>
           <DialogTrigger asChild>
             <Button className="bg-orange hover:bg-orange/90 text-white">
               <Plus className="w-4 h-4 mr-2" />
@@ -187,6 +193,14 @@ export default function HolidayManager() {
             <DialogHeader>
               <DialogTitle className="text-orange">Add Holiday</DialogTitle>
             </DialogHeader>
+            
+            {/* Error Alert inside modal */}
+            {error && (
+              <Alert className="border-red-200 bg-red-50 relative z-50">
+                <AlertDescription className="text-red-800">{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -252,12 +266,7 @@ export default function HolidayManager() {
         </Dialog>
       </div>
 
-      {/* Alerts */}
-      {error && (
-        <Alert className="border-red-200 bg-red-50">
-          <AlertDescription className="text-red-800">{error}</AlertDescription>
-        </Alert>
-      )}
+      {/* Success Alert */}
       {success && (
         <Alert className="border-green-200 bg-green-50">
           <AlertDescription className="text-green-800">{success}</AlertDescription>
@@ -321,11 +330,25 @@ export default function HolidayManager() {
       )}
 
       {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open)
+        if (!open) {
+          setError('')
+          setSuccess('')
+        }
+      }}>
         <DialogContent className="bg-white border border-gray-200 shadow-lg">
           <DialogHeader>
             <DialogTitle className="text-orange">Edit Holiday</DialogTitle>
           </DialogHeader>
+          
+          {/* Error Alert inside modal */}
+          {error && (
+            <Alert className="border-red-200 bg-red-50 relative z-50">
+              <AlertDescription className="text-red-800">{error}</AlertDescription>
+            </Alert>
+          )}
+          
           {editingHoliday && (
             <div className="space-y-4">
               <div>

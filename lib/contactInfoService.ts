@@ -50,56 +50,30 @@ export class ContactInfoService {
 
   // Update contact info (admin)
   static async updateContactInfo(contactData: UpdateContactInfoData): Promise<ContactInfo> {
-    // Get the first record (there should only be one)
-    const { data: existing } = await supabase
-      .from('contact_info')
-      .select('id')
-      .limit(1)
-      .single()
+    try {
+      const response = await fetch('/api/admin/contact-info', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(contactData),
+      })
 
-    // Prepare data for database (ensure social_links is properly formatted)
-    const dbData = {
-      ...contactData,
-      social_links: contactData.social_links || []
-    }
-
-    if (existing) {
-      // Update existing record
-      const { data, error } = await supabase
-        .from('contact_info')
-        .update(dbData)
-        .eq('id', existing.id)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error updating contact info:', error)
-        throw new Error('Failed to update contact info')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update contact info')
       }
+
+      const data = await response.json()
       
       // Ensure social_links is always an array
       return {
         ...data,
         social_links: data.social_links || []
       }
-    } else {
-      // Create new record
-      const { data, error } = await supabase
-        .from('contact_info')
-        .insert([dbData])
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error creating contact info:', error)
-        throw new Error('Failed to create contact info')
-      }
-      
-      // Ensure social_links is always an array
-      return {
-        ...data,
-        social_links: data.social_links || []
-      }
+    } catch (error) {
+      console.error('Error updating contact info:', error)
+      throw error
     }
   }
 } 

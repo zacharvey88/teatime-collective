@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { AuthService } from '@/lib/auth'
+import { signOut, useSession } from 'next-auth/react'
 import { adminTabManager } from '@/lib/adminTabManager'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -45,23 +45,14 @@ const baseNavigationItems = [
 ]
 
 export default function AdminLayout({ children, activeSection, onSectionChange }: AdminLayoutProps) {
+  const { data: session } = useSession()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [canManageAdmins, setCanManageAdmins] = useState(false)
   const { settings } = useSettings()
 
   useEffect(() => {
-    checkAdminPermissions()
-    
-    // Set up auth state listener to check permissions when auth changes
-    const { data: { subscription } } = AuthService.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        await checkAdminPermissions()
-      } else if (event === 'SIGNED_OUT') {
-        setCanManageAdmins(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
+    // With hardcoded admin user, always allow admin management
+    setCanManageAdmins(true)
   }, [])
 
   // Set sidebar collapsed by default on mobile screens
@@ -81,22 +72,12 @@ export default function AdminLayout({ children, activeSection, onSectionChange }
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const checkAdminPermissions = async () => {
-    try {
-      const canManage = await AuthService.canManageAdmins()
-      setCanManageAdmins(canManage)
-    } catch (error) {
-      console.error('Error checking admin permissions:', error)
-    }
-  }
 
   const handleSignOut = async () => {
     try {
-      await AuthService.signOut()
-      // Don't redirect here - let AdminProtected handle the logout flow
+      await signOut({ callbackUrl: '/admin/login' })
     } catch (error) {
       console.error('Sign out error:', error)
-      // Even if sign out fails, let AdminProtected handle it
     }
   }
 
@@ -118,9 +99,16 @@ export default function AdminLayout({ children, activeSection, onSectionChange }
             <div className="flex items-center justify-between">
               <div className={`flex items-center transition-all duration-300 ${sidebarCollapsed ? 'justify-center' : 'space-x-3'}`}>
                 {!sidebarCollapsed && (
-                  <h1 className="text-xl font-bold text-orange">
-                    Admin Panel
-                  </h1>
+                  <div>
+                    <h1 className="text-xl font-bold text-orange">
+                      Admin Panel
+                    </h1>
+                    {session?.user?.name && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        Welcome, {session.user.name}
+                      </p>
+                    )}
+                  </div>
                 )}
                 {sidebarCollapsed && (
                   <button

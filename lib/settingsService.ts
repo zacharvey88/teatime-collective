@@ -84,28 +84,20 @@ export class SettingsService {
 
   static async updateSettings(settingsData: UpdateSettingsData): Promise<Settings | null> {
     try {
-      // First, get the current settings to get the ID
-      const currentSettings = await this.getSettings()
-      if (!currentSettings) {
-        throw new Error('No settings found to update')
+      const response = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(settingsData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update settings')
       }
 
-      const { data, error } = await supabase
-        .from('settings')
-        .update({
-          ...settingsData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentSettings.id)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Error updating settings:', error)
-        throw new Error(error.message)
-      }
-
-      return data
+      return await response.json()
     } catch (error) {
       console.error('Error in updateSettings:', error)
       throw error

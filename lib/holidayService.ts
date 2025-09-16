@@ -46,22 +46,20 @@ export class HolidayService {
 
   static async createHoliday(holidayData: CreateHolidayData): Promise<Holiday> {
     try {
-      const { data, error } = await supabase
-        .from('holidays')
-        .insert({
-          ...holidayData,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single()
+      const response = await fetch('/api/admin/holidays', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(holidayData),
+      })
 
-      if (error) {
-        console.error('Error creating holiday:', error)
-        throw new Error(error.message)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create holiday')
       }
 
-      return data
+      return await response.json()
     } catch (error) {
       console.error('Error in createHoliday:', error)
       throw error
@@ -70,22 +68,20 @@ export class HolidayService {
 
   static async updateHoliday(id: string, holidayData: UpdateHolidayData): Promise<Holiday> {
     try {
-      const { data, error } = await supabase
-        .from('holidays')
-        .update({
-          ...holidayData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single()
+      const response = await fetch(`/api/admin/holidays/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(holidayData),
+      })
 
-      if (error) {
-        console.error('Error updating holiday:', error)
-        throw new Error(error.message)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update holiday')
       }
 
-      return data
+      return await response.json()
     } catch (error) {
       console.error('Error in updateHoliday:', error)
       throw error
@@ -94,14 +90,13 @@ export class HolidayService {
 
   static async deleteHoliday(id: string): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('holidays')
-        .delete()
-        .eq('id', id)
+      const response = await fetch(`/api/admin/holidays/${id}`, {
+        method: 'DELETE',
+      })
 
-      if (error) {
-        console.error('Error deleting holiday:', error)
-        throw new Error(error.message)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete holiday')
       }
     } catch (error) {
       console.error('Error in deleteHoliday:', error)

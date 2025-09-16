@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
   Image, 
@@ -22,6 +23,7 @@ interface DashboardOverviewProps {
 }
 
 export default function DashboardOverview({ onSectionChange }: DashboardOverviewProps) {
+  const { data: session } = useSession()
   const [orderStats, setOrderStats] = useState<OrderStats | null>(null)
   const [customerInsights, setCustomerInsights] = useState<CustomerInsights | null>(null)
   const [cakeAnalytics, setCakeAnalytics] = useState<CakeAnalytics | null>(null)

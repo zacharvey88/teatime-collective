@@ -62,37 +62,65 @@ export class MarketService {
 
   // Create new market
   static async createMarket(marketData: CreateMarketData): Promise<Market> {
-    const { data, error } = await supabase
-      .from('markets')
-      .insert([marketData])
-      .select()
-      .single()
+    try {
+      const response = await fetch('/api/admin/markets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(marketData),
+      })
 
-    if (error) throw new Error('Failed to create market')
-    return data
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create market')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error creating market:', error)
+      throw error
+    }
   }
 
   // Update market
   static async updateMarket(id: string, updates: UpdateMarketData): Promise<Market> {
-    const { data, error } = await supabase
-      .from('markets')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
+    try {
+      const response = await fetch(`/api/admin/markets/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
 
-    if (error) throw new Error('Failed to update market')
-    return data
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update market')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating market:', error)
+      throw error
+    }
   }
 
   // Delete market (this will also delete all associated market dates due to CASCADE)
   static async deleteMarket(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('markets')
-      .delete()
-      .eq('id', id)
+    try {
+      const response = await fetch(`/api/admin/markets/${id}`, {
+        method: 'DELETE',
+      })
 
-    if (error) throw new Error('Failed to delete market')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete market')
+      }
+    } catch (error) {
+      console.error('Error deleting market:', error)
+      throw error
+    }
   }
 
   // Toggle market active status

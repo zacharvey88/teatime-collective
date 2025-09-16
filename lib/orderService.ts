@@ -244,15 +244,23 @@ export class OrderService {
 
   // Update order status
   static async updateOrderStatus(orderId: string, status: Order['status']): Promise<void> {
-    const { error } = await supabase
-      .from('orders')
-      .update({ 
-        status, 
-        updated_at: new Date().toISOString() 
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
       })
-      .eq('id', orderId)
 
-    if (error) throw error
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update order status')
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error)
+      throw error
+    }
   }
 
   // Update payment status - removed as payment_status field no longer exists in Order interface
