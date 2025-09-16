@@ -1089,6 +1089,13 @@ export default function OrderPage() {
                 Thank you for your order. We'll review your request and get back to you as soon as possible.
               </p>
               
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <h4 className="text-sm font-semibold text-blue-800 mb-2">📧 Email Confirmation</h4>
+                <p className="text-sm text-blue-700">
+                  You should receive a confirmation email shortly. <strong>Please check your spam/junk folder</strong> if you don't see it in your inbox within a few minutes.
+                </p>
+              </div>
+              
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
                 <h4 className="text-sm font-semibold text-orange-800 mb-2">📍 Collection Information</h4>
                 <p className="text-sm text-orange-700 mb-2">
