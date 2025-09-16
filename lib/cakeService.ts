@@ -251,156 +251,266 @@ export class CakeService {
 
   // CRUD operations for standalone cakes
   static async createCake(cake: Omit<Cake, 'id' | 'created_at' | 'updated_at'>): Promise<Cake> {
-    const { data, error } = await supabase
-      .from('cakes')
-      .insert(cake)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    try {
+      const response = await fetch('/api/admin/cakes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cake),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create cake')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error creating cake:', error)
+      throw error
+    }
   }
 
   static async updateCake(id: string, updates: Partial<Cake>): Promise<Cake> {
-    const { data, error } = await supabase
-      .from('cakes')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    try {
+      const response = await fetch(`/api/admin/cakes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update cake')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating cake:', error)
+      throw error
+    }
   }
 
   static async deleteCake(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('cakes')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    try {
+      const response = await fetch(`/api/admin/cakes/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete cake')
+      }
+    } catch (error) {
+      console.error('Error deleting cake:', error)
+      throw error
+    }
   }
 
   // CRUD operations for cake categories
   static async createCategory(category: Omit<CakeCategory, 'id' | 'created_at' | 'updated_at'>): Promise<CakeCategory> {
-    const { data, error } = await supabase
-      .from('cake_categories')
-      .insert(category)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    try {
+      const response = await fetch('/api/admin/cake-categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(category),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create category')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error creating category:', error)
+      throw error
+    }
   }
 
   static async updateCategory(id: string, updates: Partial<CakeCategory>): Promise<CakeCategory> {
-    const { data, error } = await supabase
-      .from('cake_categories')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    try {
+      const response = await fetch(`/api/admin/cake-categories/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update category')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating category:', error)
+      throw error
+    }
   }
 
   static async deleteCategory(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('cake_categories')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    try {
+      const response = await fetch(`/api/admin/cake-categories/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete category')
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      throw error
+    }
   }
 
   // CRUD operations for cake sizes (using cake_sizes table)
   static async createSize(size: Omit<CakeSize, 'id' | 'created_at' | 'updated_at'>): Promise<CakeSize> {
-    const { data, error } = await supabase
-      .from('cake_sizes')
-      .insert(size)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    try {
+      const response = await fetch('/api/admin/cake-sizes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(size),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create size')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error creating size:', error)
+      throw error
+    }
   }
 
   static async updateSize(id: string, updates: Partial<CakeSize>): Promise<CakeSize> {
-    const { data, error } = await supabase
-      .from('cake_sizes')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', id)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data
+    try {
+      const response = await fetch(`/api/admin/cake-sizes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update size')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating size:', error)
+      throw error
+    }
   }
 
   static async deleteSize(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('cake_sizes')
-      .delete()
-      .eq('id', id)
-    
-    if (error) throw error
+    try {
+      const response = await fetch(`/api/admin/cake-sizes/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete size')
+      }
+    } catch (error) {
+      console.error('Error deleting size:', error)
+      throw error
+    }
   }
 
   // CRUD operations for cake flavors (now with optional category_id)
   static async createFlavor(flavor: Omit<CakeFlavor, 'id' | 'created_at' | 'updated_at'>): Promise<CakeFlavor> {
-    const cakeData = {
-      name: flavor.name,
-      description: flavor.description,
-      image_url: flavor.image_url,
-      category_id: flavor.category_id,
-      price_override: flavor.price_override,
-      cake_type: 'categorised' as const,
-      active: flavor.active
+    try {
+      const cakeData = {
+        name: flavor.name,
+        description: flavor.description,
+        image_url: flavor.image_url,
+        category_id: flavor.category_id,
+        price_override: flavor.price_override,
+        cake_type: 'categorised' as const,
+        active: flavor.active
+      }
+
+      const response = await fetch('/api/admin/cakes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cakeData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create flavor')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error creating flavor:', error)
+      throw error
     }
-    
-    const { data, error } = await supabase
-      .from('cakes')
-      .insert(cakeData)
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as CakeFlavor
   }
 
   static async updateFlavor(id: string, updates: Partial<CakeFlavor>): Promise<CakeFlavor> {
-    const cakeUpdates = {
-      name: updates.name,
-      description: updates.description,
-      image_url: updates.image_url,
-      category_id: updates.category_id,
-      price_override: updates.price_override,
-      active: updates.active,
-      updated_at: new Date().toISOString()
+    try {
+      const cakeUpdates = {
+        name: updates.name,
+        description: updates.description,
+        image_url: updates.image_url,
+        category_id: updates.category_id,
+        price_override: updates.price_override,
+        active: updates.active,
+        updated_at: new Date().toISOString()
+      }
+
+      const response = await fetch(`/api/admin/cakes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cakeUpdates),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update flavor')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating flavor:', error)
+      throw error
     }
-    
-    const { data, error } = await supabase
-      .from('cakes')
-      .update(cakeUpdates)
-      .eq('id', id)
-      .eq('cake_type', 'categorised')
-      .select()
-      .single()
-    
-    if (error) throw error
-    return data as CakeFlavor
   }
 
   static async deleteFlavor(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('cakes')
-      .delete()
-      .eq('id', id)
-      .eq('cake_type', 'categorised')
-    
-    if (error) throw error
+    try {
+      const response = await fetch(`/api/admin/cakes/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete flavor')
+      }
+    } catch (error) {
+      console.error('Error deleting flavor:', error)
+      throw error
+    }
   }
 
   // Utility methods

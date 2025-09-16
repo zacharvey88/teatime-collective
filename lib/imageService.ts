@@ -52,67 +52,85 @@ export class ImageService {
 
   // Create a new image
   static async createImage(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes', imageData: CreateImageData): Promise<ImageItem> {
-    const tableName = this.getTableName(type)
-    
-    const { data, error } = await supabase
-      .from(tableName)
-      .insert([imageData])
-      .select()
-      .single()
+    try {
+      const response = await fetch('/api/admin/images', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type, ...imageData }),
+      })
 
-    if (error) {
-      throw new Error(`Failed to create ${type} image: ${error.message}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || `Failed to create ${type} image`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error(`Error creating ${type} image:`, error)
+      throw error
     }
-
-    return data
   }
 
   // Update an existing image
   static async updateImage(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes', id: string, updates: Partial<ImageItem>): Promise<ImageItem> {
-    const tableName = this.getTableName(type)
-    
-    const { data, error } = await supabase
-      .from(tableName)
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single()
+    try {
+      const response = await fetch(`/api/admin/images/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type, ...updates }),
+      })
 
-    if (error) {
-      throw new Error(`Failed to update ${type} image: ${error.message}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || `Failed to update ${type} image`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error(`Error updating ${type} image:`, error)
+      throw error
     }
-
-    return data
   }
 
   // Delete an image (soft delete by setting active to false)
   static async deleteImage(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes', id: string): Promise<void> {
-    const tableName = this.getTableName(type)
-    
-    const { error } = await supabase
-      .from(tableName)
-      .update({ active: false })
-      .eq('id', id)
+    try {
+      const response = await fetch(`/api/admin/images/${id}?type=${type}`, {
+        method: 'DELETE',
+      })
 
-    if (error) {
-      throw new Error(`Failed to delete ${type} image: ${error.message}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || `Failed to delete ${type} image`)
+      }
+    } catch (error) {
+      console.error(`Error deleting ${type} image:`, error)
+      throw error
     }
   }
 
   // Reorder images by updating their order_index values
   static async reorderImages(type: 'carousel' | 'weddings' | 'festivals' | 'custom_cakes', imageIds: string[]): Promise<void> {
-    const tableName = this.getTableName(type)
-    
-    // Update each image individually to avoid null constraint issues
-    for (let i = 0; i < imageIds.length; i++) {
-      const { error } = await supabase
-        .from(tableName)
-        .update({ order_index: i })
-        .eq('id', imageIds[i])
+    try {
+      const response = await fetch('/api/admin/images/reorder', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ type, imageIds }),
+      })
 
-      if (error) {
-        throw new Error(`Failed to reorder ${type} images: ${error.message}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || `Failed to reorder ${type} images`)
       }
+    } catch (error) {
+      console.error(`Error reordering ${type} images:`, error)
+      throw error
     }
   }
 

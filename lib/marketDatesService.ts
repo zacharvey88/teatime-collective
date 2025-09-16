@@ -102,70 +102,65 @@ export class MarketDatesService {
 
   // Create new market date
   static async createMarketDate(marketData: CreateMarketDateData): Promise<MarketDate> {
-    const { data, error } = await supabase
-      .from('market_dates')
-      .insert([marketData])
-      .select(`
-        *,
-        markets!inner(
-          name,
-          location,
-          url
-        )
-      `)
-      .single()
+    try {
+      const response = await fetch('/api/admin/market-dates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(marketData),
+      })
 
-    if (error) throw new Error('Failed to create market date')
-    
-    // Transform the data to flatten the market info
-    return {
-      ...data,
-      market_name: data.markets?.name,
-      market_location: data.markets?.location,
-      market_url: data.markets?.url,
-      market_description: data.markets?.description
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create market date')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error creating market date:', error)
+      throw error
     }
   }
 
   // Update market date
   static async updateMarketDate(id: string, updates: Partial<MarketDate>): Promise<MarketDate> {
-    // Remove market info from updates as it shouldn't be updated here
-    const { market_name, market_location, market_url, ...dateUpdates } = updates
-    
-    const { data, error } = await supabase
-      .from('market_dates')
-      .update(dateUpdates)
-      .eq('id', id)
-      .select(`
-        *,
-        markets!inner(
-          name,
-          location,
-          url
-        )
-      `)
-      .single()
+    try {
+      const response = await fetch(`/api/admin/market-dates/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
 
-    if (error) throw new Error('Failed to update market date')
-    
-    // Transform the data to flatten the market info
-    return {
-      ...data,
-      market_name: data.markets?.name,
-      market_location: data.markets?.location,
-      market_url: data.markets?.url,
-      market_description: data.markets?.description
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update market date')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating market date:', error)
+      throw error
     }
   }
 
   // Delete market date
   static async deleteMarketDate(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('market_dates')
-      .delete()
-      .eq('id', id)
+    try {
+      const response = await fetch(`/api/admin/market-dates/${id}`, {
+        method: 'DELETE',
+      })
 
-    if (error) throw new Error('Failed to delete market date')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete market date')
+      }
+    } catch (error) {
+      console.error('Error deleting market date:', error)
+      throw error
+    }
   }
 
   // Note: Market dates don't have an active status - they inherit from their parent market

@@ -77,78 +77,84 @@ export class ReviewsService {
   // Create a new review
   static async createReview(reviewData: CreateReviewData): Promise<Review> {
     try {
-      // Get the next display order
-      const { data: existingReviews } = await supabase
-        .from('reviews')
-        .select('display_order')
-        .order('display_order', { ascending: false })
-        .limit(1)
+      const response = await fetch('/api/admin/reviews', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reviewData),
+      })
 
-      const nextOrder = existingReviews && existingReviews.length > 0 
-        ? (existingReviews[0].display_order || 0) + 1 
-        : 1
-
-      reviewData.display_order = nextOrder
-
-      const { data, error } = await supabase
-        .from('reviews')
-        .insert([reviewData])
-        .select()
-        .single()
-
-      if (error) {
-        throw new Error(`Failed to create review: ${error.message}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to create review')
       }
 
-      return data
+      return await response.json()
     } catch (error) {
+      console.error('Error creating review:', error)
       throw error
     }
   }
 
   // Update a review
   static async updateReview(id: string, reviewData: UpdateReviewData): Promise<Review> {
-    const { data, error } = await supabase
-      .from('reviews')
-      .update(reviewData)
-      .eq('id', id)
-      .select()
-      .single()
+    try {
+      const response = await fetch(`/api/admin/reviews/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reviewData),
+      })
 
-    if (error) {
-      throw new Error(`Failed to update review: ${error.message}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update review')
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating review:', error)
+      throw error
     }
-
-    return data
   }
 
   // Delete a review
   static async deleteReview(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('reviews')
-      .delete()
-      .eq('id', id)
+    try {
+      const response = await fetch(`/api/admin/reviews/${id}`, {
+        method: 'DELETE',
+      })
 
-    if (error) {
-      throw new Error(`Failed to delete review: ${error.message}`)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to delete review')
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error)
+      throw error
     }
   }
 
   // Update display orders for multiple reviews
   static async updateDisplayOrders(updates: { id: string; display_order: number }[]): Promise<void> {
-    const promises = updates.map(update =>
-      supabase
-        .from('reviews')
-        .update({ display_order: update.display_order })
-        .eq('id', update.id)
-    )
+    try {
+      const response = await fetch('/api/admin/reviews/display-orders', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updates),
+      })
 
-    const results = await Promise.all(promises)
-    
-    for (const result of results) {
-      if (result.error) {
-        throw new Error('Failed to update display orders')
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || 'Failed to update display orders')
       }
+    } catch (error) {
+      console.error('Error updating display orders:', error)
+      throw error
     }
   }
 

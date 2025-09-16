@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import AdminProtected from '@/components/AdminProtected'
+import AdminProtectedAuth from '@/components/AdminProtectedAuth'
+import AdminSessionProvider from '@/components/AdminSessionProvider'
 import AdminLayout from '@/components/AdminLayout'
 import DashboardOverview from '@/components/admin/DashboardOverview'
 import OrderManager from '@/components/admin/OrderManager'
@@ -12,7 +13,8 @@ import ContactManager from '@/components/admin/ContactManager'
 import MarketManager from '@/components/admin/MarketManager'
 import HolidayManager from '@/components/admin/HolidayManager'
 import SettingsManager from '@/components/admin/SettingsManager'
-import AdminManager from '@/components/admin/AdminManager'
+import PasswordManager from '@/components/admin/PasswordManager'
+// AdminManager removed - using hardcoded admin user
 
 
 
@@ -54,20 +56,64 @@ export default function AdminPage() {
       case 'settings':
         return <SettingsManager />
       case 'admins':
-        return <AdminManager />
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Admin Management</h2>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Current Admin Users */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800">Current Admin Users</h3>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-blue-800 mb-2">Zac (Super Admin)</h4>
+                  <p className="text-blue-700 text-sm">
+                    <strong>Email:</strong> zac.harvey@gmail.com<br/>
+                    <strong>Role:</strong> Super Admin<br/>
+                    <strong>Status:</strong> Active
+                  </p>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-green-800 mb-2">Catherine (Admin)</h4>
+                  <p className="text-green-700 text-sm">
+                    <strong>Email:</strong> teatimecollective@hotmail.co.uk<br/>
+                    <strong>Role:</strong> Admin<br/>
+                    <strong>Status:</strong> Active
+                  </p>
+                </div>
+              </div>
+
+              {/* Password Change */}
+              <div>
+                <PasswordManager />
+              </div>
+            </div>
+
+            <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h4 className="font-semibold text-yellow-800 mb-2">Important Note</h4>
+              <p className="text-yellow-700 text-sm">
+                After changing your password, you'll need to restart the development server for the changes to take effect. 
+                In production, the changes will be applied after the next deployment.
+              </p>
+            </div>
+          </div>
+        )
       default:
         return <DashboardOverview onSectionChange={handleSectionChange} />
     }
   }
 
   return (
-    <AdminProtected>
-      <AdminLayout
-        activeSection={activeSection}
-        onSectionChange={setActiveSection}
-      >
-        {renderActiveSection()}
-      </AdminLayout>
-    </AdminProtected>
+    <AdminSessionProvider>
+      <AdminProtectedAuth>
+        <AdminLayout
+          activeSection={activeSection}
+          onSectionChange={setActiveSection}
+        >
+          {renderActiveSection()}
+        </AdminLayout>
+      </AdminProtectedAuth>
+    </AdminSessionProvider>
   )
 } 

@@ -658,11 +658,6 @@ export default function CakeManager() {
 
       {activeTab === 'categories' && (
         <>
-          {error && (
-            <Alert>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
 
           {/* Cake Categories */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -882,6 +877,14 @@ export default function CakeManager() {
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
           </DialogHeader>
+          
+          {/* Error Alert inside modal */}
+          {error && (
+            <Alert className="border-red-200 bg-red-50 relative z-50">
+              <AlertDescription className="text-red-800">{error}</AlertDescription>
+            </Alert>
+          )}
+          
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1203,6 +1206,14 @@ export default function CakeManager() {
               {createType === 'flavor' && 'Create New Flavor'}
             </DialogTitle>
           </DialogHeader>
+          
+          {/* Error Alert inside modal */}
+          {dialogError && (
+            <Alert className="border-red-200 bg-red-50 relative z-50">
+              <AlertDescription className="text-red-800">{dialogError}</AlertDescription>
+            </Alert>
+          )}
+          
           <div className="space-y-4">
             {createType === 'category' && (
               <>

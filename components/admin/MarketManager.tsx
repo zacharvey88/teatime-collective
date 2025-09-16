@@ -360,11 +360,6 @@ export default function MarketManager() {
 
   return (
     <div className="space-y-6">
-      {error && (
-        <Alert className="bg-red-50 border-red-200">
-          <AlertDescription className="text-red-600">{error}</AlertDescription>
-        </Alert>
-      )}
 
       {/* Markets Section */}
       <div className="space-y-4">
