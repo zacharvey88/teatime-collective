@@ -128,8 +128,7 @@ export class OrderService {
           .insert({
             email: orderData.customer_email,
             name: orderData.customer_name,
-            phone: orderData.customer_phone,
-    
+            phone: orderData.customer_phone
           })
           .select('id')
           .single()
@@ -145,7 +144,6 @@ export class OrderService {
           .update({
             name: orderData.customer_name,
             phone: orderData.customer_phone,
-    
             updated_at: new Date().toISOString()
           })
           .eq('id', customer.id)
