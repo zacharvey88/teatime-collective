@@ -454,8 +454,6 @@ export default function OrderPage() {
           const errorText = await response.text()
           console.error('Failed to send email notifications:', errorText)
           // Don't throw error - order was created successfully, just email failed
-        } else {
-          console.log('Email notifications sent successfully')
         }
       } catch (error) {
         console.error('Error sending email notifications:', error)

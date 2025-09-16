@@ -1,13 +1,11 @@
-import { MailerSend, EmailParams, Sender, Recipient, Attachment } from 'mailersend'
+import { Resend } from 'resend'
 import { SettingsService } from './settingsService'
 
-// Initialize MailerSend client
-const mailerSend = new MailerSend({
-  apiKey: process.env.MAILERSEND_API_KEY || '',
-})
+// Initialize Resend client
+const resend = new Resend(process.env.RESEND_API_KEY)
 
-// From email (using MailerSend verified domain)
-const FROM_EMAIL = process.env.MAILERSEND_FROM_EMAIL || 'noreply@teatimecollective.co.uk'
+// From email (using Resend verified domain)
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'noreply@teatimecollective.co.uk'
 
 export interface OrderEmailData {
   orderId: string
@@ -40,23 +38,18 @@ export class EmailService {
   // Send order confirmation email to customer
   static async sendOrderConfirmation(data: OrderEmailData): Promise<void> {
     try {
-      console.log('Sending order confirmation email to:', data.customerEmail)
-      console.log('FROM_EMAIL:', FROM_EMAIL)
-      console.log('MAILERSEND_API_KEY exists:', !!process.env.MAILERSEND_API_KEY)
-      
-      const sender = new Sender(FROM_EMAIL, 'Teatime Collective')
-      const recipient = new Recipient(data.customerEmail, data.customerName)
+      const { data: emailData, error } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [data.customerEmail],
+        subject: `Order Confirmation - #${data.orderId}`,
+        html: await this.generateCustomerEmailHTML(data),
+        text: await this.generateCustomerEmailText(data),
+      })
 
-      const emailParams = new EmailParams()
-        .setFrom(sender)
-        .setTo([recipient])
-        .setSubject(`Order Confirmation - #${data.orderId}`)
-        .setHtml(await this.generateCustomerEmailHTML(data))
-        .setText(await this.generateCustomerEmailText(data))
-
-      console.log('Sending email via MailerSend...')
-      await mailerSend.email.send(emailParams)
-      console.log('Order confirmation email sent successfully')
+      if (error) {
+        console.error('Resend error:', error)
+        throw new Error(`Resend error: ${error.message}`)
+      }
     } catch (error) {
       console.error('Failed to send order confirmation email:', error)
       throw error
@@ -68,27 +61,23 @@ export class EmailService {
     try {
       // Get the order email from settings
       const settings = await SettingsService.getSettings()
-      console.log('Settings retrieved:', settings?.order_email)
       
       if (!settings?.order_email) {
         throw new Error('Order email not configured in settings')
       }
 
-      console.log('Sending order notification email to:', settings.order_email)
+      const { data: emailData, error } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [settings.order_email],
+        subject: `New Order Received - #${data.orderId}`,
+        html: this.generateOwnerEmailHTML(data),
+        text: this.generateOwnerEmailText(data),
+      })
 
-      const sender = new Sender(FROM_EMAIL, 'Teatime Collective Orders')
-      const recipient = new Recipient(settings.order_email, 'Teatime Collective')
-
-      const emailParams = new EmailParams()
-        .setFrom(sender)
-        .setTo([recipient])
-        .setSubject(`New Order Received - #${data.orderId}`)
-        .setHtml(this.generateOwnerEmailHTML(data))
-        .setText(this.generateOwnerEmailText(data))
-
-      console.log('Sending notification email via MailerSend...')
-      await mailerSend.email.send(emailParams)
-      console.log('Order notification email sent successfully')
+      if (error) {
+        console.error('Resend error:', error)
+        throw new Error(`Resend error: ${error.message}`)
+      }
     } catch (error) {
       console.error('Failed to send order notification email:', error)
       throw error
@@ -105,18 +94,19 @@ export class EmailService {
         throw new Error('Order email not configured in settings')
       }
 
-      const sender = new Sender(FROM_EMAIL, 'Teatime Collective Contact Form')
-      const recipient = new Recipient(settings.order_email, 'Teatime Collective')
+      const { data: emailData, error } = await resend.emails.send({
+        from: FROM_EMAIL,
+        to: [settings.order_email],
+        replyTo: data.email,
+        subject: `Contact Form: ${data.subject}`,
+        html: this.generateContactEmailHTML(data),
+        text: this.generateContactEmailText(data),
+      })
 
-      const emailParams = new EmailParams()
-        .setFrom(sender)
-        .setTo([recipient])
-        .setReplyTo(new Recipient(data.email, data.name))
-        .setSubject(`Contact Form: ${data.subject}`)
-        .setHtml(this.generateContactEmailHTML(data))
-        .setText(this.generateContactEmailText(data))
-
-      await mailerSend.email.send(emailParams)
+      if (error) {
+        console.error('Resend error:', error)
+        throw new Error(`Resend error: ${error.message}`)
+      }
     } catch (error) {
       console.error('Failed to send contact email:', error)
       throw error

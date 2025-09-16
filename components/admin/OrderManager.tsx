@@ -27,6 +27,7 @@ import {
   Type
 } from 'lucide-react'
 import { OrderService, Order } from '@/lib/orderService'
+import { supabase } from '@/lib/supabaseClient'
 import LoadingSpinner from '@/components/ui/loading-spinner'
 
 interface OrderWithItems extends Order {
@@ -40,6 +41,9 @@ interface OrderWithItems extends Order {
     estimated_unit_price: number
     estimated_total_price: number
     writing_on_cake?: string
+    custom_cake_description?: string
+    is_custom_cake?: boolean
+    custom_cake_size?: string
     created_at: string
   }>
 }
@@ -94,6 +98,67 @@ const getStatusIcon = (status: Order['status']) => {
 function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: OrderItemProps) {
   const [orderDetails, setOrderDetails] = useState<OrderWithItems | null>(null)
   const [loadingDetails, setLoadingDetails] = useState(false)
+  const [detailedItems, setDetailedItems] = useState<Array<{
+    id: string
+    name: string
+    size: string
+    quantity: number
+    price: number
+    totalPrice: number
+    writingOnCake?: string
+    details?: string
+  }>>([])
+
+  const getDetailedCakeInfo = async (item: any) => {
+    let sizeName = item.custom_cake_size || 'Standard'
+    let cakeName = item.item_name
+    
+    // If it's not a custom cake, get the actual size and variant info
+    if (!item.is_custom_cake && item.cake_id && item.cake_size_id) {
+      try {
+        // Get cake details with category name
+        const { data: cake } = await supabase
+          .from('cakes')
+          .select(`
+            name,
+            category_id,
+            cake_categories!inner(name)
+          `)
+          .eq('id', item.cake_id)
+          .single()
+        
+        // Get size details
+        const { data: cakeSize } = await supabase
+          .from('cake_sizes')
+          .select('name')
+          .eq('id', item.cake_size_id)
+          .single()
+        
+        if (cake && cakeSize) {
+          // Append category name to cake name if it exists
+          const categoryName = Array.isArray(cake.cake_categories) 
+            ? cake.cake_categories[0]?.name 
+            : cake.cake_categories?.name
+          cakeName = categoryName ? `${cake.name} - ${categoryName}` : cake.name
+          sizeName = cakeSize.name
+        }
+      } catch (error) {
+        console.error('Error fetching cake details:', error)
+        // Fall back to original values
+      }
+    }
+    
+    return {
+      id: item.id,
+      name: cakeName,
+      size: sizeName,
+      quantity: item.quantity,
+      price: item.estimated_unit_price,
+      totalPrice: item.estimated_total_price,
+      writingOnCake: item.writing_on_cake || '',
+      details: item.custom_cake_description || undefined
+    }
+  }
 
   const loadOrderDetails = async () => {
     if (!orderDetails && isExpanded) {
@@ -112,6 +177,12 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
             }))
           }
           setOrderDetails(transformedDetails)
+          
+          // Get detailed cake information for each item
+          const detailedItemsData = await Promise.all(
+            details.items.map(item => getDetailedCakeInfo(item))
+          )
+          setDetailedItems(detailedItemsData)
         }
       } catch (error) {
         console.error('Failed to load order details:', error)
@@ -227,7 +298,42 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
                   <span>Order Items</span>
                 </h4>
                 <div className="space-y-3">
-                  {orderDetails.items.map((item, index) => (
+                  {detailedItems.length > 0 ? detailedItems.map((item, index) => (
+                    <div key={item.id} className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg shadow-sm">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-800">{item.name}</div>
+                            <div className="text-sm text-gray-600 flex items-center space-x-4">
+                              <span>Size: {item.size}</span>
+                              <span>Qty: {item.quantity}</span>
+                            </div>
+                            {item.details && (
+                              <div className="text-sm text-gray-500 mt-1 italic">{item.details}</div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-green-700">£{item.totalPrice.toFixed(2)}</div>
+                          <div className="text-sm text-gray-600">£{item.price.toFixed(2)} each</div>
+                        </div>
+                      </div>
+                      
+                      {/* Writing on Cake - Show if exists */}
+                      {item.writingOnCake && (
+                        <div className="mt-3 pt-3 border-t border-orange-200">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <Type className="w-4 h-4 text-green-600" />
+                            <span className="text-sm font-medium text-gray-700">Writing on Cake:</span>
+                          </div>
+                          <p className="text-sm text-gray-700 bg-green-50 p-2 rounded break-words">{item.writingOnCake}</p>
+                        </div>
+                      )}
+                    </div>
+                  )) : orderDetails.items.map((item, index) => (
                     <div key={item.id} className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg shadow-sm">
                       <div className="flex justify-between items-start mb-3">
                         <div className="flex items-center space-x-3">
@@ -255,8 +361,6 @@ function OrderItem({ order, isExpanded, onToggle, onUpdateStatus, updating }: Or
                           <p className="text-sm text-gray-700 bg-green-50 p-2 rounded break-words">{item.writing_on_cake}</p>
                         </div>
                       )}
-                      
-
                     </div>
                   ))}
                 </div>
