@@ -147,3 +147,4 @@ The application uses Supabase with the following main tables:
 ---
 
 Built with ❤️ for Teatime Collective
+# Trigger deployment
