@@ -113,11 +113,16 @@ Teatime Collective is a vegan cake business that serves festivals, markets, and 
    NEXTAUTH_SECRET=your_nextauth_secret
    AUTH_SECRET=your_auth_secret
    
-   # Admin User Credentials (bcrypt hashed passwords)
+   # Admin User Credentials (bcrypt hashed passwords - 12 rounds)
    ADMIN_EMAIL_1=admin1@example.com
    ADMIN_NAME_1=Admin User 1
    ADMIN_ROLE_1=superadmin
    ADMIN_PASSWORD_HASH_1=your_bcrypt_hash_1
+   
+   ADMIN_EMAIL_2=admin2@example.com
+   ADMIN_NAME_2=Admin User 2
+   ADMIN_ROLE_2=admin
+   ADMIN_PASSWORD_HASH_2=your_bcrypt_hash_2
    
    # Email Configuration
    RESEND_API_KEY=your_resend_api_key
@@ -195,7 +200,7 @@ The application implements a comprehensive multi-layer security system to protec
 
 ### Authentication & Authorization
 - **NextAuth.js JWT Sessions**: Secure token-based authentication
-- **Bcrypt Password Hashing**: All passwords are securely hashed
+- **Bcrypt Password Hashing**: All passwords are securely hashed with 12 rounds
 - **Role-Based Access Control**: Different permission levels for admin operations
 - **Session Validation**: Every admin API request validates the session
 - **Environment Variable Storage**: All sensitive credentials stored securely
@@ -243,10 +248,12 @@ Access the admin dashboard at `/admin` with the following features:
 - **Settings Configuration**: Business settings and email configuration
 
 ### Getting Admin Access
-1. Set up admin credentials in environment variables
-2. Generate bcrypt password hashes for admin credentials
+1. Set up admin credentials in environment variables (both local and production)
+2. Generate bcrypt password hashes using the provided script: `node scripts/generate-password-hash.js your-password`
 3. Access `/admin/login` to authenticate
 4. Use the admin dashboard to manage all site content
+
+**Note**: Admin users are configured via environment variables only. No user management interface is provided for security reasons.
 
 ## 🎨 Customisation
 
