@@ -67,7 +67,7 @@ Teatime Collective is a vegan cake business that serves festivals, markets, and 
 
 - **Frontend**: Next.js 13 (App Router), React 18, TypeScript
 - **Styling**: Tailwind CSS, Radix UI Components
-- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **Backend**: Supabase (PostgreSQL, Storage)
 - **Authentication**: NextAuth.js with JWT sessions
 - **Email**: Resend API for transactional emails
 - **Deployment**: Vercel
