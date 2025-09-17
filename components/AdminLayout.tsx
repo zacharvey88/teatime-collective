@@ -15,7 +15,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Users,
   Home,
   ShoppingCart,
   Calendar,
@@ -47,12 +46,7 @@ const baseNavigationItems = [
 export default function AdminLayout({ children, activeSection, onSectionChange }: AdminLayoutProps) {
   const { data: session } = useSession()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [canManageAdmins, setCanManageAdmins] = useState(false)
   const { settings } = useSettings()
-
-  useEffect(() => {
-    setCanManageAdmins(true)
-  }, [])
 
   // Set sidebar collapsed by default on mobile screens
   useEffect(() => {
@@ -80,11 +74,7 @@ export default function AdminLayout({ children, activeSection, onSectionChange }
     }
   }
 
-  // Build navigation items dynamically based on permissions
-  const navigationItems = [
-    ...baseNavigationItems,
-    ...(canManageAdmins ? [{ id: 'admins', label: 'User Management', icon: Users }] : [])
-  ]
+  const navigationItems = baseNavigationItems
 
   return (
     <div className="min-h-screen bg-gray-50">

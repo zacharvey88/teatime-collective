@@ -5,7 +5,7 @@
  * 
  * Usage: node scripts/generate-password-hash.js <password>
  * 
- * This script generates a bcrypt hash for a given password.
+ * This script generates a bcrypt hash for a given password using 12 rounds.
  * Use this when adding new admin users or when you need to manually update passwords.
  */
 
@@ -25,7 +25,7 @@ if (password.length < 6) {
 }
 
 try {
-  const hash = bcrypt.hashSync(password, 10);
+  const hash = bcrypt.hashSync(password, 12);
   console.log(`\nPassword: ${password}`);
   console.log(`Hash: ${hash}\n`);
   console.log('Copy the hash above and paste it into the ADMIN_USERS array in app/api/auth/[...nextauth]/route.ts');

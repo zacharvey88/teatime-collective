@@ -196,7 +196,7 @@ The application implements a comprehensive multi-layer security system to protec
 ### Authentication & Authorization
 - **NextAuth.js JWT Sessions**: Secure token-based authentication
 - **Bcrypt Password Hashing**: All passwords are securely hashed
-- **Role-Based Access Control**: Different permission levels for admin users
+- **Role-Based Access Control**: Different permission levels for admin operations
 - **Session Validation**: Every admin API request validates the session
 - **Environment Variable Storage**: All sensitive credentials stored securely
 
@@ -216,7 +216,7 @@ The application implements a comprehensive multi-layer security system to protec
 ### Client-Side Security
 - **No Direct Database Access**: Client-side code cannot directly access the database
 - **API-Only Data Access**: All data operations go through protected API routes
-- **Session-Based UI**: Admin components only render for authenticated users
+- **Session-Based UI**: Admin components only render for authenticated sessions
 - **Middleware Protection**: Admin routes are protected at the Next.js level
 
 ### Data Access Patterns
@@ -230,7 +230,7 @@ The application implements a comprehensive multi-layer security system to protec
 Access the admin dashboard at `/admin` with the following features:
 
 - **Login System**: Secure authentication with email/password
-- **Multi-User Support**: Multiple admin users with different roles
+- **Environment-Based Users**: Admin users configured via environment variables
 - **Dashboard Overview**: Order statistics and quick actions
 - **Tabbed Interface**: Organized sections for different management tasks
 
@@ -244,7 +244,7 @@ Access the admin dashboard at `/admin` with the following features:
 
 ### Getting Admin Access
 1. Set up admin credentials in environment variables
-2. Generate bcrypt password hashes for admin users
+2. Generate bcrypt password hashes for admin credentials
 3. Access `/admin/login` to authenticate
 4. Use the admin dashboard to manage all site content
 

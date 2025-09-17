@@ -6,17 +6,17 @@ import bcrypt from 'bcryptjs'
 const ADMIN_USERS = [
   {
     id: '1',
-    email: process.env.ADMIN_EMAIL_1 || 'zac.harvey@gmail.com',
-    name: process.env.ADMIN_NAME_1 || 'Zac',
-    role: process.env.ADMIN_ROLE_1 || 'superadmin',
-    password: process.env.ADMIN_PASSWORD_HASH_1 || ''
+    email: process.env.ADMIN_EMAIL_1!,
+    name: process.env.ADMIN_NAME_1!,
+    role: process.env.ADMIN_ROLE_1!,
+    password: process.env.ADMIN_PASSWORD_HASH_1!
   },
   {
     id: '2',
-    email: process.env.ADMIN_EMAIL_2 || 'teatimecollective@hotmail.co.uk',
-    name: process.env.ADMIN_NAME_2 || 'Catherine',
-    role: process.env.ADMIN_ROLE_2 || 'admin',
-    password: process.env.ADMIN_PASSWORD_HASH_2 || ''
+    email: process.env.ADMIN_EMAIL_2!,
+    name: process.env.ADMIN_NAME_2!,
+    role: process.env.ADMIN_ROLE_2!,
+    password: process.env.ADMIN_PASSWORD_HASH_2!
   }
 ].filter(user => user.password);
 
