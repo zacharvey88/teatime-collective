@@ -1,4 +1,4 @@
-# Teatime Collective - Vegan Cake Business Website
+# Teatime Collective - Local Bakery Website
 
 A modern, full-stack web application for Teatime Collective, a vegan cake business specialising in festival catering and market trading since 2013.
 
