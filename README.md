@@ -256,7 +256,6 @@ Access the admin dashboard at `/admin` with the following features:
 ## 🎨 Customisation
 
 ### Styling
-- **Primary Colour**: Orange (#FF6B35) - easily changeable in settings
 - **Tailwind CSS**: Built for easy customization and theming
 - **Responsive Design**: Mobile-first approach for all screen sizes
 - **Component Library**: Radix UI components for consistent design
