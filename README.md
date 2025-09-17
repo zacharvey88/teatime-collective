@@ -53,12 +53,6 @@ Teatime Collective is a vegan cake business that serves festivals, markets, and 
   - Order form notices and messages
   - Cart and checkout configuration
 
-- **User Management**:
-  - Multi-user admin system
-  - Role-based access control
-  - Password management
-  - Session management
-
 ### Technical Features
 - **Real-time Updates**: Live order notifications and status updates
 - **Image Optimisation**: Automatic image compression and optimisation
