@@ -40,3 +40,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+# database setup scripts (security sensitive)
+supabase-setup.sql
+*-setup.sql
+database-setup.sql

@@ -217,10 +217,10 @@ export default function ContactPage() {
                     className="w-full bg-orange text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-orange-900 transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     {submitting ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-orange-200 border-t-orange-600 rounded-full animate-spin inline mr-2"></div>
+                      <div className="flex items-center justify-center">
+                        <div className="w-5 h-5 border-2 border-transparent border-t-white rounded-full animate-spin mr-2"></div>
                         Sending Message...
-                      </>
+                      </div>
                     ) : (
                       <>
                         <Send className="w-5 h-5 inline mr-2" />

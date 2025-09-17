@@ -409,35 +409,28 @@ Please review this order and contact the customer to confirm pricing and arrange
           .content { background: #fff; padding: 30px; border: 1px solid #ddd; border-top: none; }
           .footer { background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 8px 8px; border: 1px solid #ddd; border-top: none; }
           .contact-details { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
-          .message-box { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px 0; }
           .highlight { color: #f97316; font-weight: bold; }
         </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>📧 New Contact Form Submission</h1>
-            <p>Someone has sent you a message!</p>
+            <h1>New Contact Form Submission</h1>
           </div>
           
           <div class="content">
             <div class="contact-details">
-              <h3>Contact Details</h3>
               <p><strong>Name:</strong> <span class="highlight">${data.name}</span></p>
               <p><strong>Email:</strong> <a href="mailto:${data.email}">${data.email}</a></p>
               <p><strong>Subject:</strong> ${data.subject}</p>
-            </div>
-            
-            <div class="message-box">
-              <h3>Message</h3>
-              <p style="white-space: pre-wrap;">${data.message}</p>
+              <p><strong>Message:</strong></p>
+              <p style="white-space: pre-wrap; margin-top: 10px;">${data.message}</p>
             </div>
             
             <p><strong>Reply directly to this email to respond to ${data.name}.</strong></p>
           </div>
           
           <div class="footer">
-            <p>Teatime Collective | Contact Form</p>
             <p>This email was sent from your website contact form</p>
           </div>
         </div>
@@ -451,18 +444,14 @@ Please review this order and contact the customer to confirm pricing and arrange
     return `
 New Contact Form Submission
 
-CONTACT DETAILS:
 Name: ${data.name}
 Email: ${data.email}
 Subject: ${data.subject}
-
-MESSAGE:
-${data.message}
+Message: ${data.message}
 
 Reply directly to this email to respond to ${data.name}.
 
 ---
-Teatime Collective | Contact Form
 This email was sent from your website contact form
     `.trim()
   }
