@@ -1,8 +1,5 @@
-// Debug utilities for local development
-
 export const debugStorage = () => {
-  // This function is intentionally empty for production
-  // Debug logging has been removed
+  // Intentionally empty for production
 }
 
 export const clearStorage = () => {
@@ -27,11 +24,9 @@ export const testImageLoading = async (imageUrl: string) => {
 }
 
 export const logPageLoad = () => {
-  // This function is intentionally empty for production
-  // Debug logging has been removed
+  // Intentionally empty for production
 }
 
 export const logStorageChange = (event: StorageEvent) => {
-  // This function is intentionally empty for production
-  // Debug logging has been removed
+  // Intentionally empty for production
 } 

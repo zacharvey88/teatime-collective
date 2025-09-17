@@ -51,7 +51,6 @@ export default function AdminLayout({ children, activeSection, onSectionChange }
   const { settings } = useSettings()
 
   useEffect(() => {
-    // With hardcoded admin user, always allow admin management
     setCanManageAdmins(true)
   }, [])
 

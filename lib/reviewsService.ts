@@ -120,7 +120,6 @@ export class ReviewsService {
     }
   }
 
-  // Delete a review
   static async deleteReview(id: string): Promise<void> {
     try {
       const response = await fetch(`/api/admin/reviews/${id}`, {

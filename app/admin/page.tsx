@@ -14,7 +14,6 @@ import MarketManager from '@/components/admin/MarketManager'
 import HolidayManager from '@/components/admin/HolidayManager'
 import SettingsManager from '@/components/admin/SettingsManager'
 import PasswordManager from '@/components/admin/PasswordManager'
-// AdminManager removed - using hardcoded admin user
 
 
 

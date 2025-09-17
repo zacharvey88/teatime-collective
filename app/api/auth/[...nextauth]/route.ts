@@ -3,7 +3,6 @@ import { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import bcrypt from 'bcryptjs'
 
-// Admin users are now loaded from environment variables for security
 const ADMIN_USERS = [
   {
     id: '1',
@@ -19,7 +18,7 @@ const ADMIN_USERS = [
     role: process.env.ADMIN_ROLE_2 || 'admin',
     password: process.env.ADMIN_PASSWORD_HASH_2 || ''
   }
-].filter(user => user.password); // Only include users with valid password hashes
+].filter(user => user.password);
 
 const authOptions: NextAuthOptions = {
   providers: [
@@ -34,7 +33,6 @@ const authOptions: NextAuthOptions = {
           return null
         }
 
-        // Check against hardcoded admin users
         const user = ADMIN_USERS.find(u => u.email === credentials.email)
         if (user) {
           const passwordsMatch = await bcrypt.compare(credentials.password, user.password)

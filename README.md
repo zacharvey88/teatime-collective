@@ -76,7 +76,7 @@ Teatime Collective is a vegan cake business that serves festivals, markets, and 
 - **Date Handling**: date-fns
 - **Security**: Row Level Security (RLS), bcrypt password hashing
 
-## 🚀 Getting Started
+## 🚀 Try it for yourself
 
 ### Prerequisites
 - Node.js 18+ 
@@ -118,11 +118,6 @@ Teatime Collective is a vegan cake business that serves festivals, markets, and 
    ADMIN_NAME_1=Admin User 1
    ADMIN_ROLE_1=superadmin
    ADMIN_PASSWORD_HASH_1=your_bcrypt_hash_1
-   
-   ADMIN_EMAIL_2=admin2@example.com
-   ADMIN_NAME_2=Admin User 2
-   ADMIN_ROLE_2=admin
-   ADMIN_PASSWORD_HASH_2=your_bcrypt_hash_2
    
    # Email Configuration
    RESEND_API_KEY=your_resend_api_key

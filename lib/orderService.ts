@@ -192,7 +192,6 @@ export class OrderService {
         })))
 
       if (itemsError) {
-        // If items creation fails, delete the order
         await supabase
           .from('orders')
           .delete()
@@ -263,8 +262,6 @@ export class OrderService {
     }
   }
 
-  // Update payment status - removed as payment_status field no longer exists in Order interface
-
   // Get orders by status
   static async getOrdersByStatus(status: Order['status'], includeArchived: boolean = false): Promise<Order[]> {
     let query = supabase
@@ -320,9 +317,7 @@ export class OrderService {
     return data || []
   }
 
-  // Delete an order (and its items)
   static async deleteOrder(orderId: string): Promise<void> {
-    // Delete order items first
     const { error: itemsError } = await supabase
       .from('order_items')
       .delete()
@@ -330,7 +325,6 @@ export class OrderService {
 
     if (itemsError) throw itemsError
 
-    // Delete the order
     const { error: orderError } = await supabase
       .from('orders')
       .delete()
